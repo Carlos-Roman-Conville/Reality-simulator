@@ -217,6 +217,33 @@ Todos that remain: the timed untreated-crisis acceptance case (one `it.todo`) ne
 cited bleed rate and a volume-to-flow curve with cascade kinetics, none of which exist
 in the library. The row therefore stays "partial, acceptance blocked".
 
+### Every death opens a crisis; water exhaustion (2561, 2026-10-30)
+
+Asked by the pirate-ship lane's review of 2538 and 2539. The crisis record is now one type, `Crisis` in
+`src/crisis.ts` (exported from `src/index.ts`), kept in `world.trace.crises`: `cause`, `source` (the row that
+justifies it), `risk` (null where the row gives no number, and nothing is rolled for a null), `startedAt`,
+`durationSeconds`, `resolvedAt`. The anatomy and medicine crisis shapes are gone; `MedicineCrisis` is `Crisis`.
+Paths that open one: a disease or inoculation death draw and an air condition (medicine; they reach the trace at the
+next medicine step), an organ under its floor (anatomy), a loss at the circulation row that says "dying" (class IV,
+opened by `circulationProcess` itself, so a body with a wound and circulation but no anatomy still gets it), and a
+water deficit in the hydration rows that say work stops or death. `declareDeath(w, body, cause)` is the only thing
+that sets `props.dead`, and it throws for a body with no crisis in the trace; the engine never calls it.
+
+Water exhaustion reads the `physiology.hydration` rows. "6 to 10" says "incapacitated" and "over 10" says "death risk
+per hour", so each opens a crisis at its lower bound (source: the row id and its effect); the output
+`work_capacity_hydration` is 1 for the "none" row, 0 for those two, and null for the rows that give no work figure
+(the Endurance and Strength factors act on pools, not on work capacity). The "4 to 6" row's "collapse risk in heat"
+has no number and no stop, so it opens nothing. The body also keeps `work_capacity_heat` (the core temperature's),
+and combining the two is the host's.
+
+Tests: `test/hydration-week.test.ts` runs a hard worker in a hot room with nothing to drink until the over-10 band: a
+crisis exists exactly when the deficit is in or past the row's band, work capacity follows the row, no dead flag,
+`declareDeath` refuses a body with no crisis and then works. `test/checkpoint2.test.ts` adds the never-bound and
+bound-at-once bleeding runs. The library still has no thrust bleed rate (the todo stands), so those two runs impose a
+host rate of 200 mL/min with clotting 0: they test the path from a bleeding wound to its class IV crisis before any
+death, not a predicted course. Bound at once, no blood is lost and no crisis opens. The 2531 variants are unchanged
+(rate null, no crisis).
+
 ## Independence (2532, 2026-10-30): the engine alone, a horse in a stable
 
 Run `node --experimental-strip-types examples/horse-stable.ts`; test `test/independence.test.ts`.

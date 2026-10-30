@@ -7,6 +7,7 @@ import { defaultRegistry, type Component } from '../src/registry.ts';
 import { bodyArea, bodyOutputs, metOf, physiologyProcess } from '../src/physiology.ts';
 import { wbgtBom } from '../src/environment.ts';
 import type { Transfer } from '../src/trace.ts';
+import { crisesOf, declareDeath } from '../src/crisis.ts';
 
 const MAN = { height_cm: 175, age_y: 30, male: 1 };
 const water = (ts: readonly Transfer[], pred: (t: Transfer) => boolean) =>
@@ -69,6 +70,45 @@ describe('hydration across the checkpoint-1 week (ISO 7730 sweat, breath and ski
     expect(out.water_deficit_pct).toBeCloseTo((lossLph - madeKg) / 70 * 100, 9);
     expect(w.trace.failed()).toEqual([]);
   });
+
+  it('a body given no water reaches the incapacitated and death-risk bands, each with a crisis, and never dies silently', () => {
+    const reg = defaultRegistry(), w = new World(reg), sch = new Scheduler();
+    const room: Component = { id: 'room', kind: 'room', material: 'air_mass', mass: 1e6, temperatureC: 32, contents: [], ports: [],
+      condition: { capability: 1, control: 1, accuracy: 1 }, props: { rh: 0.5, wbgt_c: wbgtBom(32, 50) } };
+    const body: Component = { id: 'body', kind: 'body', material: 'flesh', mass: 70, temperatureC: 37, ports: [],
+      contents: [{ substance: 'water', phase: 'liquid', mass: 40 }], condition: { capability: 1, control: 1, accuracy: 1 }, props: { ...MAN } };
+    reg.addComponent(room); reg.addComponent(body);
+    w.conserve('water', ['body', 'room'], 1e-9);
+    sch.add(physiologyProcess('body', 'room', { every: 1, met: metOf('smithing') }));
+    // the rows that say work stops or death, read from the table: "incapacitated" (6 to 10) and "death risk per hour" (over 10)
+    const stops = libraryTable('physiology', 'hydration').filter(r => /incapacitated|death/.test(String(r['Effect in the model'])));
+    expect(stops.map(r => r.id)).toEqual(['physiology.hydration.6-to-10', 'physiology.hydration.over-10']);
+    const loOf = (id: unknown) => Number(/^(?:over )?([\d.]+)/.exec(String(libraryRow('physiology', 'hydration', String(id))['Deficit (% body mass)']))![1]);
+    const reached = new Map<string, number>(); // row id -> the hour its crisis was first seen
+    let hours = 0;
+    while (hours < 24 && !reached.has('physiology.hydration.over-10')) {
+      sch.run(w, 600, 10); hours += 1 / 6;
+      const out = bodyOutputs(body), pct = out.water_deficit_pct as number;
+      for (const r of stops) {
+        const open = crisesOf(w, 'body').find(c => c.cause === r.id);
+        // a crisis exists exactly when the deficit is in or past the row's band; its source names the row
+        expect(open !== undefined).toBe(pct >= loOf(r.id));
+        if (open) { reached.set(String(r.id), reached.get(String(r.id)) ?? hours); expect(open.kind).toBe('crisis'); expect(open.source).toContain(String(r.id)); }
+      }
+      // work capacity follows the row: 1 where the row says none, 0 where it says incapacitated or death, null where it gives no work figure
+      const effect = String(libraryRow('physiology', 'hydration', String(out.hydration_row))['Effect in the model']);
+      expect(out.work_capacity_hydration).toBe(effect === 'none' ? 1 : /incapacitated|death/.test(effect) ? 0 : null);
+      expect(body.props).not.toHaveProperty('dead'); // the engine kills no one
+    }
+    expect([...reached.keys()]).toEqual(stops.map(r => r.id)); // the 6 to 10 crisis opened first, then the over-10
+    expect(bodyOutputs(body).work_capacity_hydration).toBe(0);
+    expect(w.trace.crises).toHaveLength(2);
+    // a host that decides the body died must find the crisis in the trace; without one the engine refuses
+    expect(() => declareDeath(new World(defaultRegistry()), 'body', 'x')).toThrow();
+    declareDeath(w, 'body', 'water exhaustion');
+    expect(body.props.dead).toBe(1);
+    expect(w.trace.failed()).toEqual([]);
+  }, 60_000);
 
   it('takes the skin area from DuBois when the host gives height, and refuses a body with neither area nor height', () => {
     const body = { mass: 70, props: { height_cm: 175 } } as unknown as Component;

@@ -10,6 +10,7 @@ import { eatMeal, poolLevel, type MealItem, type MealOptions } from "./nutrition
 import type { Component } from "./registry.ts";
 import type { Process } from "./scheduler.ts";
 import type { World } from "./world.ts";
+import { crisesOf, trackCrisis, type Crisis } from "./crisis.ts";
 
 export type AnatomyTable = "organs" | "tissues" | "damage_function" | "timescales" | "species";
 export const anatomyRules = (table: AnatomyTable) => Object.fromEntries(libraryTable("anatomy", table).map(r => [String(r.id), r]));
@@ -70,17 +71,6 @@ export interface OrganState {
   insult: number;
   resistance: number;
   repairAllowed: boolean;
-}
-export interface Crisis {
-  kind: "crisis";
-  body: string;
-  organ: string;
-  startedAt: number;
-  durationSeconds: number;
-  function: number | null;
-  remainingCapacity: number;
-  source: string;
-  resolvedAt?: number;
 }
 export interface BodyAssembly {
   body: string;
@@ -174,15 +164,8 @@ export function connectOrganInput(w: World, a: BodyAssembly, organ: string, sour
  * a crisis immediately; durations are observations for the host, never death rolls. */
 const floors: Record<string, number> = { brain: 0.2, heart: 0.2, lungs: 0.2, liver: 0.1, kidneys: 0.1 };
 function crisis(w: World, a: BodyAssembly, id: string, active: boolean, value: number | null, capacity: number, source: string) {
-  const previous = [...a.crises].reverse().find(c => c.organ === id && c.resolvedAt === undefined);
-  if (previous) {
-    previous.durationSeconds = w.t - previous.startedAt;
-    previous.function = value; previous.remainingCapacity = capacity;
-    if (!active) previous.resolvedAt = w.t;
-  } else if (active) {
-    a.crises.push({ kind: "crisis", body: a.body, organ: id, startedAt: w.t, durationSeconds: 0, function: value, remainingCapacity: capacity, source });
-    w.trace.note(w.t, `crisis: ${a.body}/${id}; ${source}; outcome belongs to host`);
-  }
+  const c = trackCrisis(w, a.body, id, active, { source, organ: id, function: value, remainingCapacity: capacity });
+  if (c && !a.crises.includes(c)) a.crises.push(c);
 }
 
 /** Run after circulation/breathing and on input-change events (dt=0 supported).
@@ -236,7 +219,8 @@ export function anatomyProcess(a: BodyAssembly): Process {
       if (floors[id] !== undefined && s.function !== null) crisis(w, a, id, s.function <= floors[id], s.function, 1 - s.damage, "ANATOMY.md section 3a");
     }
     for (const [id, tissue] of Object.entries(a.tissues)) out[id] = fraction(tissue.integrity, id);
-    crisis(w, a, "circulation.bleeding.iv", out["circulation.bleeding.iv"] === 1, null, 1, "circulation.bleeding.iv; ANATOMY.md section 3a");
+    // The bleed class's own crisis is opened by circulation (the row says dying); the assembly lists it with the organ crises.
+    for (const c of crisesOf(w, a.body)) if (c.cause.startsWith("circulation.bleeding.") && !a.crises.includes(c)) a.crises.push(c);
     w.afterStep(); // physical transfers remain checked by their owning modules
   } };
 }

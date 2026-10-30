@@ -7,7 +7,9 @@ import { assembleBody, assemblyCirculation, anatomyProcess } from '../src/anatom
 import { World } from '../src/world.ts';
 import { defaultRegistry } from '../src/registry.ts';
 import { bodyOutputs } from '../src/physiology.ts';
-import { healingMultiplier } from '../src/medicine.ts';
+import { createMedicine, healingMultiplier, inflictWound, medicineProcess, treat } from '../src/medicine.ts';
+import { crisesOf, declareDeath } from '../src/crisis.ts';
+import { Scheduler } from '../src/scheduler.ts';
 import { rng } from '../src/process.ts';
 import { GLYCOGEN_BOUND_WATER } from '../src/nutrition.ts';
 
@@ -101,6 +103,38 @@ describe('checkpoint 2: supported wound integration; missing kinetics explicitly
       expect(component.props).not.toHaveProperty('dead');
       expect(bodyOutputs(component)).not.toHaveProperty('dead');
     }
+  });
+
+  // The library has no thrust bleed rate (the todo below), so these two runs impose a host rate and clotting: they test the path
+  // from a bleeding wound to its crisis record, not a predicted course.
+  it.each(['never-bound', 'bound-at-once'] as const)('a bleeding wound, %s, ends in a crisis record before any death', variant => {
+    const w = new World(defaultRegistry()), sch = new Scheduler();
+    const body = w.registry.addComponent({ id: 'body', kind: 'body', material: 'flesh', mass: FIXTURE.massKg,
+      temperatureC: 37, contents: [], ports: [], condition: { capability: 1, control: 1, accuracy: 1 }, props: { male: 1 } });
+    const assembly = assembleBody(w, 'body'), medicine = createMedicine('body', { seed: WOUND_FIXTURE.seed });
+    const wound = inflictWound(medicine, WOUND_ID, { severity: 0, rateMlMin: 200, clotting: 0, infected: false });
+    if (variant === 'bound-at-once') treat(medicine, 'tourniquet-and-ligature', { wound: wound.n });
+    sch.add(assemblyCirculation(assembly)); sch.add(medicineProcess(medicine)); sch.add(anatomyProcess(assembly));
+    const iv = libraryRow('circulation', 'bleeding', 'circulation.bleeding.iv');
+    expect(String(iv['Organ consequences (ANATOMY)'])).toContain('dying');
+    for (let minute = 0; minute < 30; minute++) {
+      const before = crisesOf(w, 'body').length;
+      sch.run(w, 60, 60);
+      // the engine never sets a dead flag; a host asking for a death before any crisis record exists is refused
+      expect(body.props).not.toHaveProperty('dead');
+      if (before === 0 && crisesOf(w, 'body').length === 0) expect(() => declareDeath(w, 'body', 'blood loss')).toThrow();
+    }
+    const crises = crisesOf(w, 'body');
+    if (variant === 'bound-at-once') { expect(crises).toEqual([]); expect(body.props.blood_lost_ml).toBe(0); return; }
+    expect(crises.map(c => c.cause)).toEqual([iv.id]);
+    expect(crises[0]).toMatchObject({ kind: 'crisis', body: 'body', organ: iv.id });
+    expect(crises[0].source).toContain(String(iv.id));
+    expect(w.trace.crises).toEqual(crises);
+    expect(assembly.crises).toContain(crises[0]); // the assembly lists the same record
+    declareDeath(w, 'body', 'blood loss'); // only now can a host mark the body dead
+    expect(body.props.dead).toBe(1);
+    expect(crises[0].resolved).toBe('died');
+    expect(w.trace.failed()).toEqual([]);
   });
 
   it('body mass is conserved including shed blood at the library blood density', () => {

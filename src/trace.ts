@@ -3,6 +3,8 @@
  * every step checks conservation of each tracked quantity against the recorded flows, so an experiment can be read back
  * to see why it failed.
  */
+import type { Crisis } from "./crisis.ts";
+
 export interface Transfer { t: number; process: string; quantity: string; from: string; to: string; amount: number; note?: string; chemicalChange?: boolean }
 
 export interface Check { t: number; quantity: string; expected: number; actual: number; tolerance: number; ok: boolean }
@@ -11,6 +13,8 @@ export class Trace {
   transfers: Transfer[] = [];
   checks: Check[] = [];
   notes: { t: number; text: string }[] = [];
+  /** Every crisis record opened on any body (crisis.ts): the trace is where a death must find its crisis. */
+  crises: Crisis[] = [];
   record(x: Transfer) { this.transfers.push(x); }
   note(t: number, text: string) { this.notes.push({ t, text }); }
   check(t: number, quantity: string, expected: number, actual: number, tolerance: number) {

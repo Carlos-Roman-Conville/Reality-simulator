@@ -11,6 +11,7 @@ import { poolLevel } from "./nutrition.ts";
 import { rng } from "./process.ts";
 import type { Process } from "./scheduler.ts";
 import type { World } from "./world.ts";
+import { recordCrisis, type Crisis } from "./crisis.ts";
 
 const DAY = 86400;
 const slug = (id: unknown) => String(id).split(".").pop()!;
@@ -118,16 +119,6 @@ export interface Wound {
   workingPart: boolean;
   resting: boolean;
 }
-export interface MedicineCrisis {
-  kind: "crisis";
-  body: string;
-  cause: string;
-  startedAt: number;
-  day: number;
-  risk: number | null;
-  source: string;
-  resolved?: "survived" | "died";
-}
 export interface Immunity { disease: string; level: "lifelong" | "partial"; sinceDay: number; fadesAfterDays: number | null; via: "survived" | "inoculation" }
 export interface MedicineState {
   body: string;
@@ -138,7 +129,7 @@ export interface MedicineState {
   wounds: Wound[];
   immunity: Record<string, Immunity>;
   lastingHarm: Record<string, string>;
-  crises: MedicineCrisis[];
+  crises: Crisis[];
   airActive: Record<string, number>;
   /** Used for a wound's pain when the host does not name the cause. */
   options: { riskAt: number };
@@ -157,7 +148,7 @@ export function createMedicine(body: string, options: MedicineOptions = {}): Med
 
 const between = (rand: () => number, r: Range) => r.lo + Math.floor(rand() * (Math.round(r.hi) - Math.round(r.lo) + 1));
 function emit(s: MedicineState, cause: string, risk: number | null, source: string) {
-  s.crises.push({ kind: "crisis", body: s.body, cause, startedAt: s.elapsedSeconds, day: s.day, risk, source });
+  s.crises.push({ kind: "crisis", body: s.body, cause, startedAt: s.elapsedSeconds, durationSeconds: 0, day: s.day, risk, source });
 }
 
 // ---------------------------------------------------------------- exposure and onset
@@ -425,7 +416,7 @@ export function advanceDays(s: MedicineState, days: number, factors: HealingFact
 }
 
 /** The host's decision on a crisis. "died" removes the case; "survived" lets the course go on. The engine kills no one. */
-export function resolveCrisis(s: MedicineState, crisis: MedicineCrisis, outcome: "survived" | "died") {
+export function resolveCrisis(s: MedicineState, crisis: Crisis, outcome: "survived" | "died") {
   crisis.resolved = outcome;
   const id = /^disease:(.+)$/.exec(crisis.cause)?.[1];
   const x = id ? s.sick.find(k => k.id === id && k.crisis) : undefined;
@@ -522,6 +513,7 @@ export function medicineProcess(s: MedicineState, factors: HealingFactors = {}, 
     const days = Math.floor((s.elapsedSeconds + dt) / DAY) - Math.floor(s.elapsedSeconds / DAY);
     s.elapsedSeconds += dt;
     if (days) advanceDays(s, days, { ...worldHealingFactors(w, s.body), ...factors });
+    for (const c of s.crises) recordCrisis(w, c); // disease, inoculation and air crises reach the trace here
     Object.assign(bodyOutputs(w.registry.component(s.body)), medicineOutputs(s));
   } };
 }

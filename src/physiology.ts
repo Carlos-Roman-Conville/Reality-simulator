@@ -9,9 +9,11 @@
  * sheltered (1 default; 0 for a wet cold night); work_w (external work, W); intake_kcal (food energy eaten); area_m2 (else
  * DuBois from height_cm) and h (else ISO 7730's convection and radiation). On the room: rh (atmosphere's) and air_speed_ms (0).
  * Outputs by library id on `body.props.outputs` (read them with `bodyOutputs`): alertness, sleep_debt, circadian,
- * core_c, core_state, work_capacity_heat, water_deficit_pct, hydration_state, endurance_hydration, energy_balance_kcal,
+ * core_c, core_state, work_capacity_heat, water_deficit_pct, hydration_state, endurance_hydration, work_capacity_hydration,
+ * energy_balance_kcal,
  * pal, rmr_kcal, sweat_l_per_h, breath_water_l_per_h, skin_diffusion_l_per_h, urine_l_per_h, wbgt_c, wbgt_ceiling_c,
- * acclimatisation, fatigue_met_hours, and the matching `*_row` ids.
+ * acclimatisation, fatigue_met_hours, and the matching `*_row` ids. A water deficit in a band whose row says work stops
+ * ("incapacitated") or death opens a crisis record for that row (crisis.ts); the engine kills no one.
  */
 import type { Process } from "./scheduler.ts";
 import { addHeat, type World } from "./world.ts";
@@ -19,6 +21,7 @@ import type { Component } from "./registry.ts";
 import { C_TO_K, KCAL_J, M, O2_ENERGY_J_PER_L, P_SEA_LEVEL, SWEAT_LATENT, heatFlow, metabolicHeat, molesInVolume, restingMetabolicRate, waterVapourPressure } from "./physics.ts";
 import { libraryMeta, libraryRow, libraryTable, type LibraryRow } from "./library.ts";
 import { accumulateExposure } from "./atmosphere.ts";
+import { trackCrisis } from "./crisis.ts";
 
 export type BodyOutputs = Record<string, number | string | null>;
 
@@ -188,12 +191,17 @@ export function coreRow(coreC: number) {
   return { row, state: String(row.State), effect, workCapacity: m ? Number(m[1]) : effect === "none" ? 1 : null, sweatAtMax: effect.includes("sweat rate at max") };
 }
 
-/** Water deficit (% of body mass) to its row; `endurance` is the Endurance factor (the in-heat one when hot), null where the text gives none. */
+/** The hydration rows whose effect says work stops ("incapacitated") or death: where a water deficit opens a crisis. */
+const HYDRATION_STOPS = /incapacitated|death/;
+export const hydrationCrisisRows = () => lib().hydration.filter(b => HYDRATION_STOPS.test(String(b.row["Effect in the model"])));
+
+/** Water deficit (% of body mass) to its row; `endurance` is the Endurance factor (the in-heat one when hot), null where the text gives none;
+ * `workCapacity` is 1 where the row says none, 0 where it says work stops or death, null where it gives no work figure. */
 export function hydrationRow(deficitPct: number, hot: boolean) {
   const row = bandAt(lib().hydration, deficitPct).row, effect = String(row["Effect in the model"]);
   const m = /Endurance(?: pool)? x([\d.]+)(?: \(x([\d.]+) in heat\))?/.exec(effect);
   const endurance = m ? Number(hot && m[2] ? m[2] : m[1]) : effect === "none" ? 1 : null;
-  return { row, effect, endurance };
+  return { row, effect, endurance, workCapacity: effect === "none" ? 1 : HYDRATION_STOPS.test(effect) ? 0 : null };
 }
 
 /**
@@ -394,5 +402,8 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     out.sweat_l_per_h = sweatLph;
     out.breath_water_l_per_h = breathKg * 3600 / dt; out.skin_diffusion_l_per_h = diffKg * 3600 / dt; out.urine_l_per_h = urineKg * 3600 / dt;
     out.water_deficit_pct = p.waterDeficitPct; out.hydration_state = hyd.effect; out.hydration_row = String(hyd.row.id); out.endurance_hydration = hyd.endurance;
+    out.work_capacity_hydration = hyd.workCapacity;
+    for (const band of hydrationCrisisRows()) trackCrisis(w, b.id, String(band.row.id), p.waterDeficitPct >= band.lo,
+      { source: `${band.row.id}: ${String(band.row["Effect in the model"])} (deficit ${String(band.row["Deficit (% body mass)"])}% of body mass)` });
   } };
 }
