@@ -1,0 +1,41 @@
+{
+  "_about": "Scientific data library, domain population: the universal columns of the game's body/data/population.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "cohorts": {
+    "title": "The settlement record: cohorts the aggregate model keeps",
+    "kind": "model",
+    "conf": "medium",
+    "source": "A compact age-sex-role structure, updated daily for a visited town (the overnight tick) and in a batch for a distant one (the days elapsed). ChatGPT's three simulation levels (unvisited aggregate; discovered named characters tracked; active full detail) recorded in COMBAT.md 4e, proposed; kept.",
+    "columns": ["id", "Field", "Type", "What it holds", "Mark", "source"],
+    "rows": [
+      ["population.cohorts.children", "children", "count", "under 15", "proposed", "open"],
+      ["population.cohorts.adults-m-adults-f", "adults_m, adults_f", "count", "15 to 50, by sex", "proposed", "open"],
+      ["population.cohorts.elders", "elders", "count", "over 50", "proposed", "open"],
+      ["population.cohorts.seasoned-share", "seasoned_share", "0 to 1", "fraction of adults immune to the local fevers", "proposed", "open"],
+      ["population.cohorts.enslaved", "enslaved", "count", "a plantation town's enslaved people; whether this appears in the game at all is Rex's (GOODS.md Open for Rex 1)", "open", "open"],
+      ["population.cohorts.transient", "transient", "count", "sailors, soldiers, visitors in port this week (the recruit pool's visitors, PIRATE.md 7b)", "proposed", "open"],
+      ["population.cohorts.health", "health", "0 to 1", "mean body condition of the pool (food sufficiency, epidemic state)", "proposed", "open"],
+      ["population.cohorts.food-days", "food_days", "number", "stores against need (ECOLOGY and the economy)", "proposed", "open"],
+      ["population.cohorts.epidemic", "epidemic", "disease id or none, with day", "the current outbreak (MEDICINE parameters)", "proposed", "open"],
+      ["population.cohorts.labour", "labour", "person-days per day", "= adults x health x (1 - sick share)", "proposed", "open"],
+      ["population.cohorts.occupations", "occupations", "map", "how many farmers, fishers, smiths, sailors (GOODS.md 3d labels) the pool supplies", "proposed", "open"]
+    ]
+  },
+  "tick": {
+    "title": "The aggregate daily update",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Standard cohort-component demography reduced to daily rates; epidemic as a simple SIR-type pulse using MEDICINE.md catch and death rates; migration from the economy's prosperity and the town's reputation. Numbers placeholders.",
+    "columns": ["id", "Step", "Rule", "Reads", "Mark", "source"],
+    "rows": [
+      ["population.tick.births", "Births", "children += adults_f x birth_rate/365 x health", "rates table", "proposed", "open"],
+      ["population.tick.deaths-background", "Deaths, background", "each cohort -= n x death_rate/365 x (2 - health) ; elders x2", "rates, health", "proposed", "open"],
+      ["population.tick.epidemic", "Epidemic", "on outbreak: sick share rises by the disease's catch rate x (1 - seasoned_share) daily for its course; deaths = sick x the disease's untreated risk; survivors join seasoned_share (yellow fever, smallpox)", "MEDICINE.md diseases", "proposed", "open"],
+      ["population.tick.ageing", "Ageing", "children -> adults at 15 (1/5475 a day), adults -> elders at 50", "-", "proposed", "open"],
+      ["population.tick.food", "Food", "food_days -= 1; if under 0: health -= 0.02 a day; births x0.5; deaths x1.5 (famine)", "ECOLOGY, economy", "proposed", "open"],
+      ["population.tick.migration-in", "Migration in", "transient += arrivals (ships in port x crew share ashore); adults += settlers (prosperity x reputation x 0.001 a day)", "economy, town reputation", "proposed", "open"],
+      ["population.tick.migration-out", "Migration out", "adults -= leavers (fear of fever x epidemic; the dying port's pressure: Rex, everyone thinking of abandoning the port)", "town state", "proposed", "open"],
+      ["population.tick.labour-supply", "Labour supply", "labour = adults x health x (1 - sick); the town's places draw workers from it; a place with no labour stalls (an input to the economy, not a fate)", "cohorts", "proposed", "open"],
+      ["population.tick.recruit-pool-refresh", "Recruit pool refresh", "the unnamed candidates (merc, hire) a port offers are drawn from transient and adults by occupation; named characters are never drawn or removed here", "PIRATE.md 7b", "proposed", "open"]
+    ]
+  }
+}

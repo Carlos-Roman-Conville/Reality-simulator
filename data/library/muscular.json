@@ -1,0 +1,225 @@
+{
+  "_about": "Scientific data library, domain muscular: the universal columns of the game's body/data/muscular.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "groups": {
+    "title": "The muscle groups the sim tracks (left/right where the body has two)",
+    "kind": "science",
+    "conf": "high",
+    "source": "Anatomy is textbook (Gray's). The split by head (deltoid front/middle/rear; chest clavicular/sternocostal; and so on) is Rex's rule that groups split the way real muscles split (COMBAT.md 4b). Which groups count is proposed (ChatGPT's 25 to 40 functional model, extended). MUS-ANAT",
+    "columns": ["id", "Group", "Region", "Sides", "Main action", "Mark", "source"],
+    "rows": [
+      ["delt_front", "Deltoid, anterior head", "shoulder", "L/R", "raising the arm forward, pushing", "rex (split), proposed (set)", "open"],
+      ["delt_mid", "Deltoid, middle head", "shoulder", "L/R", "raising the arm sideways; holding a sword out", "rex (split), proposed (set)", "open"],
+      ["delt_rear", "Deltoid, posterior head", "shoulder", "L/R", "pulling the arm back; pulling apart (Rex's example)", "rex (split), proposed (set)", "open"],
+      ["rotator_cuff", "Rotator cuff (supraspinatus, infraspinatus, teres minor, subscapularis)", "shoulder", "L/R", "stabilising and rotating the shoulder; a thrown cast; overhead work", "proposed", "open"],
+      ["pec_clav", "Pectoralis major, clavicular portion (upper chest)", "chest", "L/R", "pushing up and forward", "rex (split), proposed (set)", "open"],
+      ["pec_stern", "Pectoralis major, sternocostal portion (middle and lower chest)", "chest", "L/R", "pushing forward and down; hugging a cask", "rex (split), proposed (set)", "open"],
+      ["trap_upper", "Trapezius, upper", "back", "L/R", "shrugging; carrying on the shoulder", "proposed", "open"],
+      ["trap_mid", "Trapezius, middle", "back", "L/R", "pulling the shoulder blades together: rowing, hauling", "proposed", "open"],
+      ["trap_lower", "Trapezius, lower", "back", "L/R", "pulling the blades down: climbing, overhead pulls", "proposed", "open"],
+      ["lats", "Latissimus dorsi", "back", "L/R", "pulling down and back: hauling, climbing, rowing", "proposed", "open"],
+      ["rhomboids", "Rhomboids", "back", "L/R", "retracting the blades", "proposed", "open"],
+      ["erectors", "Erector spinae", "back (core)", "L/R", "holding the back straight under load; lifting from the deck", "proposed", "open"],
+      ["abs", "Rectus abdominis", "core", "one", "bending forward; bracing", "proposed", "open"],
+      ["obliques", "Obliques (external and internal)", "core", "L/R", "twisting: a sword cut, a cast, swinging a hammer", "proposed", "open"],
+      ["deep_core", "Deep stabilisers (transversus, multifidus)", "core", "one", "bracing the spine", "proposed", "open"],
+      ["biceps", "Biceps brachii", "upper arm", "L/R", "bending the elbow, turning the palm up: hauling hand over hand", "proposed", "open"],
+      ["brachialis", "Brachialis", "upper arm", "L/R", "bending the elbow (the strongest flexor)", "proposed", "open"],
+      ["triceps", "Triceps brachii (three heads)", "upper arm", "L/R", "straightening the elbow: pushing, a thrust, a hammer", "rex (split allowed), proposed", "open"],
+      ["forearm_flex", "Forearm flexors and grip", "forearm", "L/R", "gripping: rope, a cutlass, a fish on the line", "proposed", "open"],
+      ["forearm_ext", "Forearm extensors", "forearm", "L/R", "opening the hand, steadying the wrist: aiming, writing", "proposed", "open"],
+      ["hand", "Intrinsic hand muscles", "hand", "L/R", "fine control: a needle, cards, a knot", "proposed", "open"],
+      ["glute_max", "Gluteus maximus", "hip", "L/R", "driving the hip: climbing, a jump, lifting", "proposed", "open"],
+      ["glute_med", "Gluteus medius and minimus", "hip", "L/R", "holding the pelvis level: balance on one leg, a rolling deck", "proposed", "open"],
+      ["hip_flex", "Hip flexors (iliopsoas)", "hip", "L/R", "lifting the knee: climbing, stepping over a rail", "proposed", "open"],
+      ["adductors", "Adductors", "hip", "L/R", "squeezing the legs in: gripping a yard with the thighs", "proposed", "open"],
+      ["quads", "Quadriceps (four heads)", "thigh", "L/R", "straightening the knee: standing from a crouch, climbing, pushing a gun", "rex (split allowed), proposed", "open"],
+      ["hamstrings", "Hamstrings", "thigh", "L/R", "bending the knee, driving the hip: running, hauling with the legs", "proposed", "open"],
+      ["calves", "Gastrocnemius and soleus", "lower leg", "L/R", "pushing off the toes: running, jumping, standing on a footrope", "proposed", "open"],
+      ["tibialis", "Tibialis anterior", "lower leg", "L/R", "lifting the foot; balance", "proposed", "open"],
+      ["neck", "Neck (sternocleidomastoid, neck extensors)", "neck", "L/R", "holding the head; looking aloft; taking a blow", "proposed", "open"],
+      ["diaphragm", "Diaphragm and intercostals", "chest", "one", "breathing hard; the wind", "proposed", "open"]
+    ]
+  },
+  "values": {
+    "title": "What each group carries (three values plus the stimulus store)",
+    "kind": "model",
+    "conf": "medium",
+    "source": "ChatGPT's development / fatigue / condition triple with accumulated training stimulus (COMBAT.md 4b, proposed, outside AI), kept; units and ranges the keeper's.",
+    "columns": ["id", "Value", "Range", "Unit", "Changes by", "Reads", "Mark", "source"],
+    "rows": [
+      ["muscular.values.contractile-was-development", "contractile (was 'development')", "0 to 100 (genetic max per group, inherited from the limb's hidden max)", "index: 50 is an ordinary sailor", "the tension stimulus after rest and food (hypertrophy: more contractile protein); disuse decay", "force potential, muscle mass, limb Strength (computed)", "rex (the split, 2026-10-29); proposed (ranges)", "open"],
+      ["muscular.values.oxidative", "oxidative", "0 to 100", "index: mitochondria, capillaries and fuel enzymes as one number", "the aerobic stimulus (long work at a share of capacity); disuse decay faster than contractile (weeks)", "the group's endurance time and its recovery rate R between efforts; local muscular endurance", "rex (the split, 2026-10-29); proposed (ranges)", "open"],
+      ["muscular.values.fatigue", "fatigue", "0 to 1", "fraction of fibres in the fatigued compartment (3CC)", "work by the activation profile; recovers by R", "today's force = development x (1 - fatigue)", "proposed (outside AI)", "open"],
+      ["muscular.values.condition", "condition", "0 to 1", "1 = sound; strain grades 1 to 3 at 0.8, 0.5, 0.2", "injury; healing (MEDICINE clock)", "force cap; pain", "proposed (outside AI)", "open"],
+      ["muscular.values.stimulus-tension-stimulus-aerobic", "stimulus_tension, stimulus_aerobic", "0 to 100 each", "two indices of unconverted training signal", "added by work by the stimuli table; each converts to its own state at the overnight tick if rest and food allow; decays if not. Fatigue is not stimulus: a man can be exhausted with no useful signal, and a good session needs no exhaustion", "contractile, oxidative", "rex (the split, 2026-10-29); proposed (ranges)", "open"],
+      ["muscular.values.mass", "mass", "kg (derived)", "kg", "contractile x the body's lean mass share (NUTRITION)", "body composition", "proposed", "open"]
+    ]
+  },
+  "fatigue_rates": {
+    "title": "Three-compartment fatigue model (3CC): rates by joint",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Xia and Frey Law 2008 (J Biomech): muscle in resting, active, fatigued compartments; F = fatigue rate active to fatigued, R = recovery rate fatigued to resting, per second. Fitted values from Frey Law, Looft and Heitsman 2012: ankle F 0.00589 R 0.0182; shoulder F 0.00058 R 0.00168; a 2018 extension adds a rest multiplier. MUS-3CC",
+    "columns": ["id", "Joint (groups)", "F (per s)", "R (per s)", "Note", "Mark", "source"],
+    "rows": [
+      ["muscular.fatigue_rates.shoulder-deltoids-rotator-cuff", "Shoulder (deltoids, rotator cuff)", 0.00058, 0.00168, "fitted 2012", "proposed", "open"],
+      ["muscular.fatigue_rates.elbow-biceps-brachialis-triceps", "Elbow (biceps, brachialis, triceps)", 0.0012, 0.0036, "interpolated by the keeper between shoulder and ankle", "proposed", "open"],
+      ["muscular.fatigue_rates.grip-forearm-hand", "Grip (forearm, hand)", 0.0025, 0.0075, "interpolated; grip tires fast and recovers fast", "proposed", "open"],
+      ["muscular.fatigue_rates.trunk-erectors-abs-obliques", "Trunk (erectors, abs, obliques)", 0.001, 0.003, "interpolated", "proposed", "open"],
+      ["muscular.fatigue_rates.hip-and-knee-glutes-quads-hamstrings", "Hip and knee (glutes, quads, hamstrings)", 0.003, 0.009, "interpolated", "proposed", "open"],
+      ["muscular.fatigue_rates.ankle-calves-tibialis", "Ankle (calves, tibialis)", 0.00589, 0.0182, "fitted 2012", "proposed", "open"]
+    ]
+  },
+  "endurance_time": {
+    "title": "How long a hold lasts at a given effort (Rohmert-type endurance curve)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Rohmert 1960 and later fits: endurance time falls steeply with %MVC; below about 15% MVC a hold is sustainable for a long time (the ergonomic design limit). Numbers here are the keeper's reading of general curves, not one study. MUS-ROH",
+    "columns": ["id", "Effort (% of the group's max)", "Endurance time (fresh)", "Example", "Mark", "source"],
+    "rows": [
+      ["muscular.endurance_time.15", "15", "over 60 min", "holding the helm in a light breeze", "proposed", "open"],
+      ["muscular.endurance_time.25", "25", "about 15 min", "holding a line under moderate strain", "proposed", "open"],
+      ["muscular.endurance_time.50", "50", "about 2 min", "hanging from a yard by the hands", "proposed", "open"],
+      ["muscular.endurance_time.75", "75", "about 40 s", "the capstan in a heavy heave", "proposed", "open"],
+      ["muscular.endurance_time.100", "100", "about 10 s", "a maximal lift", "proposed", "open"]
+    ]
+  },
+  "activations": {
+    "title": "Action activation profiles (% of the group's maximum; illustrative)",
+    "kind": "model",
+    "conf": "low",
+    "source": "Shape from EMG literature where it exists (inverted row and suspension rows: lats, mid trapezius, biceps, rear deltoid at 50 to 60% MVIC; climbing postures: middle and lower trapezius 35 to 60%; MUS-EMG). Hauling rope is ChatGPT's illustrative profile (COMBAT.md 4b). Every other profile is the keeper's estimate and a data task to refine. The columns are the groups by id; a blank is 0.",
+    "columns": ["id", "Intensity (MET)", "lats", "trap_mid", "trap_lower", "trap_upper", "rhomboids", "delt_front", "delt_mid", "delt_rear", "rotator_cuff", "pec_clav", "pec_stern", "biceps", "brachialis", "triceps", "forearm_flex", "forearm_ext", "hand", "erectors", "abs", "obliques", "deep_core", "glute_max", "glute_med", "hip_flex", "adductors", "quads", "hamstrings", "calves", "tibialis", "neck", "Mark", "source"],
+    "rows": [
+      ["muscular.activations.hauling-a-line-hand-over-hand", 7, 90, 70, 50, 30, 60, 10, 20, 45, 30, 10, 10, 70, 60, 10, 85, 30, 40, 55, 30, 30, 40, 35, 20, 10, 10, 35, 30, 25, 10, 20, "proposed (outside AI)", "open"],
+      ["muscular.activations.the-capstan-pushing-a-bar-walking", 7, 20, 30, 20, 40, 20, 40, 30, 10, 20, 50, 60, 20, 20, 50, 40, 10, 10, 70, 40, 30, 50, 70, 40, 30, 30, 80, 60, 60, 20, 20, "proposed", "open"],
+      ["muscular.activations.pumping-the-bilge-a-brake-pump-up-and-down", 7, 50, 40, 30, 30, 30, 40, 30, 30, 20, 30, 40, 50, 40, 50, 60, 20, 20, 60, 40, 20, 40, 40, 20, 20, 10, 50, 30, 30, 10, 10, "proposed", "open"],
+      ["muscular.activations.climbing-the-shrouds-and-working-aloft", 8, 70, 50, 60, 30, 40, 30, 30, 40, 50, 20, 20, 60, 60, 20, 80, 30, 40, 40, 40, 30, 60, 60, 60, 50, 60, 60, 40, 60, 30, 30, "proposed", "open"],
+      ["muscular.activations.rowing-the-boat", 10, 80, 70, 50, 30, 60, 10, 20, 50, 30, 10, 10, 60, 50, 20, 70, 20, 30, 70, 40, 30, 50, 60, 20, 30, 10, 80, 60, 40, 20, 10, "proposed", "open"],
+      ["muscular.activations.mending-sail-seated-palm-and-needle", 2.5, 5, 10, 5, 20, 10, 15, 10, 5, 10, 5, 5, 10, 10, 10, 35, 40, 70, 20, 10, 5, 10, 0, 0, 0, 0, 5, 0, 0, 0, 20, "proposed", "open"],
+      ["muscular.activations.swabbing-and-holystoning-the-deck", 3, 30, 30, 20, 20, 30, 40, 20, 20, 20, 30, 40, 30, 30, 40, 40, 20, 20, 50, 30, 40, 30, 40, 30, 30, 20, 50, 30, 30, 10, 10, "proposed", "open"],
+      ["muscular.activations.carpentry-sawing-and-hammering", 4.5, 30, 30, 20, 30, 30, 40, 30, 30, 40, 30, 40, 40, 30, 60, 60, 40, 40, 40, 20, 40, 30, 20, 20, 10, 10, 30, 20, 20, 10, 10, "proposed", "open"],
+      ["muscular.activations.smithing-the-hammer-at-the-anvil", 6, 40, 30, 20, 40, 30, 50, 40, 30, 40, 30, 40, 40, 30, 70, 80, 50, 40, 50, 30, 50, 40, 30, 20, 10, 10, 40, 20, 30, 10, 20, "proposed", "open"],
+      ["muscular.activations.fishing-the-cast-fishing-md-stage-4", 3.5, 20, 20, 10, 20, 20, 40, 30, 30, 50, 20, 30, 20, 20, 50, 50, 40, 40, 30, 20, 60, 30, 20, 20, 10, 10, 30, 20, 20, 10, 10, "proposed", "open"],
+      ["muscular.activations.fishing-pulling-in-a-big-one-stage-7", 5, 60, 50, 30, 20, 40, 10, 20, 40, 30, 10, 10, 60, 50, 10, 90, 30, 40, 50, 30, 30, 40, 30, 20, 10, 10, 40, 30, 30, 10, 10, "proposed", "open"],
+      ["muscular.activations.cooking-at-the-galley", 3.3, 10, 15, 10, 20, 10, 20, 20, 10, 15, 10, 20, 20, 20, 20, 40, 30, 40, 20, 10, 15, 10, 10, 10, 5, 5, 20, 10, 20, 5, 10, "proposed", "open"],
+      ["muscular.activations.walking-the-deck-a-seaway", 2.5, 5, 10, 5, 10, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 10, 5, 5, 20, 10, 15, 30, 30, 50, 30, 20, 40, 30, 40, 30, 10, "proposed", "open"],
+      ["muscular.activations.running-a-charge-a-chase", 10, 10, 10, 10, 10, 10, 20, 10, 10, 10, 10, 10, 20, 10, 20, 10, 10, 10, 30, 30, 30, 40, 70, 50, 70, 30, 70, 80, 80, 40, 20, "proposed", "open"],
+      ["muscular.activations.cutlass-cut-one-arm", 10, 30, 30, 20, 30, 20, 60, 50, 30, 50, 40, 50, 30, 20, 60, 80, 40, 40, 40, 30, 70, 50, 40, 30, 20, 20, 50, 30, 40, 20, 20, "proposed", "open"],
+      ["muscular.activations.sword-thrust-one-arm", 10, 10, 20, 10, 20, 10, 60, 40, 10, 40, 50, 50, 10, 10, 80, 70, 40, 40, 30, 30, 40, 40, 50, 30, 40, 20, 60, 40, 50, 20, 10, "proposed", "open"],
+      ["muscular.activations.parry-and-block", 8, 20, 30, 20, 30, 30, 40, 50, 40, 60, 20, 20, 50, 40, 40, 80, 50, 40, 30, 30, 30, 40, 20, 30, 10, 10, 40, 20, 30, 20, 20, "proposed", "open"],
+      ["muscular.activations.aiming-and-firing-a-musket", 3, 10, 20, 10, 30, 20, 40, 30, 20, 40, 20, 20, 30, 30, 20, 40, 50, 40, 20, 10, 10, 30, 10, 10, 5, 5, 20, 10, 20, 10, 30, "proposed", "open"],
+      ["muscular.activations.pulling-something-apart-two-hands-rexs-example", 8, 50, 70, 40, 30, 70, 10, 30, 90, 40, 10, 10, 60, 50, 10, 90, 30, 40, 40, 30, 30, 40, 20, 20, 10, 10, 30, 20, 20, 10, 20, "rex (example), proposed (numbers)", "open"],
+      ["muscular.activations.grapple-and-wrestle", 10, 50, 50, 40, 40, 50, 40, 40, 40, 50, 50, 60, 60, 50, 50, 90, 40, 50, 60, 50, 60, 60, 60, 50, 50, 60, 70, 60, 50, 30, 50, "proposed", "open"],
+      ["muscular.activations.swimming", 8, 70, 30, 40, 20, 30, 40, 30, 30, 50, 40, 50, 20, 20, 50, 30, 20, 20, 30, 30, 30, 40, 40, 30, 50, 40, 40, 50, 60, 30, 20, "proposed", "open"],
+      ["muscular.activations.gym-lifting-a-stone-from-the-deck-deadlift", 6, 40, 40, 30, 60, 40, 10, 10, 10, 10, 5, 5, 20, 20, 10, 90, 20, 20, 90, 40, 30, 70, 90, 40, 20, 40, 70, 90, 40, 10, 20, "proposed", "open"],
+      ["muscular.activations.gym-pressing-a-cask-overhead", 6, 10, 20, 30, 50, 20, 90, 70, 20, 60, 50, 20, 10, 10, 80, 50, 30, 20, 40, 40, 20, 50, 20, 20, 5, 5, 20, 10, 20, 10, 20, "proposed", "open"],
+      ["muscular.activations.gym-pull-ups-on-a-yard", 6, 90, 60, 70, 20, 60, 5, 10, 50, 40, 10, 20, 80, 70, 5, 90, 20, 30, 20, 40, 20, 40, 5, 5, 20, 5, 5, 5, 5, 5, 20, "proposed", "open"],
+      ["muscular.activations.gym-squatting-with-a-cask", 6, 10, 20, 10, 40, 10, 10, 10, 5, 10, 5, 5, 20, 20, 10, 50, 10, 10, 70, 40, 20, 60, 90, 40, 30, 50, 95, 60, 50, 20, 20, "proposed", "open"],
+      ["muscular.activations.gym-rope-rows-seated-pulling-a-weighted-line", 5, 70, 80, 50, 20, 80, 5, 10, 60, 30, 5, 5, 60, 50, 5, 70, 20, 30, 40, 20, 20, 30, 10, 5, 5, 5, 20, 20, 10, 5, 10, "proposed", "open"]
+    ]
+  },
+  "training": {
+    "title": "Training, adaptation and disuse constants",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Protein 1.6 g/kg/day is the plateau for resistance-training gains (Morton et al. 2018 meta-analysis, BJSM; MUS-PROT). DOMS peaks 24 to 72 h and clears by 7 days (MUS-DOMS). Muscle protein synthesis stays raised 24 to 48 h after lifting (textbook). Supercompensation (gain after recovery) is the Banister logic applied per group. Detraining: strength holds for about 2 to 3 weeks then falls; muscle mass loss is faster than strength loss (textbook, medium). Novice gains are fast (10 to 30% strength in 8 to 12 weeks), trained gains slow.",
+    "columns": ["id", "Constant", "Value", "Unit", "Note", "Mark", "source"],
+    "rows": [
+      ["muscular.training.tension-stimulus-per-action", "Tension stimulus (per action)", "sum over groups of activation% x reps x loadFactor, loadFactor = 0 under 40% of the group's max, rising to 1.0 at 80%+", "index", "mechanical tension, not energy: a MET says how much a body burns, not how hard a muscle pulls (fixed 2026-10-29 after ChatGPT's point)", "proposed", "open"],
+      ["muscular.training.aerobic-stimulus-per-action", "Aerobic stimulus (per action)", "sum over groups of activation% x minutes / 60 x min(1, effort / oxidativeShare), counted only while the action lasts over 10 minutes at 20 to 70% of the group's max", "index", "long work at a sustainable share of capacity: rowing, pumping, the capstan, a climb that goes on", "proposed", "open"],
+      ["muscular.training.technical-practice-per-action", "Technical practice (per action)", "minutes x the movement pattern's share of the action", "index", "feeds the pattern's neural recruitment (patterns table) and the skill (STATS 2), not the muscle", "proposed", "open"],
+      ["muscular.training.overload-threshold-tension", "Overload threshold (tension)", 40, "% of the group's max", "below it, work builds oxidative capacity and technique but not contractile size", "proposed", "open"],
+      ["muscular.training.conversion-window", "Conversion window", "24 to 72", "h", "stimulus converts to development across this window after a hard session; a second hard session inside it does not cancel the first: conversion that night is scaled by min(1, hoursSinceLastHardSession / 48) and unconverted stimulus carries over, so adaptation is continuous and only sustained overload with no rest days (fatigue over 0.6 at the tick) stalls it", "proposed", "open"],
+      ["muscular.training.conversion-rate-novice-development-under-40", "Conversion rate (novice, development under 40)", 0.5, "development per 10 stimulus", "fast beginner gains", "proposed", "open"],
+      ["muscular.training.conversion-rate-trained-development-40-to-70", "Conversion rate (trained, development 40 to 70)", 0.2, "development per 10 stimulus", "", "proposed", "open"],
+      ["muscular.training.conversion-rate-advanced-over-70", "Conversion rate (advanced, over 70)", 0.07, "development per 10 stimulus", "the hidden genetic max caps it (STATS.md)", "proposed", "open"],
+      ["muscular.training.protein-gate", "Protein gate", "1.6 g/kg/day = x1.0; 0.8 = x0.5; 0.4 = x0.1", "multiplier on conversion", "NUTRITION.md", "proposed", "open"],
+      ["muscular.training.energy-gate", "Energy gate", "balance >= 0: x1.0; -500 kcal: x0.6; -1000: x0.2 (and development decays 0.1/day)", "multiplier", "NUTRITION.md", "proposed", "open"],
+      ["muscular.training.sleep-gate", "Sleep gate", "slept >= 7 h: x1.0; 5 h: x0.6; under 4: x0.3", "multiplier", "PHYSIOLOGY.md", "proposed", "open"],
+      ["muscular.training.disuse-decay", "Disuse decay", "none for 14 days; then -0.3 development/day toward the limb's genetic min", "development", "Rex: disuse lowers attributes toward the minimum", "rex (rule), proposed (rate)", "open"],
+      ["muscular.training.doms", "DOMS", "pain 2 to 4 for 24 to 72 h after a load over 70% on an untrained group", "MEDICINE pain", "clears by day 7; smaller on trained groups", "proposed", "open"],
+      ["muscular.training.age-factor-on-conversion", "Age factor on conversion", "x1.0 to 30, x0.8 at 45, x0.6 at 60", "multiplier", "PHYSIOLOGY ageing", "proposed", "open"]
+    ]
+  },
+  "adaptation": {
+    "title": "The adaptation model: what lives at which level (Rex, 2026-10-29; structure from ChatGPT's notes, outside AI)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Exercise physiology: hypertrophy from mechanical tension and protein accretion; mitochondrial biogenesis, capillarisation and enzyme changes from sustained aerobic demand; early strength gains largely neural (motor-unit recruitment, 4 to 8 weeks) and movement-specific; tendons remodel slowly (months) and tolerate repeated load by that remodelling (standard references: ACSM, McArdle Katch and Katch). The structure is ChatGPT's (outside AI), the keeper agreeing: two long-term states per muscle, tendons per joint, recruitment per movement pattern, three stimuli per activity. MUS-ADAPT",
+    "columns": ["id", "Level", "States", "Changed by", "Timescale", "Feeds", "Mark", "source"],
+    "rows": [
+      ["muscular.adaptation.per-muscle-group", "Per muscle group", "contractile, oxidative, fatigue (3CC), condition", "tension stimulus; aerobic stimulus; work; injury", "contractile weeks to months; oxidative days to weeks (and lost in weeks); fatigue minutes to a night", "force potential and mass; endurance and recovery; today's force", "rex (the level and its states, 2026-10-29); proposed (timescales, numbers)", "open"],
+      ["muscular.adaptation.per-tendon-and-joint", "Per tendon and joint", "load tolerance, injury state, recovery", "repeated loading below the tolerance raises it slowly; a load over it strains it; rest heals it (MEDICINE clock)", "months to gain; days to weeks to heal a strain; a rupture months", "the cap on how hard the muscles across it may pull without injury (the injuries table); joint range of motion as a cap on reach (open)", "rex (the level and its states, 2026-10-29); proposed (timescales, numbers)", "open"],
+      ["muscular.adaptation.per-movement-pattern", "Per movement pattern", "neural recruitment efficiency, coordination", "technical practice of actions that use the pattern", "fast: weeks for the first gains, then slow", "force actually produced in that pattern (recruitment x contractile), and the skill's technique side (STATS 2) which stays the skill's", "rex (the level and its states, 2026-10-29); proposed (timescales, numbers)", "open"],
+      ["muscular.adaptation.per-activity-the-activation-row", "Per activity (the activation row)", "tension stimulus, aerobic stimulus, technical practice", "the action's nature: load, reps, duration, effort, which patterns it uses", "-", "the three levels above", "rex (the level and its states, 2026-10-29); proposed (timescales, numbers)", "open"],
+      ["muscular.adaptation.whole-body-physiology", "Whole body (PHYSIOLOGY)", "cardio fitness (Banister), systemic fatigue, oxygen delivery", "the day's MET-hours", "weeks", "aerobic_today and the Endurance pool; the oxidative states read it as a ceiling", "rex (the level and its states, 2026-10-29); proposed (timescales, numbers)", "open"]
+    ]
+  },
+  "patterns": {
+    "title": "Movement patterns (neural recruitment lives here, not per muscle and not in the skill)",
+    "kind": "model",
+    "conf": "medium",
+    "source": "ChatGPT's point (outside AI), kept: a man gets stronger at a movement by recruiting more of the muscle he has, without more muscle and without more skill; Swordplay is technique and timing, Reflexes is response speed, neither is maximal recruitment. The pattern set is the keeper's; each activation row names its patterns. Patterns that one arm performs are tracked per side (L/R), like the muscles, so handedness, a lost hand and one-sided training matter; the trunk and leg patterns are one.",
+    "columns": ["id", "Pattern", "Sides", "What it is", "Main groups", "Recruitment index (0 to 100; 50 ordinary)", "Mark", "source"],
+    "rows": [
+      ["muscular.patterns.horizontal-pull", "Horizontal pull", "L/R", "pulling toward the body", "lats, trap_mid, rhomboids, delt_rear, biceps, forearm_flex", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.vertical-pull", "Vertical pull", "L/R", "pulling down from overhead", "lats, trap_lower, biceps, forearm_flex", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.horizontal-push", "Horizontal push", "L/R", "pushing away", "pec_stern, pec_clav, delt_front, triceps", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.vertical-push", "Vertical push", "L/R", "pushing overhead", "delt_front, delt_mid, triceps, trap_upper", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.squat-and-hinge", "Squat and hinge", "one", "driving with the legs and hips from a bend", "quads, glute_max, hamstrings, erectors", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.grip", "Grip", "L/R", "holding on", "forearm_flex, hand", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.rotation", "Rotation", "one", "twisting the trunk", "obliques, abs, erectors", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.carry-and-brace", "Carry and brace", "one", "holding a load against the body", "trap_upper, erectors, deep_core, forearm_flex", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.locomotion", "Locomotion", "one", "running and jumping", "glute_max, hamstrings, quads, calves, hip_flex", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"],
+      ["muscular.patterns.fine-manipulation", "Fine manipulation", "L/R", "the hand's learned control of its small muscles (ChatGPT, outside AI, 2026-10-29: Dexterity is the general fine-motor capability, this is the recruitment the hand has practised, the skill is the task's technique; a swordsman and a surgeon share Dexterity, not this)", "hand, forearm_ext", "per character", "rex (the pattern, per side, 2026-10-29); proposed (the index)", "open"]
+    ]
+  },
+  "tendons": {
+    "title": "Tendons and joints: load tolerance",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Tendons adapt slower than muscle (months) so a fast-growing muscle can outrun its tendon: the overuse injuries of the injuries table. Rupture needs a load far over tolerance on a cold or fatigued tendon. The set and numbers are the keeper's placeholders.",
+    "columns": ["id", "Tendon or joint", "Spans", "Tolerance index (0 to 100)", "Common strain here", "Raised by", "Mark", "source"],
+    "rows": [
+      ["muscular.tendons.rotator-cuff-and-shoulder-joint", "Rotator cuff and shoulder joint", "shoulder", "per character", "the rigger's shoulder; a dislocation in a fall", "repeated overhead and pulling work under tolerance", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.elbow-biceps-and-common-flexor-and-extensor-tendons", "Elbow (biceps and common flexor and extensor tendons)", "elbow", "per character", "the oarsman's and smith's elbow", "repeated pulling and hammering", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.wrist-and-finger-flexor-tendons", "Wrist and finger flexor tendons", "wrist and hand", "per character", "the climber's finger; the line that strips a tendon", "grip work", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.lower-back-lumbar-discs-and-ligaments", "Lower back (lumbar discs and ligaments)", "trunk", "per character", "the lift with a bent back", "hinge work under tolerance; bracing", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.hip-and-groin-adductor-and-flexor-tendons", "Hip and groin (adductor and flexor tendons)", "hip", "per character", "the groin strain gripping a yard", "squat and hinge work", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.knee-patellar-and-hamstring-tendons", "Knee (patellar and hamstring tendons)", "knee", "per character", "the jump that lands wrong", "locomotion and squat work", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"],
+      ["muscular.tendons.achilles-and-ankle", "Achilles and ankle", "ankle", "per character", "the rupture in a sprint on a cold morning", "locomotion", "rex (tendons per joint, 2026-10-29); proposed (this set, the numbers)", "open"]
+    ]
+  },
+  "injuries": {
+    "title": "Muscle and tendon injuries",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Strain grading I to III is clinical standard; recovery times are typical ranges (textbook). Risk factors: fatigue, cold, no warm-up, a load far above the group's development, prior injury.",
+    "columns": ["id", "Injury", "Trigger (model)", "Condition set to", "Pain", "Recovery (days)", "Mark", "source"],
+    "rows": [
+      ["muscular.injuries.grade-i-strain-pulled-muscle", "Grade I strain (pulled muscle)", "effort over 90% on a group at fatigue over 0.6: 5% per event; cold x2", 0.8, 3, "7 to 14", "proposed", "open"],
+      ["muscular.injuries.grade-ii-strain-partial-tear", "Grade II strain (partial tear)", "effort over 100% (a slip, a sudden load): 2% per event; x3 if fatigued", 0.5, 6, "21 to 42", "proposed", "open"],
+      ["muscular.injuries.grade-iii-rupture-e-g-a-torn-hamstring", "Grade III (rupture, e.g. a torn hamstring)", "a fall arrested by one limb, a maximal effort on a cold group: 0.5%", 0.2, 8, "90 to 180; may never return fully (permanent cap)", "proposed", "open"],
+      ["muscular.injuries.tendinopathy-overuse", "Tendinopathy (overuse)", "the same group over 60% for 10+ days without a rest day", 0.7, 4, "14 to 60 with rest", "proposed", "open"],
+      ["muscular.injuries.cramp", "Cramp", "hydration deficit over 2% and salt low, group fatigue over 0.7", 1.0, 5, "minutes", "proposed", "open"],
+      ["muscular.injuries.back-injury-lifting-with-a-bent-back", "Back injury (lifting with a bent back)", "a lift over 80% with erectors fatigued: 3%", 0.5, 7, "14 to 60", "proposed", "open"]
+    ]
+  },
+  "limb_strength": {
+    "title": "How a limb's Strength is computed from its groups (proposed answer to the replace-or-compute question)",
+    "kind": "model",
+    "conf": "low",
+    "source": "Rex left open whether muscle replaces per-limb Strength or Strength is computed from it (COMBAT.md 4b; ChatGPT: replaces). This table is the 'computed' reading, offered because it keeps STATS.md's Strength number alive for every system that already reads it while the muscles underneath make it per limb and trainable by what you do. Weights are the keeper's.",
+    "columns": ["id", "Formula (development x (1 - fatigue) x condition, per group)", "Weights", "Mark", "source"],
+    "rows": [
+      ["muscular.limb_strength.right-arm-strength", "weighted mean of the right arm's groups' contractile x mean recruitment of the arm's patterns, scaled to the STATS 1 to 20 range (the character-sheet number); the force in a given action is the action's own: contractile x the pattern's recruitment x (1 - fatigue) x condition per required group, the weakest limiting", "grip 0.2, lats 0.15, biceps+brachialis 0.15, triceps 0.15, deltoids 0.15, pecs 0.1, trap_mid+rhomboids 0.1", "proposed", "open"],
+      ["muscular.limb_strength.left-arm-strength", "the same with the left groups", "the same", "proposed", "open"],
+      ["muscular.limb_strength.right-leg-strength", "weighted mean of the right leg's groups", "quads 0.3, glute_max 0.25, hamstrings 0.2, calves 0.15, hip_flex+adductors 0.1", "proposed", "open"],
+      ["muscular.limb_strength.left-leg-strength", "the same", "the same", "proposed", "open"],
+      ["muscular.limb_strength.movement-tiles", "f(min(leg L, leg R) x 0.7 + mean x 0.3, balance (glute_med, deep_core, Agility), fatigue, injuries, load)", "COMBAT 4a: the weaker leg limits; not a plain sum", "proposed (outside AI), formula proposed", "open"],
+      ["muscular.limb_strength.arm-dexterity-per-limb", "NOT muscle: Dexterity is control; the hand and forearm extensors set a cap only (condition x fatigue over 0.8 dips it x0.9)", "-", "proposed (outside AI: muscle is force only)", "open"],
+      ["muscular.limb_strength.whole-body-lift-and-carry", "erectors + glutes + quads + grip, the weakest of them limiting", "-", "proposed", "open"]
+    ]
+  }
+}

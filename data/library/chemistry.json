@@ -1,0 +1,123 @@
+{
+  "_about": "Scientific data library, domain chemistry: the universal columns of the game's body/data/chemistry.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "schema": {
+    "title": "The substance schema (every substance, real or tagged, is one record of this shape)",
+    "kind": "model",
+    "conf": "high",
+    "source": "ChatGPT's field list (outside AI), kept and typed; provenance tags per Rex (COMBAT 4d): the engine reads properties, never the tag.",
+    "columns": ["id", "Field", "Type and unit", "Used by", "Mark", "source"],
+    "rows": [
+      ["chemistry.schema.id", "id", "string (chemistry id, e.g. co2)", "every doc", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.name-formula", "name, formula", "text", "the item screen, the docs", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.provenance", "provenance", "Historical | Anachronistic | Prehistoric | Mythological | Fantasy | Science Fiction | Original Fiction", "the item screen only (Rex)", "rex (the tags), proposed (the field)", "open"],
+      ["chemistry.schema.molar-mass", "molar mass", "g/mol", "stoichiometry, density", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.phase-at-25-c-and-1-atm-melting-and-boiling-points", "phase at 25 C and 1 atm; melting and boiling points", "solid | liquid | gas; C", "which engine handles it (GAS_DYNAMICS for gases and vapours)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.density-gas-relative-to-air-liquid-solid-kg-m3", "density (gas: relative to air; liquid, solid: kg/m3)", "number", "pooling and rising; cargo weight", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.vapour-pressure-at-25-c", "vapour pressure at 25 C", "mmHg", "how much a liquid puts into the air (mercury: 0.002 mmHg, enough to poison a shut room over months)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.solubility-in-water", "solubility in water", "g/L", "washing out by rain; dissolving in the body's fluids (uptake)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.flammability-flash-point-limits-in-air", "flammability: flash point, limits in air", "C; % by volume", "fires, explosions (the magazine)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.reactivity-notes", "reactivity notes", "text and reaction ids", "CHEMISTRY reactions", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.thermal-heat-of-combustion", "thermal: heat of combustion", "MJ/kg", "the fire's heat (PHYSIOLOGY, the box's temperature)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.persistence-in-the-environment", "persistence in the environment", "half-life in air, water, soil (hours to years)", "GAS_DYNAMICS sinks; ECOLOGY", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.exposure-routes", "exposure routes", "inhalation | skin | ingestion | wound", "the body's uptake", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.uptake-fraction-by-route", "uptake fraction by route", "0 to 1", "dose = exposure x uptake", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.toxicity-references", "toxicity references", "thresholds table rows (ppm and effect; mg/kg oral)", "MEDICINE, NEUROLOGY", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.schema.mechanism-class", "mechanism class", "asphyxiant (simple) | chemical asphyxiant (CO, H2S) | irritant | systemic toxin | neuroactive (NEUROLOGY row) | nutrient | inert", "which body pathway it takes", "rex (the field, 2026-10-29)", "open"]
+    ]
+  },
+  "substances": {
+    "title": "The initial database (small; the schema is general)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Standard chemical data; toxicity thresholds from occupational and clinical references: CO (COHb 10 to 20% headache, 20 to 30% drowsiness and ataxia, 30 to 50% seizures and unconsciousness, over 50% death; 200 ppm slight headache in 2 to 3 h, 800 ppm dizziness and convulsions in 45 min, 1,600 ppm death within 30 min; elimination half-life 4 to 6 h in air; CHM-CO), CO2 (1% drowsy, 3% headache and panting, 5% confusion, 8 to 10% unconsciousness; standard), H2S (10 ppm irritation, 100 ppm IDLH and olfactory fatigue, 500 ppm lethal in 30 to 60 min; CHM-H2S), SO2 (irritant: 5 ppm airway, 100 ppm IDLH), oxygen (hypoxia under 16%, unconsciousness under 10%).",
+    "columns": ["id", "Substance", "Formula", "Molar mass", "Phase", "Density vs air", "Mechanism class", "Effect thresholds (inhalation)", "Provenance", "Mark", "source"],
+    "rows": [
+      ["o2", "Oxygen", null, null, "gas", 1.1, "nutrient (the one the body burns)", "under 19.5% work falls; 16% judgement and coordination; 12% unconscious; 6% death in minutes", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["n2", "Nitrogen", null, null, "gas", 0.97, "inert", "none (simple asphyxiant only by displacement)", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["co2", "Carbon dioxide", null, null, "gas", 1.5, "simple asphyxiant and respiratory driver", "1% drowsy; 3% headache, panting; 5% confusion; 8 to 10% unconscious; pools low", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["co", "Carbon monoxide", null, null, "gas", 0.97, "chemical asphyxiant (binds haemoglobin 200 x oxygen: carboxyhaemoglobin)", "200 ppm headache in 2 to 3 h; 800 ppm nausea and convulsions in 45 min; 1,600 ppm death in 30 min; COHb 10 to 20% headache, 20 to 30% drowsy and ataxic, 30 to 50% seizures, over 50% death; half-life 4 to 6 h in air", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["h2o_v", "Water vapour", "H2O", 18, "gas", 0.6, "inert (displaces oxygen in the alveoli: the 47 mmHg)", "none", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["h2s", "Hydrogen sulphide", null, null, "gas", 1.2, "chemical asphyxiant (cellular) and irritant; the nose fails at 100 ppm", "0.01 ppm rotten eggs; 10 ppm eye and airway irritation; 100 ppm olfactory fatigue, IDLH; 500 ppm collapse, death in 30 to 60 min; pools low", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["so2", "Sulphur dioxide", null, null, "gas", 2.2, "irritant (airways, eyes)", "1 ppm smell; 5 ppm airway irritation; 20 ppm eyes stream, cough; 100 ppm IDLH; pools low", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["smoke", "Smoke particles (soot, tars)", "C and tars", "-", "aerosol", "-", "irritant; heat; carries CO", "eyes stream and sight falls (Eyesight x0.6 at 100 mg/m3); cough; inhalation injury at high density with heat", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["hg_v", "Mercury vapour", "Hg", 201, "gas from the liquid (vapour pressure 0.002 mmHg at 25 C)", 7, "systemic toxin (nerves, kidneys; NEUROLOGY burden)", "chronic: a shut room with spilt mercury reaches 0.1 mg/m3; months to erethism and tremor", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["ch4", "Methane (marsh gas)", null, null, "gas", 0.55, "simple asphyxiant; flammable 5 to 15%", "none until oxygen is displaced; an explosion with a lamp", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["s", "Sulphur (brimstone)", null, null, "solid", "-", "fuel: burns to SO2", "-", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["c", "Charcoal (carbon)", "C", 12, "solid", "-", "fuel: burns to CO2, or CO when starved", "-", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["kno3", "Saltpetre (potassium nitrate)", null, null, "solid", "-", "oxidiser (GOODS row 39)", "-", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["ethanol", "Alcohol (spirit of wine)", null, null, "liquid (vapour pressure 59 mmHg)", 1.6, "neuroactive (NEUROLOGY row); flammable", "the drink; its vapour in a still-house is a fire risk", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["pb", "Lead", null, null, "solid (dissolves into rum and cider from still worms and pewter)", "-", "systemic toxin (the dry gripes; NEUROLOGY burden)", "by ingestion (MEDICINE)", "Historical", "rex (the substance and its mechanism class, 2026-10-29); proposed (thresholds as placeholders)", "open"],
+      ["chemistry.substances.tagged", "A tagged substance (template)", "as written", "as written", "as written", "as written", "as written", "its own thresholds", "Fantasy | Science Fiction | Mythological", "open", "open"]
+    ]
+  },
+  "reactions": {
+    "title": "The first reactions (combustion, fermentation, rot; and a set that shows the engine does not care what year it is)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Stoichiometry is exact; rates and conditions are placeholders. Black powder: 75% KNO3, 15% charcoal, 10% sulphur by mass; about 43% of products are gas (CO2, N2, CO, H2S, H2, CH4), 56% solids (potassium salts), about 330 cm3 of gas per gram; the products do not follow one simple equation (CHM-BP). Thermodynamic possibility is not kinetics: a reaction needs its conditions (ChatGPT's point, kept).",
+    "columns": ["id", "Reaction", "Reactants", "Products", "Conditions", "Rate (placeholder)", "Heat", "Mark", "source"],
+    "rows": [
+      ["comb_c_full", "Charcoal burning in plenty of air", null, null, null, null, null, "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["comb_c_starved", "Charcoal burning starved of air", "2 C + O2", "2 CO + heat", "oxygen under 15% or a shut space", "the brazier in the cabin: 10 to 30% of carbon to CO", "10 MJ/kg", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["comb_wood", "Wood and tar burning", "wood + O2", "CO2, H2O, CO (10% if smoky), soot, tars, heat", "ignition; spreads by heat", "by surface", "15 MJ/kg", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["comb_s", "Sulphur burning", "S + O2", "SO2 + heat", "ignition over 250 C", "a stinkpot: 100 g in a minute", "9 MJ/kg", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["black_powder", "Black powder deflagration", "KNO3 + C + S (75:15:10)", "gases 43% (CO2, N2, CO, H2S trace, H2, CH4) 330 cm3/g; solids 56% (K2CO3, K2SO4, K2S); water 1%", "a spark, a match; confinement makes the bang", "instant", "3 MJ/kg", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["ferment", "Fermentation (the brewer's and the still-house's first step)", "sugars", "ethanol + CO2", "yeast, 20 to 30 C, days", "a vat: 1 L CO2 per litre of wort over days (a shut brew-house pools CO2)", "small", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["rot", "Anaerobic rot (the bilge)", "organic matter", "CH4, H2S, CO2", "wet, no air, warm", "slow; by the cleanliness meter", "-", "rex (the reaction, 2026-10-29); proposed (rates)", "open"],
+      ["oxygen_calx", "Oxygen from the red calx of mercury", "HgO (red precipitate, an apothecary's good)", "Hg + O2", "heat over 500 C: a burning lens in sun, or a strong fire on a retort; collect over water or mercury", "minutes", "absorbs heat", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["hydrogen_acid", "Hydrogen from iron and spirit of salt (or oil of vitriol)", "Fe + 2 HCl", "FeCl2 + H2", "room temperature; collect over water (Hales 1727 trough, or any jar in a tub)", "minutes", "small", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["phosphorus_urine", "Phosphorus from urine", "urine evaporated, charcoal, strong heat in a retort", "P4 (white phosphorus) + ...", "red heat (over 1,000 C) in a retort with a receiver under water; days of evaporation; about 60 buckets of urine per ounce", "days", "endothermic", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["chlorine_scheele", "Chlorine from salt, manganese ore and oil of vitriol", "NaCl + MnO2 + H2SO4", "Cl2 + MnSO4 + Na2SO4 + H2O", "gentle heat in a retort; the gas is heavy, green, deadly (an ATMOSPHERE scenario)", "minutes", "small", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["ether_cordus", "Sweet oil of vitriol (ether) from spirit of wine and oil of vitriol", "C2H5OH + H2SO4", "(C2H5)2O + H2O", "distil at 130 to 140 C; flammable vapour", "hours", "small", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["chemistry.reactions.voltaic_pile", "A voltaic pile from zinc and copper discs in brine", "Zn + Cu + brine", "a current; ZnCl2 at the zinc", "stack 20 to 60 pairs; brine-soaked cloth or leather", "runs for hours", "-", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["water_electrolysis", "Water split by a current", "H2O + a current", "H2 + O2", "a pile (voltaic_pile); electrodes of gold, platinum or charcoal", "hours", "absorbs energy", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["soap", "Soap from fat and lye", "fat + lye (potash from wood ash)", "soap + glycerol", "boiling for hours", "hours", "small", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["calomel", "Calomel (mercurous chloride) by sublimation", "Hg + HgCl2 (corrosive sublimate), or Hg + salt + vitriol", "Hg2Cl2", "sublimation in aludels, 400 C", "hours", "-", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["aqua_fortis", "Aqua fortis (nitric acid) from saltpetre and vitriol", "KNO3 + H2SO4 (or green vitriol heated)", "HNO3 + KHSO4", "distil from a retort at 100 to 200 C; the fumes are deadly (NO2: an ATMOSPHERE species to add)", "hours", "-", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["unknown", "A reaction the database does not hold", "whatever the player combines", "unknown", "whatever the apparatus reaches", "-", "-", "rex (the reaction belongs in the database, 2026-10-29); proposed (rates, conditions as placeholders)", "open"],
+      ["(general)", "Any reaction the engine will later hold: metallurgy (smelting, the forge), cooking (Maillard, caramel), corrosion (rust, verdigris), tanning, dyeing (indigo vats), the apothecary's preparations (calomel, lunar caustic, spirit of salt)", "by record", "by record", "temperature, pressure, catalyst, contact time", "by record", "by record", "open (scope: whether recipes become reactions)", "open"]
+    ]
+  },
+  "domains": {
+    "title": "The domains the engine must eventually cover (architecture now, records later)",
+    "kind": "science",
+    "conf": "high",
+    "source": "ChatGPT's list (outside AI), adopted by Rex (2026-10-29): chemistry itself, regardless of whether the civilisation in the game understands it. The record types each domain needs are the keeper's; coverage grows by adding records, never by changing the schema.",
+    "columns": ["id", "Domain", "What it covers", "Record types it needs", "First records in the database", "Status", "Mark", "source"],
+    "rows": [
+      ["chemistry.domains.composition-and-structure", "Composition and structure", "elements, molecules, ions, formula and molar mass, isomers later", "substance", "16 substances", "schema done", "rex (scope)", "open"],
+      ["chemistry.domains.physical-properties-and-phases", "Physical properties and phases", "density, melting and boiling points, vapour pressure, solubility, phase diagrams", "substance fields; phase-change rules", "the schema's fields", "schema done", "rex (scope)", "open"],
+      ["chemistry.domains.thermodynamics", "Thermodynamics", "heat of reaction, energy balance, spontaneity (free energy) as the possibility test", "reaction fields: heat, free energy sign", "heat of combustion on fuels", "fields done", "rex (scope)", "open"],
+      ["chemistry.domains.kinetics", "Kinetics", "rate as a function of temperature (Arrhenius), concentration, catalyst, contact time: the feasibility test apart from possibility", "reaction fields: rate law, activation, catalyst", "placeholders on 7 reactions", "fields done", "rex (scope)", "open"],
+      ["chemistry.domains.equilibrium-and-acid-base", "Equilibrium and acid-base", "reversible reactions, pH, buffers, solubility products", "reaction fields: equilibrium constant; substance fields: acid strength", "litmus as the period's pH", "fields done", "rex (scope)", "open"],
+      ["chemistry.domains.inorganic", "Inorganic", "metals, salts, acids, bases, the mineral acids, pigments", "substances, reactions", "saltpetre, sulphur, mercury, lead", "records open", "rex (scope)", "open"],
+      ["chemistry.domains.organic", "Organic", "carbon compounds: alcohols, acids, esters, sugars, fats, dyes, drugs", "substances, reactions", "ethanol; fermentation", "records open", "rex (scope)", "open"],
+      ["chemistry.domains.biochemistry", "Biochemistry", "the body's chemistry: NUTRITION's nutrients, NEUROLOGY's substances, enzymes, fermentation", "substances shared with the body docs", "the nutrients and the drugs (by reference)", "shared", "rex (scope)", "open"],
+      ["chemistry.domains.electrochemistry", "Electrochemistry", "cells, electrolysis, plating, corrosion", "reactions with a power role; substance electrode potentials", "none", "records open", "rex (scope)", "open"],
+      ["chemistry.domains.metallurgy-and-materials", "Metallurgy and materials", "smelting, alloys, steel, glass, ceramics, cement", "reactions with heat roles; material records", "none (GOODS has the trades)", "records open; GOODS's smelting and smithing recipes are the first list", "rex (scope)", "open"],
+      ["chemistry.domains.photochemistry-radiochemistry-nuclear", "Photochemistry, radiochemistry, nuclear", "light-driven and nuclear reactions", "reactions with light roles", "none", "later", "rex (the domain is supported, 2026-10-29); proposed (records)", "open"],
+      ["chemistry.domains.interactions-with-other-systems", "Interactions with other systems", "what a substance does to a body (the body docs), the air (ATMOSPHERE), the sea and soil (ECOLOGY), a material (corrosion, GOODS)", "the mechanism class and route fields", "done", "schema done", "rex (scope)", "open"]
+    ]
+  },
+  "reaction_fields": {
+    "title": "The reaction record (every reaction, period or not, is one record of this shape)",
+    "kind": "model",
+    "conf": "high",
+    "source": "Thermodynamic possibility and kinetics kept apart (ChatGPT, kept); conditions as the roles an apparatus must supply (SCIENTIFIC_EQUIPMENT); 'unknown' as the engine's honest answer for a reaction it has no record of.",
+    "columns": ["id", "Field", "Type and unit", "Used by", "Mark", "source"],
+    "rows": [
+      ["chemistry.reaction_fields.id-name", "id, name", "text", "every doc", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.reactants-and-products-with-stoichiometry", "reactants and products with stoichiometry", "substance ids and moles", "mass conservation; GAS_DYNAMICS sources; inventories", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.possibility-free-energy-sign-at-conditions-or-spontaneous", "possibility: free-energy sign at conditions, or 'spontaneous above T'", "sign or a temperature", "whether it can happen at all", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.conditions-temperature-range-pressure-atmosphere-catalyst", "conditions: temperature range, pressure, atmosphere, catalyst, solvent, contact time", "numbers and ids", "the assembly pipeline (SCIENTIFIC_EQUIPMENT 3): the roles an apparatus must supply", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.rate-a-rate-law-and-an-activation-energy-or-a-half-time-at", "rate: a rate law and an activation energy, or a half-time at a reference temperature", "placeholder constants", "how long; whether the fuel lasts", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.equilibrium-constant-if-reversible", "equilibrium constant (if reversible)", "number at a reference temperature", "yield", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.heat", "heat", "kJ/mol or MJ/kg", "the box's temperature; fires", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.side-reactions-and-failure-modes", "side reactions and failure modes", "reaction ids; what happens off-conditions (too hot: charring; too little air: CO)", "the engine's answer when conditions are missed", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.hazards", "hazards", "explosion limits, toxic products, pressure", "accidents (ATMOSPHERE laboratory scenario; MEDICINE)", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.identification-what-a-period-test-shows-what-an-instrument", "identification: what a period test shows, what an instrument shows", "tests and instrument ids", "DISCOVERY: observed vs identified", "rex (the field, 2026-10-29)", "open"],
+      ["chemistry.reaction_fields.history-first-performed-by-whom-where-disputes", "history: first performed, by whom, where; disputes", "dates and names", "JOURNAL: the anomaly note", "rex (when and by whom)", "open"],
+      ["chemistry.reaction_fields.coverage-supported-unknown", "coverage: supported | unknown", "the engine's honesty flag: a reaction not in the database is unknown, never impossible", "DISCOVERY's answer to an attempt the database does not hold", "rex (the field, 2026-10-29)", "open"]
+    ]
+  }
+}

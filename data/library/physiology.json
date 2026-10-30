@@ -1,0 +1,203 @@
+{
+  "_about": "Scientific data library, domain physiology: the universal columns of the game's body/data/physiology.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "met": {
+    "title": "Energy cost of ship work (MET, multiples of resting metabolism)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Compendium of Physical Activities (Ainsworth et al.), standard reference; values are the nearest listed activity, not measured on sailors. PHY-MET",
+    "columns": ["id", "MET", "Nearest compendium activity", "Mark", "source"],
+    "rows": [
+      ["physiology.met.sleeping", 0.95, "sleeping", "proposed", "open"],
+      ["physiology.met.standing-watch-still", 1.5, "standing quietly", "proposed", "open"],
+      ["physiology.met.walking-the-deck-light-chores", 2.5, "walking 2.5 mph, light housework", "proposed", "open"],
+      ["physiology.met.swabbing-picking-oakum-mending-sail-seated", 2.5, "scrubbing floors / sewing", "proposed", "open"],
+      ["physiology.met.helm-in-a-seaway", 3.0, "boat handling, general", "proposed", "open"],
+      ["physiology.met.cooking-at-the-galley-fire", 3.3, "cooking, moderate effort, standing", "proposed", "open"],
+      ["physiology.met.fishing-from-the-rail-handline", 3.5, "fishing from boat, standing", "proposed", "open"],
+      ["physiology.met.carpentry-caulking-coopering", 4.5, "carpentry, general", "proposed", "open"],
+      ["physiology.met.climbing-aloft-working-the-rigging", 8.0, "rock or rope climbing", "proposed", "open"],
+      ["physiology.met.hauling-lines-the-capstan-pumping-the-bilge", 7.0, "heavy manual labour, shovelling / rowing vigorous", "proposed", "open"],
+      ["physiology.met.rowing-the-boat-hard", 12.0, "rowing, competitive", "proposed", "open"],
+      ["physiology.met.smithing", 6.0, "blacksmithing / forging", "proposed", "open"],
+      ["physiology.met.swordplay-boarding-fight", 10.0, "fencing / boxing, sparring", "proposed", "open"],
+      ["physiology.met.gym-regimen-lifting-stones-barrels", 6.0, "weight lifting, vigorous", "proposed", "open"],
+      ["physiology.met.swimming", 8.0, "swimming, moderate", "proposed", "open"]
+    ]
+  },
+  "pal": {
+    "title": "Physical activity level (PAL) bands used for the day's total",
+    "kind": "science",
+    "conf": "high",
+    "source": "FAO/WHO/UNU 2004 energy requirements; PAL bands 1.2 to 2.4. PHY-FAO",
+    "columns": ["id", "Day type", "PAL", "What it looks like", "Mark", "source"],
+    "rows": [
+      ["physiology.pal.sick-in-a-hammock", "Sick in a hammock", 1.2, "bed rest", "proposed", "open"],
+      ["physiology.pal.in-port-idle", "In port, idle", 1.4, "sedentary or light", "proposed", "open"],
+      ["physiology.pal.ordinary-sea-day", "Ordinary sea day", 1.75, "active: watches, chores, some hauling", "proposed", "open"],
+      ["physiology.pal.hard-sea-day", "Hard sea day", 2.1, "storm, pumping, careening", "proposed", "open"],
+      ["physiology.pal.battle-day", "Battle day", 2.4, "the top of the FAO band", "proposed", "open"]
+    ]
+  },
+  "sleep_debt": {
+    "title": "Sleep debt and what it does (model derived from Van Dongen et al. 2003)",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Van Dongen, Maislin, Mullington, Dinges, Sleep 26(2) 2003: 14 nights at 4 h matched 3 nights of total deprivation; cumulative wakefulness beyond about 15.84 h a day predicted lapses. PHY-VD",
+    "columns": ["id", "Cumulative debt (hours below 8 h)", "Alertness multiplier", "Mark", "source"],
+    "rows": [
+      ["physiology.sleep_debt.0-to-4", "0 to 4", 1.0, "proposed", "open"],
+      ["physiology.sleep_debt.4-to-12", "4 to 12", 0.92, "proposed", "open"],
+      ["physiology.sleep_debt.12-to-24", "12 to 24", 0.82, "proposed", "open"],
+      ["physiology.sleep_debt.24-to-40", "24 to 40", 0.7, "proposed", "open"],
+      ["physiology.sleep_debt.over-40", "over 40", 0.55, "proposed", "open"]
+    ]
+  },
+  "circadian": {
+    "title": "Time-of-day alertness (the circadian factor)",
+    "kind": "science",
+    "conf": "high",
+    "source": "Two-process model (Borbely 1982); maritime watch studies find sleepiness peaks on the night and early-morning watches (Akerstedt et al. 2013; Colquhoun 1988). PHY-WATCH",
+    "columns": ["id", "Ship's time", "Factor", "Note", "Mark", "source"],
+    "rows": [
+      ["physiology.circadian.06-00-to-10-00", "06:00 to 10:00", 0.95, "morning rise", "proposed", "open"],
+      ["physiology.circadian.10-00-to-14-00", "10:00 to 14:00", 1.0, "peak", "proposed", "open"],
+      ["physiology.circadian.14-00-to-16-00", "14:00 to 16:00", 0.93, "post-meal dip (the afternoon watch, where the Navy study found the worst vigilance)", "proposed", "open"],
+      ["physiology.circadian.16-00-to-22-00", "16:00 to 22:00", 1.0, "second peak", "proposed", "open"],
+      ["physiology.circadian.22-00-to-02-00", "22:00 to 02:00", 0.88, "first watch", "proposed", "open"],
+      ["physiology.circadian.02-00-to-06-00", "02:00 to 06:00", 0.78, "the trough: the middle watch", "proposed", "open"]
+    ]
+  },
+  "wbgt_limits": {
+    "title": "Heat stress: WBGT ceilings for continuous work (acclimatised), and the model's core-temperature drift",
+    "kind": "science",
+    "conf": "medium",
+    "source": "NIOSH criteria (2016) and ACGIH TLVs as summarised by the US Navy heat-flag tables: light about 30 C, moderate about 28 C, heavy about 25 C WBGT for continuous acclimatised work; unacclimatised 1 to 2 C lower. PHY-WBGT",
+    "columns": ["id", "Work class (MET)", "WBGT ceiling, acclimatised (C)", "Unacclimatised (C)", "Model: core drift above ceiling (C per hour per C over)", "Mark", "source"],
+    "rows": [
+      ["physiology.wbgt_limits.light-under-3", "Light (under 3)", 30.0, 28.5, 0.15, "proposed", "open"],
+      ["physiology.wbgt_limits.moderate-3-to-6", "Moderate (3 to 6)", 28.0, 26.0, 0.25, "proposed", "open"],
+      ["physiology.wbgt_limits.heavy-over-6", "Heavy (over 6)", 25.0, 23.0, 0.4, "proposed", "open"]
+    ]
+  },
+  "core_temp": {
+    "title": "Core temperature thresholds",
+    "kind": "science",
+    "conf": "high",
+    "source": "NIOSH: keep core under 38.0 C (95% of workers then under 39.2 C); heat stroke at about 40 C with CNS signs; hypothermia mild under 35 C, severe under 28 C (standard clinical thresholds). PHY-WBGT, PHY-COLD",
+    "columns": ["id", "Core (C)", "State", "What the sim does", "Mark", "source"],
+    "rows": [
+      ["physiology.core_temp.40-0", ">= 40.0", "heat stroke", "collapse; a MEDICINE.md condition; death risk per hour untreated", "proposed", "open"],
+      ["physiology.core_temp.38-5-to-40-0", "38.5 to 40.0", "heat exhaustion", "work capacity x0.6; sweat rate at max; hydration drains fast", "proposed", "open"],
+      ["physiology.core_temp.38-0-to-38-5", "38.0 to 38.5", "heat strain", "work capacity x0.85", "proposed", "open"],
+      ["physiology.core_temp.36-5-to-38-0", "36.5 to 38.0", "normal", "none", "proposed", "open"],
+      ["physiology.core_temp.35-0-to-36-5", "35.0 to 36.5", "cold stress", "Dexterity x0.8 (numb hands), shivering costs energy", "proposed", "open"],
+      ["physiology.core_temp.32-0-to-35-0", "32.0 to 35.0", "mild hypothermia", "Dexterity x0.5, Wits x0.8; must be warmed", "proposed", "open"],
+      ["physiology.core_temp.32-0", "< 32.0", "severe hypothermia", "unconscious; death risk per hour", "proposed", "open"]
+    ]
+  },
+  "cold_water": {
+    "title": "Survival in the water (immersion), by water temperature",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Computational immersion study (PMC11234009): still fresh water 136/113/100 min at 5/2/0 C; static salt water 111/88/80/66 min at 5/2/0/-2 C. Boating-safety charts: under 15 min to exhaustion at 0 C, 1 to 2 h at 10 to 15 C, 2 to 12 h at 15 to 21 C, indefinite above about 26 C. Cold shock (gasp, loss of breathing control) worst at 10 to 15 C; drowning in the first minutes is the main killer. The times are central estimates with wide variance: body fat, clothing, flotation, swimming ability, exhaustion, sea state and whether the man can keep his head up move them by hours either way; the model rolls around them, never reads them as fixed. PHY-COLD",
+    "columns": ["id", "Water (C)", "Time to exhaustion or unconsciousness", "Expected survival", "Mark", "source"],
+    "rows": [
+      ["physiology.cold_water.0-to-5", "0 to 5", "15 to 30 min", "45 to 90 min", "proposed", "open"],
+      ["physiology.cold_water.5-to-10", "5 to 10", "30 to 60 min", "1 to 3 h", "proposed", "open"],
+      ["physiology.cold_water.10-to-15", "10 to 15", "1 to 2 h", "1 to 6 h", "proposed", "open"],
+      ["physiology.cold_water.15-to-21", "15 to 21", "2 to 7 h", "2 to 40 h", "proposed", "open"],
+      ["physiology.cold_water.21-to-27", "21 to 27", "3 to 12 h", "3 h to indefinite", "proposed", "open"],
+      ["physiology.cold_water.over-27", "over 27", "indefinite (fatigue, thirst, sharks decide)", "indefinite", "proposed", "open"]
+    ]
+  },
+  "hydration": {
+    "title": "Water balance thresholds (loss as % of body mass)",
+    "kind": "science",
+    "conf": "high",
+    "source": "Sports Medicine 2015 supplement: hypohydration over 2% impairs aerobic work in warm-hot conditions, about 1% more per 1 C skin temperature above 27 C; sweat rates 0.5 to over 2.5 L/h in heat; total fluid need 3.7 L/day men, 2.7 women (US National Academies), 2 L drinking water (WHO). PHY-HYD",
+    "columns": ["id", "Deficit (% body mass)", "Effect in the model", "Mark", "source"],
+    "rows": [
+      ["physiology.hydration.0-to-1", "0 to 1", "none", "proposed", "open"],
+      ["physiology.hydration.1-to-2", "1 to 2", "thirst; Endurance pool x0.95", "proposed", "open"],
+      ["physiology.hydration.2-to-4", "2 to 4", "Endurance x0.85 (x0.75 in heat); Wits x0.9; heat strain faster", "proposed", "open"],
+      ["physiology.hydration.4-to-6", "4 to 6", "Endurance x0.65; Strength x0.9; collapse risk in heat", "proposed", "open"],
+      ["physiology.hydration.6-to-10", "6 to 10", "incapacitated; kidney injury (MEDICINE)", "proposed", "open"],
+      ["physiology.hydration.over-10", "over 10", "death risk per hour", "proposed", "open"]
+    ]
+  },
+  "banister": {
+    "title": "Cardiovascular fitness: the fitness-fatigue model constants",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Banister impulse-response model (Morton, Fitz-Clarke, Banister 1990): performance = base + k1*fitness - k2*fatigue, each an exponentially decaying sum of daily training loads. The 42-day / 7-day constants are the TrainingPeaks CTL/ATL convention, not a universal fit. PHY-BAN",
+    "columns": ["id", "Parameter", "Value", "Unit", "Mark", "source"],
+    "rows": [
+      ["physiology.banister.tau-fitness", "tau_fitness", 42, "days", "proposed", "open"],
+      ["physiology.banister.tau-fatigue", "tau_fatigue", 7, "days", "proposed", "open"],
+      ["physiology.banister.k1-fitness-gain", "k1 (fitness gain)", 1.0, "ratio", "proposed", "open"],
+      ["physiology.banister.k2-fatigue-weight", "k2 (fatigue weight)", 1.3, "ratio", "proposed", "open"],
+      ["physiology.banister.daily-load", "Daily load", "sum of MET-hours above 2 MET", "MET-h", "proposed", "open"],
+      ["physiology.banister.age-decline-of-the-ceiling", "Age decline of the ceiling", 10, "% per decade from the late 20s (sedentary); 5 to 7 trained", "proposed", "open"]
+    ]
+  },
+  "ageing": {
+    "title": "Ageing curves the body uses (the maximum, not the current value)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Grip strength pooled norms (Tomkinson et al. 2025, 2.4 million adults): peak at 30 to 39, faster decline from middle age; VO2max about -10% per decade from the late 20s; muscle mass -3 to -8% per decade after 30 with faster loss after 60 (sources disagree on the exact rate). PHY-AGE",
+    "columns": ["id", "Attribute family", "Rises until", "Plateau", "Falls after", "Rate", "Mark", "source"],
+    "rows": [
+      ["physiology.ageing.strength-per-limb-via-muscular", "Strength (per limb, via MUSCULAR)", 25, "25 to 39", 40, "-1% a year to 60, -1.5% after, -3% after 75", "proposed", "open"],
+      ["physiology.ageing.endurance-cardio-ceiling", "Endurance (cardio ceiling)", 22, "22 to 30", 30, "-10% a decade untrained, -6% trained", "proposed", "open"],
+      ["physiology.ageing.agility-reflexes", "Agility, Reflexes", 22, "22 to 30", 30, "-5% a decade; -10% after 60", "proposed", "open"],
+      ["physiology.ageing.dexterity", "Dexterity", 25, "25 to 45", 45, "-4% a decade; tremor risk after 65", "proposed", "open"],
+      ["physiology.ageing.constitution-immune-healing", "Constitution (immune, healing)", 20, "20 to 35", 35, "-5% a decade; healing time +30% by 60", "proposed", "open"],
+      ["physiology.ageing.eyesight-near", "Eyesight (near)", 15, "15 to 40", 40, "presbyopia: fine detail -20% by 50 (period: no spectacles at sea)", "proposed", "open"],
+      ["physiology.ageing.hearing", "Hearing", 15, "15 to 30", 30, "high tones first; -10% a decade after 50; gunners faster", "proposed", "open"],
+      ["physiology.ageing.skills-stats-md", "Skills (STATS.md)", "never fall", "-", "-", "Rex: skills never decrease, only rust", "rex", "open"]
+    ]
+  },
+  "acclimatisation": {
+    "title": "Acclimatisation clocks",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Heat: plasma volume +9% after 6 days of exercise in humid heat, back to baseline about 25 days after stopping; full adaptation 10 to 14 days (PHY-HEATACC). Seasickness: 40% of 1,293 sailors affected, most mildly; 72% of cases in rough sea; incidence fell to 10% of its first-day value over 10 days at sea in cadets (PHY-SEA). Disease 'seasoning' is in MEDICINE.md.",
+    "columns": ["id", "Adaptation", "Time to gain", "Time to lose", "Effect", "Mark", "source"],
+    "rows": [
+      ["physiology.acclimatisation.heat-acclimatisation", "Heat acclimatisation", "10 to 14 days of work in heat", "about 25 days away from it", "WBGT ceiling +2 C; sweat starts sooner; less salt lost per litre", "proposed", "open"],
+      ["physiology.acclimatisation.sea-legs-seasickness-habituation", "Sea legs (seasickness habituation)", "3 to 10 days at sea", "about a month ashore", "nausea chance in a seaway x0.1 when habituated", "proposed", "open"],
+      ["physiology.acclimatisation.cold-acclimatisation", "Cold acclimatisation", "weeks", "weeks", "small: shivering threshold lowered; not modelled beyond clothing", "proposed", "open"],
+      ["physiology.acclimatisation.altitude", "Altitude", "-", "-", "not relevant at sea; left out", "proposed", "open"]
+    ]
+  },
+  "recovery": {
+    "title": "What a night's sleep restores (the overnight tick)",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Simplified from the subsystems: sleep repays debt hour for hour above need; muscle fatigue recovers by the 3CC R rate (MUSCULAR.md); glycogen refills from the day's carbohydrate (NUTRITION.md); wounds heal by phase (MEDICINE.md).",
+    "columns": ["id", "Quantity", "Overnight rule", "Reads", "Mark", "source"],
+    "rows": [
+      ["physiology.recovery.sleep-debt", "Sleep debt", "debt -= max(0, hours slept - 8) ; debt += max(0, 8 - hours slept); a 4-on-4-off night counts 0.85 of its hours", "watch roster", "proposed", "open"],
+      ["physiology.recovery.whole-body-fatigue-the-days-met-hours", "Whole-body fatigue (the day's MET-hours)", "resets to 0 after 7+ hours; otherwise carries (8 - slept)/8 of it", "sleep", "proposed", "open"],
+      ["physiology.recovery.endurance-pool-fight", "Endurance pool (fight)", "refills to its ceiling if slept, fed and watered; else to ceiling x (sleep x hydration x glycogen factors)", "NUTRITION, sleep", "proposed", "open"],
+      ["physiology.recovery.core-temperature", "Core temperature", "returns to 37.0 if sheltered; a wet cold night on deck lowers it (ENVIRONMENT)", "weather, shelter", "proposed", "open"],
+      ["physiology.recovery.banister-fitness-and-fatigue", "Banister fitness and fatigue", "both decay by their time constants; the day's load added", "duties", "proposed", "open"]
+    ]
+  },
+  "ventilation": {
+    "title": "Ventilation demand: how much air a body moves, and the drive",
+    "kind": "science",
+    "conf": "high",
+    "source": "Minute ventilation about 6 L/min at rest rising near-linearly with oxygen demand to 100+ at maximal work; oxygen consumption 3.5 mL/kg/min per MET; the carbon dioxide drive doubles ventilation for each 5 mmHg rise in PaCO2 while the hypoxic drive wakes under about 60 mmHg PaO2 (standard respiratory physiology; PHY-VENT). The breathing drive itself is NEUROLOGY's (opioids and deep drink depress it).",
+    "columns": ["id", "Quantity", "Formula or value", "Unit", "Reads", "Mark", "source"],
+    "rows": [
+      ["physiology.ventilation.oxygen-demand", "Oxygen demand", "VO2 = 3.5 x MET x mass_kg", "mL/min", "PHYSIOLOGY 1 MET table", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.minute-ventilation", "Minute ventilation", "VE = 6 + 0.025 x (VO2 - 250), capped by the profile's maximal capacity (ANATOMY 1a)", "L/min", "oxygen demand", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.inhaled-dose-of-a-gas", "Inhaled dose of a gas", "VE x concentration x minutes x uptake fraction (CHEMISTRY)", "L or mg", "GAS_DYNAMICS exposure", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.the-carbon-dioxide-drive", "The carbon dioxide drive", "VE x 2 per 5 mmHg of PaCO2 over 40 (the panting in a shut hold); over 70 mmHg the drive fails and sleepiness wins", "-", "CIRCULATION blood gas", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.the-hypoxic-drive", "The hypoxic drive", "VE up when PaO2 falls under 60 mmHg (altitude, a low-oxygen hold); carbon monoxide gives no drive at all: the body does not notice (the silent killer)", "-", "CIRCULATION", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.work-of-breathing", "Work of breathing", "at VE over 60 L/min, or airway resistance over 2, breathing itself costs: the Endurance pool x0.9; at resistance over 4 (smoke, SO2) x0.6 and the character stops working", "-", "ANATOMY 1a", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["physiology.ventilation.breath-holding-and-drowning", "Breath-holding and drowning", "a trained diver 1 to 2 minutes; a panicked man 30 seconds; water in the lungs ends transfer: CIRCULATION saturation falls to unconsciousness in 1 to 3 minutes, death in 4 to 6 (PHYSIOLOGY 5 immersion covers the cold side)", "min", "Swimming skill, Nerve", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"]
+    ]
+  }
+}

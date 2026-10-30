@@ -113,6 +113,42 @@ Substances and materials live in `data/substances.json` and `data/materials.json
 field means no standard value was found. The pirate table's `smoke` row (soot and tars, not one substance) and its
 tagged-substance template are not carried over.
 
+## The library
+
+`data/library/` is the scientific data library: the universal columns of the pirate game's `body/data/*.json`
+tables, split by `scripts/split_data.py` (MIGRATION.md sections 3 and 5, phase 2). One file per domain
+(`physiology`, `nutrition`, `anatomy`, `circulation`, `medicine`, `muscular`, `neurology`, `atmosphere`,
+`gasdynamics`, `chemistry`, `equipment`, `science`, `environment`, `ecology`, `population`) plus `sources.json`.
+A file is `{"_about": text, "<table>": {title, kind, conf, source, columns: [...], rows: [[...]]}}`, the game's own
+schema. Only tables marked E or L in the map are here; the split lists the game columns each table keeps (faces,
+STATS and COMBAT links, period treatments, availability, places).
+
+- **`id`** is the first column of every table and is stable. A table with its own `Id` column keeps it
+  (`o2`, `mortar`; prefixed `<domain>.<table>.` only where the same id appears in two tables, as `tagged` does).
+  Any other row gets `<domain>.<table>.<slug of its first column>` (`physiology.met.hauling-lines-...`,
+  `nutrition.foods.ships-biscuit`; a trailing GOODS row number is dropped from the slug). The catalogue's world
+  history (date, credited to, predecessor, `conf_history`) is the table `catalogue_history`, one row per catalogue
+  entry, id `equipment.catalogue_history.<catalogue id>`.
+- **`source`** is the last column: `open`, or source keys from `sources.json` separated by `; `. Keys come from the
+  row's own cells and from the game's docs (the doc table line that starts with the row's first cell, or a prose
+  line that contains a long first cell). `open` means no library source is cited for that row yet; the table's
+  `source` text still names its sources. Citations of `history`-kind sources stay with the game.
+- **`sources.json`** holds the game's source rows whose Kind is `science` or `reference` (Key, What, Gives, URL,
+  Kind, Opened). `python scripts/check_library.py` exits 0 when every file parses, every table has `id` and
+  `source`, no id repeats, and every source is `open` or a key in `sources.json`.
+- **A number has one home.** A column that moves is removed from where it came from. Where `data/substances.json`
+  or `data/reactions.json` already holds a row by the same id, the library table has `null` in the columns the
+  engine file holds (chemistry `Formula`, `Molar mass`; reaction `Reactants`, `Products`, `Conditions`, `Rate`,
+  `Heat`). The game keeps only `id` and its own columns in an adapter row, and reads the rest by id. A quantity
+  that two docs both state belongs in one library row, cited by the other.
+- `Mark` (rex / proposed / open) is a review state, not a number: the library's is for its columns, the adapter's
+  for the game's.
+
+Run `python scripts/split_data.py` to rewrite the library from the game's files (idempotent; it prints, per table, the
+rows read and written and the columns moved and left). `--write-game [--game-out DIR]` also writes the adapter
+versions (`*.adapter.json`, id plus game columns) beside the originals or into DIR, for the game side of phase 2 to
+apply; it never changes the originals.
+
 ## Next (the belt)
 
 Wire the equipment catalogue and further substance records (`body/data/*.json`) into the registry; expand reaction

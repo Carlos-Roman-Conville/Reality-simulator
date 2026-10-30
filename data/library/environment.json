@@ -1,0 +1,23 @@
+{
+  "_about": "Scientific data library, domain environment: the universal columns of the game's body/data/environment.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "exposure": {
+    "title": "Where a character is: the exposure the body reads",
+    "kind": "model",
+    "conf": "medium",
+    "source": "WBGT estimated from air temperature, humidity and sun (the Australian Bureau of Meteorology approximation is the usual shortcut; shade and wind lower it); the mosquito and water multipliers are MEDICINE.md hygiene rows placed by terrain; the rest are the keeper's placeholders.",
+    "columns": ["id", "Shade", "Wind felt", "WBGT vs open deck", "Wet", "Mark", "source"],
+    "rows": [
+      ["environment.exposure.open-deck-day", "none", "full", "+0", "spray", "proposed", "open"],
+      ["environment.exposure.aloft", "none", "more", "-1 C", "spray, rain", "proposed", "open"],
+      ["environment.exposure.below-decks-under-way", "full", "none", "+3 C (crowding, the galley)", "damp", "proposed", "open"],
+      ["environment.exposure.the-galley", "full", "none", "+6 C", "dry", "proposed", "open"],
+      ["environment.exposure.a-swampy-anchorage-or-river-mouth-wet-season", "some", "little", "+1 C", "rain", "proposed", "open"],
+      ["environment.exposure.a-dry-coral-island-the-beach-careening", "palms", "trades", "+2 C in the sun", "dry", "proposed", "open"],
+      ["environment.exposure.rainforest-hills", "full", "none", "-2 C, humid", "wet", "proposed", "open"],
+      ["environment.exposure.a-plantation-town", "buildings", "some", "+1 C", "dry season dry", "proposed", "open"],
+      ["environment.exposure.the-tavern-the-brothel", "full", "none", "+2 C", "dry", "proposed", "open"],
+      ["environment.exposure.the-guinea-coast", "some", "little", "+2 C", "wet", "proposed", "open"],
+      ["environment.exposure.north-atlantic-winter", "none", "gale", "cold: PHYSIOLOGY cold rules", "soaked", "proposed", "open"]
+    ]
+  }
+}

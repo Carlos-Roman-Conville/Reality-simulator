@@ -1,0 +1,34 @@
+{
+  "_about": "Scientific data library, domain ecology: the universal columns of the game's body/data/ecology.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "depletion_rules": {
+    "title": "Depletion and regeneration rules",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Logistic recovery is the Schaefer model's own; the catch-per-effort fall is the standard signal (CPUE proportional to B); the 'tragedy' row is the Cayman history. The fishing minigame's catch (FISHING.md stage 1, reading the water) is the visible face: fewer silhouettes.",
+    "columns": ["id", "Rule", "Formula or statement", "Mark", "source"],
+    "rows": [
+      ["ecology.depletion_rules.daily-catch-per-fisher", "Daily catch per fisher", "catch = q x effort x B / K (q from Fishing skill, FISHING.md stages); the minigame shows B/K as how many silhouettes appear", "proposed", "open"],
+      ["ecology.depletion_rules.overnight-stock-update", "Overnight stock update", "B += r B (1 - B/K) / 365 - today's catch (all boats on the ground, aggregate for distant ones)", "proposed", "open"],
+      ["ecology.depletion_rules.a-ground-is-fished-out", "A ground is 'fished out'", "B under 0.2 K: catch x0.2, the port's fish price up (economy), the fisherman duty yields little", "proposed", "open"],
+      ["ecology.depletion_rules.recovery", "Recovery", "logistic: from 0.2 K back to 0.8 K takes about 2.8/r years (reef fish 7 years, pelagics 3, turtles 56)", "proposed", "open"],
+      ["ecology.depletion_rules.turtle-crawls-goods-md-row-60", "Turtle crawls (GOODS.md row 60)", "live turtles kept in pens do not deplete further but do not breed; a crawl of N feeds N x 30 kg", "proposed", "open"],
+      ["ecology.depletion_rules.nesting-beaches", "Nesting beaches", "taking turtles on the beach in nesting season takes breeding females: r x0.5 for that stock for a decade", "proposed", "open"],
+      ["ecology.depletion_rules.hunting-pressure", "Hunting pressure", "the same model for game; boucaniers on Hispaniola at MSY x3 drove cattle to near zero by 1700 (history)", "proposed", "open"]
+    ]
+  },
+  "soil": {
+    "title": "Soil fertility model",
+    "kind": "model",
+    "conf": "low",
+    "source": "A fertility index per field (0 to 1) drained by each crop's demand and restored by manure, fallow and legumes; Barbados exhaustion and the planters' manuring response are the historical anchor (ECO-SOIL). Numbers are placeholders.",
+    "columns": ["id", "Rule", "Formula", "Mark", "source"],
+    "rows": [
+      ["ecology.soil.fertility-drain-per-harvest", "Fertility drain per harvest", "f -= demand (cane 0.06, tobacco 0.08, maize 0.03, cassava 0.01, pease -0.02 i.e. restores)", "proposed", "open"],
+      ["ecology.soil.yield", "Yield", "yield = max yield x (0.3 + 0.7 f) x rain factor x labour factor", "proposed", "open"],
+      ["ecology.soil.manure", "Manure", "f += 0.03 per 10 t/ha of dung (cattle pens next to cane fields: the Barbados practice)", "proposed", "open"],
+      ["ecology.soil.fallow", "Fallow", "f += 0.02 a year idle; +0.04 under bush", "proposed", "open"],
+      ["ecology.soil.deforestation", "Deforestation", "clearing forest gives f = 0.9 for a new field but removes firewood for the mill and raises erosion: f -= 0.02 a year extra on slopes", "proposed", "open"],
+      ["ecology.soil.rain", "Rain", "a dry year (under 60% of normal) halves yields; a hurricane destroys standing cane and plantains for a season", "proposed", "open"]
+    ]
+  }
+}
