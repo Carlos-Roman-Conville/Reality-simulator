@@ -36,18 +36,22 @@ export interface SpeciesProfile {
 }
 
 /** Species differences come from columns, never a species switch in the process.
- * Horse organ sizes, Hb and ventilation are absent; the host can supply a profile.
+ * Organ masses, Hb and maximal ventilation are read from the library's slots; a null
+ * slot (no cited source) stays null and the host can supply a profile.
  */
 export function speciesProfile(column: "Human default" | "A horse (example)" = "Human default"): SpeciesProfile {
   const fields = Object.fromEntries(libraryTable("anatomy", "species").map(r => [String(r.id), r[column]]));
-  const organs = libraryTable("anatomy", "organs").map(r => String(r.id));
-  const human = column === "Human default";
-  return { fields, organs, organMassKg: Object.fromEntries(organs.map(id => [id, null])),
+  const organRows = libraryTable("anatomy", "organs"), organs = organRows.map(r => String(r.id));
+  const numeric = (v: unknown) => typeof v === "number" ? v : null;
+  // The human fields point at the rows that hold the value; another species' are numbers or null.
+  const hb = fields["anatomy.species.haemoglobin-g-dl"], ve = fields["anatomy.species.maximal-ventilation-l-min"];
+  return { fields, organs, organMassKg: Object.fromEntries(organRows.map(r => [String(r.id), numeric(r[`Mass (kg, ${column})`])])),
     bloodMlKg: Number(fields["anatomy.species.blood-volume-ml-kg"]),
     cardiacOutputLMinKg: Number(fields["anatomy.species.resting-cardiac-output-l-min-per-kg"]),
     temperatureC: Number(fields["anatomy.species.body-temperature-set-point-c"]),
-    haemoglobinGDL: human ? number(libraryRow("circulation", "quantities", "circulation.quantities.haemoglobin")["Normal (70 kg man)"]) : null,
-    respiratory: human ? respiratoryProfile() : null };
+    haemoglobinGDL: hb === "circulation.quantities.haemoglobin" ? number(libraryRow("circulation", "quantities", hb)["Normal (70 kg man)"]) : numeric(hb),
+    respiratory: ve === "anatomy.respiratory.ventilation-capacity-maximal" ? respiratoryProfile()
+      : typeof ve === "number" ? respiratoryProfile({ maxVentilationLMin: ve }) : null };
 }
 
 /** The species' resting rate from its RMR-formula field (kcal/day), or null when the field is not a power law (the human's is Mifflin-St Jeor in physiology). */
@@ -84,8 +88,9 @@ export interface BodyAssembly {
   organs: Record<string, OrganState>;
   tissues: Record<string, { row: LibraryRow; integrity: number; component: string }>;
   crises: Crisis[];
-  /** Qualitative source rows, never a fabricated potassium concentration or hazard. */
-  cascades: Record<string, { statement: string; kineticsSeconds: null }>;
+  /** Qualitative source rows, never a fabricated potassium concentration or hazard;
+   * kineticsSeconds is the organ row's cited cascade timescale, null while none is cited. */
+  cascades: Record<string, { statement: string; kineticsSeconds: number | null }>;
   signals: Record<string, { component: string; output: string }>;
   elapsedSeconds: number;
 }
@@ -226,7 +231,8 @@ export function anatomyProcess(a: BodyAssembly): Process {
       const c = w.registry.component(s.component);
       bodyOutputs(c)[id] = s.function; c.props.damage = s.damage;
       if (s.function === null) delete c.props.function; else c.props.function = s.function;
-      if (s.function !== null && s.function < 1) a.cascades[id] = { statement: String(s.row["Failure cascade (model)"]), kineticsSeconds: null };
+      if (s.function !== null && s.function < 1) a.cascades[id] = { statement: String(s.row["Failure cascade (model)"]),
+        kineticsSeconds: typeof s.row["Cascade kinetics (s)"] === "number" ? s.row["Cascade kinetics (s)"] : null };
       if (floors[id] !== undefined && s.function !== null) crisis(w, a, id, s.function <= floors[id], s.function, 1 - s.damage, "ANATOMY.md section 3a");
     }
     for (const [id, tissue] of Object.entries(a.tissues)) out[id] = fraction(tissue.integrity, id);

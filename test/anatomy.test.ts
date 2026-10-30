@@ -63,6 +63,11 @@ describe("anatomy assembly", () => {
     p.step(w, 0);
     expect(a.profile.bloodMlKg).toBe(80); expect(a.profile.temperatureC).toBe(38);
     expect(a.organs.intestines.massKg).toBeNull();
+    // The library slots exist and are null until cited (flags/anatomy.md); the profile reads them, no species code.
+    for (const r of libraryTable("anatomy", "organs"))
+      for (const col of ["Mass (kg, Human default)", "Mass (kg, A horse (example))", "Cascade kinetics (s)"]) expect(r[col]).toBeNull();
+    expect(Object.values(speciesProfile().organMassKg).every(m => m === null)).toBe(true);
+    expect(speciesProfile().haemoglobinGDL).toBe(15); expect(speciesProfile().respiratory).not.toBeNull();
     expect(Object.values(a.organs).every(o => o.function === 1)).toBe(true);
     expect(() => assemblyBreathing(a, "room")).toThrow(/ventilation/);
     expect(() => assemblyCirculation(a)).toThrow(/haemoglobin/);
