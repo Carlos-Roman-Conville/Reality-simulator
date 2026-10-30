@@ -78,9 +78,10 @@ Both phases landed overnight on the belt, 26 engine tasks and 8 game tasks, abou
   medicine and combat; `web/src/world/settlement.run.ts` prints thirty days of stock, production, consumption,
   spoilage, calories, sleep, hazards, shortages and crises for twelve settlers. A yellow fever case on day 14 opens a
   crisis record with its row and risk; nobody dies silently; stores sized for the month run out on day 30.
-- **Honest gaps, all in `flags/` or `FIXTURES.md`:** the library's unsourced slots are null (plasma refill, maximal
-  cardiac output, bleed rate and clotting, organ masses, cascade kinetics, three-compartment fatigue rates, EC50 and
-  tolerance rate, vector exposure); sourcing tasks 2552 to 2562 fill them from opened pages or record the search.
+- **Honest gaps, all in `flags/` or `FIXTURES.md`:** the library's unsourced slots are null (plasma refill,
+  bleed rate and clotting, organ masses, cascade kinetics, three-compartment fatigue rates, EC50 and
+  tolerance rate, vector exposure); sourcing tasks 2552 to 2562 fill them from opened pages or record the search
+  (2560 filled maximal cardiac output, 20 L/min, Magder 2022).
   2561 built `src/crisis.ts`: a class IV bleed opens a crisis, the hydration bands "6 to 10" and "over 10" open one at
   their lower bound, and `declareDeath` throws without a crisis. Weather in the settlement run repeats
   one daily mean (the diurnal curve is not applied by the places adapter). Production rates are F-WK fixtures.
