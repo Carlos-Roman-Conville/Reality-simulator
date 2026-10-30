@@ -24,6 +24,11 @@ assignments, offices, permissions, money), the seven tick steps (`tick/`), the r
 (`reduce.ts`), queries (`queries.ts`). `examples/hamlet.ts`: three parcels, two construct projects, a sawyer's line,
 no game data. `test/engine.test.ts`: one describe per TESTS.md U-row, 16 tests.
 
+Step 2 (the same evening, on Rex's verbatim approval via the town keeper): the pirate adapter in
+`Games/RPG's/pirate-ship/web/src/settlement/` (`load.ts`, `bridge.ts`, `index.ts`, `settlement.test.ts`) over
+`data/pirate-ship/settlement/start.json`; T0, T1, A1 and A2 green beside the game's 274 other tests. The engine
+gained `addBuilding` (seed a standing building) and `test/acceptance.test.ts` (the engine half of A1).
+
 What the code encodes of Rex's answers: a sale changes the holder and nothing else (U3); a title can refuse a
 buyer (U3, Q6); assignments never end on their own (U4); a business runs while its operator is away if a manager
 is available (U7, Q2); layouts change only through projects unless `config.freeLayout` is set (U8, Q8 default);

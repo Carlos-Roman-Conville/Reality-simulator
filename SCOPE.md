@@ -37,5 +37,7 @@ Inherited from [HQ/PRINCIPLES.md](../../HQ/PRINCIPLES.md) and [Toolchain/SCOPE.m
 ## Current state
 
 - 2026-10-29: folder created with the design set; Rex approved the architecture and step 1 (agreeing with
-  ChatGPT's review) and answered Q2; Q1 and Q6 answered in part. Step 1 built: `npm test` 16 green, typecheck
-  clean. Next: step 2 (the pirate adapter shell and the T0 guard) once Rex sets the starting titles (Q6).
+  ChatGPT's review) and answered Q2; Q1 and Q6 answered in part. Step 1 built: `npm test` 23 green, typecheck
+  clean. Step 2 (the pirate adapter, T0 guard, A1, A2) built the same evening on Rex's verbatim approval. Next:
+  step 3 (the derived map) once Rex gives the footprint classes (Q1); step 4 sign-off once he confirms the
+  starting title rows (Q6).

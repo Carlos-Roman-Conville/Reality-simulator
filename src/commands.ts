@@ -24,6 +24,7 @@ export type Command =
   | { type: 'endLease'; lease: string }
   | { type: 'setRent'; lease: string; rent: number }
   // building
+  | { type: 'addBuilding'; parcel: string; footprint: Rect; storeys?: number; condition?: number; rooms?: Room[]; placements?: Placement[]; fixtures?: string[] }
   | { type: 'startProject'; kind: ProjectKind; target: string; plan?: ProjectPlan; materials?: { material: string; units: number }[]; labourDays?: number; pool?: string; wage?: number; account: string; permitRequired?: boolean; permit?: string | null }
   | { type: 'advanceProject'; project: string; workerDays: number }
   | { type: 'cancelProject'; project: string }
@@ -264,6 +265,26 @@ export function setRent(ctx: Ctx, c: Extract<Command, { type: 'setRent' }>): voi
 }
 
 // building
+
+/** Seed a building that already stands (the town as it is when you arrive). New buildings come from projects. */
+export function addBuilding(ctx: Ctx, c: Extract<Command, { type: 'addBuilding' }>): string {
+  const site = parcel(ctx, c.parcel)
+  if (site.retired) throw new Error('parcel is retired')
+  const footprint = rect(c.footprint, 'footprint')
+  if (!contains(site.footprint, footprint)) throw new Error('footprint outside the parcel')
+  const fixtures = [...(c.fixtures ?? [])]
+  const rooms = structuredClone(c.rooms ?? [])
+  const placements = structuredClone(c.placements ?? [])
+  checkPlacements(rooms, placements, fixtures)
+  const condition = finite(c.condition ?? 1, 'condition', 0)
+  if (condition > 1) throw new Error('condition is 0..1')
+  const id = newId(ctx, 'bldg')
+  ctx.state.buildings[id] = { id, parcel: site.id, footprint, storeys: c.storeys ?? 1, condition,
+    layout: { version: 1, rooms, placements }, layoutHistory: [], fixtures, builtOn: ctx.state.settlement.day, demolishedOn: null }
+  site.buildings.push(id)
+  site.vacant = false
+  return id
+}
 
 export function startProject(ctx: Ctx, c: Extract<Command, { type: 'startProject' }>): string {
   const plan = c.plan ?? {}

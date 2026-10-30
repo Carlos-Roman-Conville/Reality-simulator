@@ -34,6 +34,7 @@ export function reduce(state: SettlementState, command: Command, config: Settlem
     case 'lease': result = handlers.leaseTitle(ctx, command); break
     case 'endLease': handlers.endLease(ctx, command); break
     case 'setRent': handlers.setRent(ctx, command); break
+    case 'addBuilding': result = handlers.addBuilding(ctx, command); break
     case 'startProject': result = handlers.startProject(ctx, command); break
     case 'advanceProject': handlers.advanceProject(ctx, command); break
     case 'cancelProject': handlers.cancelProject(ctx, command); break
