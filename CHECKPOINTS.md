@@ -92,27 +92,51 @@ Sweat is the evaporation the heat balance requires at the ISO 7730 comfort skin
 temperature, less the skin diffusion, at most the hydration source's 2.5 L/h.
 A sourced sweat fit by MET and WBGT could not be opened (web access denied); see FLAGS.md.
 
-Day 7 of the unchanged fixture (3 kg drink a day, 18–24 C, MET 3–6):
+Day 7 of the unchanged fixture (3 kg drink a day, 18–24 C, MET 3–6) (2565 refresh):
 
 | Water | kg |
 | --- | --- |
-| In | 4.311 (food and drink 3.813, metabolic 0.498) |
-| Out | 4.311 |
-| Out: sweat (of which about 0.87 dripped) | 2.395 |
-| Out: urine | 0.953 |
-| Out: skin diffusion | 0.570 |
-| Out: breath | 0.393 |
-| Deficit | 0.359 (0.51%, row `physiology.hydration.0-to-1`) |
+| In | 4.394 (food and drink 3.895, metabolic 0.499) |
+| Out | 4.394 |
+| Out: sweat | 2.399 |
+| Out: urine | 1.03 |
+| Out: skin diffusion | 0.571 |
+| Out: breath | 0.394 |
+| Deficit | 0.352 (0.503%, row `physiology.hydration.0-to-1`) |
 
-Days 2–7 repeat within 0.01 kg. Day 1 passes 1.21 kg of urine while the first surplus clears.
+(2565 refresh) The 2540 figures were 4.311 in and out (food and drink 3.813, metabolic 0.498), sweat 2.395,
+urine 0.953, skin 0.570, breath 0.393, deficit 0.359 (0.51%). 2554 (supper gained 0.1 kg salt beef and 0.25 kg
+dried pease, so more food water) moved them; 2552 and the later tasks did not change a water row beyond that.
+The example does not print the dripped share, so the old "about 0.87 dripped" is dropped, not re-measured.
+Days 2–7 now stay between 4.389 and 4.399 kg out. Day 1 passes 1.283 kg of urine while the first surplus clears
+(2540: 1.21 kg), 4.751 kg out in all, with 2.502 kg of sweat.
+
+### Week ledger, energy and mass (2565 refresh)
+
+(2565 refresh) Copied from `examples/human-week.ts`. 2552 (body mass now counts glycogen and its bound water) and
+2554 (supper gained 0.1 kg salt beef and 0.25 kg dried pease) changed these rows; no later task is known to have moved them (the run shows no sign of 2557, 2561 or 2564 in these columns).
+
+| Day | kcal in | kcal out | Stored | Mass kg | Deficit kg | Sleep debt h | Alertness | CO2 peak ppm |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 4061.5 | 3730.297 | 331.203 | 69.686 | 0.357 | 2 | 0.780 | 1406.432 |
+| 2 | 4061.5 | 3723.192 | 338.308 | 69.735 | 0.352 | 4 | 0.718 | 1402.016 |
+| 3 | 4061.5 | 3799.743 | 261.757 | 69.774 | 0.347 | 8 | 0.718 | 1519.093 |
+| 4 | 4061.5 | 3725.184 | 336.316 | 69.812 | 0.352 | 10 | 0.718 | 1488.978 |
+| 5 | 4061.5 | 3801.533 | 259.967 | 69.851 | 0.347 | 14 | 0.640 | 1520.345 |
+| 6 | 4061.5 | 3726.934 | 334.566 | 69.889 | 0.352 | 16 | 0.640 | 1490.196 |
+| 7 | 4061.5 | 3727.797 | 333.703 | 69.933 | 0.352 | 18 | 0.640 | 1404.973 |
+
+Core temperature prints 37.000 every day. Mass rises 0.247 kg over the week (69.686 to 69.933), where the
+fat-only proxy before 2552 gave 69.537 on day 7. Sodium and magnesium pools print full on every day.
 
 Across the week the deficit stays between -0.90% and 1.59%. The peak is day 1 at 17:58,
-after the 15:00–17:00 carpentry and smithing hours. Every minute is inside the table's
+after the 15:00–17:00 carpentry and smithing hours (2540 figures: the example prints only day-end
+deficits, 0.496% to 0.51%, so the minute-level range is not re-measured here). Every minute is inside the table's
 mild band (the rows under 2%, "1 to 2": thirst, Endurance pool x0.95).
 
-The daily water out, 4.3 kg, is above the library's 3.7 L/day total need (PHY-HYD) for a
-man doing eight hours of MET 3 to 6 work. Mass is 69.537 kg on day 7: the fat-only proxy,
-unchanged.
+The daily water out, about 4.4 kg (2565 refresh: 4.389 to 4.399 on days 2–7), is above the library's 3.7 L/day total need (PHY-HYD) for a
+man doing eight hours of MET 3 to 6 work. Mass is 69.933 kg on day 7 (2565 refresh; the 2540 fat-only proxy gave 69.537, before
+2552 added glycogen and its bound water).
 
 A MET 6 worker in a 32 C, 50% room (BoM WBGT 31.4 C, core 37.85 C after an hour) loses
 water in the first hour as follows:
@@ -198,13 +222,22 @@ fewer todo than the 2531 validation, because shed-blood body mass is now a real 
 
 2560 sourcing pass: `examples/human-wound.ts` re-run with the sourced muscular F and R and the 20 L/min maximal output: 3 variants, 194,285 transfers and 276,492 checks per variant, 0 conservation failures.
 
+(2565 refresh) Figures in this subsection re-run after 2552, 2554, 2557, 2560, 2561 and 2564. The direction of
+cardiac output and DO2 flipped from the 2551 text: they now rise day by day (4.877977, 4.881352, 4.884099,
+4.886783, 4.889515, 4.892183, 4.895214 L/min; DO2 947.613, 948.278, 948.614, 949.330, 949.664, 950.377, 950.965 mL/min)
+instead of easing; the run output does not say which task caused the flip (2552's heavier body and 2557's circulation columns are the candidates). The old 0.110 fatigue
+peak and 6.0 progress days were the 2551 figures and are replaced. Verdicts did not flip: `organsUnderOne` is empty,
+no organ is unknown, nobody is sick and no crisis is recorded in any variant on any day (2561's crisis paths stay closed
+because the thrust bleed rate is still null). The run still reports 194,285 transfers and 276,492 checks per variant, 0 failures.
+
 Rows that moved: the day ledgers now sit on the hydrated body, so no organ falls below
 one (`organsUnderOne` empty), no organ is unknown, nobody is sick and no crisis is
-recorded in any variant on any day; cardiac output eases from 4.9 L/min on day 1 to
-4.868 L/min and DO2 from 951.9 to 945.6 mL/min by day 7 (blood volume 4900 mL, Hb 15,
-unchanged in all three variants). Left-hand fatigue peaks at 0.110 on day 1 and is
-fully recovered by day 7. The wound reaches 6.0 days of progress, open=false, at day 7 in the
-bound variants and unbound in the third; none heals inside the week (clean healing is 14 to 30 days;
+recorded in any variant on any day; cardiac output now rises from 4.877977 L/min on day 1 to
+4.895214 L/min on day 7 and DO2 from 947.613 to 950.965 mL/min (blood volume 4900 mL, Hb 15,
+unchanged in all three variants). Left-hand fatigue peaks at 0.425 on days 1 and 2 and is
+essentially recovered from day 3 (peak 4.1e-22, end 4.1e-46 on day 3, falling to 3.6e-118 and 3.6e-142 on day 7). The wound
+(drawn at day 2) reaches 7.810 days of progress at day 7 with open=false and healed=false in all three variants (bound = true in the
+two bound variants, false in the third); none heals inside the week (clean healing is 14 to 30 days;
 the neutral-factor reference heals on day 14 for seed 1).
 
 Rows that did not move, and why: the three variants still match to the last digit in blood
