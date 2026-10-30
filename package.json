@@ -1,0 +1,19 @@
+{
+  "name": "@rex/economy",
+  "version": "0.0.1",
+  "description": "The economy engine: goods, recipes, inventories, markets (stock, consumption, reserve, production, price), labour market, trade and transport, organisations, business accounting. A reducer plus a daily tick; no game imports. The pirate ports are its first client.",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^5.0.5"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
