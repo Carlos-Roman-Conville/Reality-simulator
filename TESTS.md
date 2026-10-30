@@ -31,9 +31,12 @@ not a game rule.
 | E11 | money is conserved across a sale | buying and selling move goods one way and money the other at the market's price (or the host's), through the ledger provider only; the sum of balances never changes; a trade with no price anywhere is refused (open); one beyond stock leaves the state untouched |
 | E13 | accounting reconciles with the ledger | the view sums the holder's rows by kind (sale, purchase, wage, rent, freight, other), values its inventories at today's prices, and its profit equals the balance change; a day range filters the rows |
 
-## Planned (PLAN.md steps 6 and 8)
+## Package tests (`test/labour-and-sim.test.ts`), steps 6 and 8
 
-E12 wage quote rises when posts outnumber workers · E14 the three-port sim is deterministic.
+| Id | Rule under test | Must hold |
+|---|---|---|
+| E12 | the wage quote rises when posts outnumber workers | the default rule (`posted-median`) quotes the role's posted median with no pressure (the open state) and nothing for a role with no posts; under the `ratio` rule the quote rises with more posts than workers, falls with more workers, stays within its floor and ceiling, and falls back to the median when the host's supply is unknown |
+| E14 | the three-port sim is deterministic | thirty days run twice give the same state, log and printed table; every price finite, no negative stock; the companies' purses and the ports' takings sum to what the companies started with; at least one shipment and one sale happened |
 
 ## Integration (PLAN.md steps 9–11)
 

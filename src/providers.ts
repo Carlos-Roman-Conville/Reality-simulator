@@ -1,4 +1,4 @@
-// What this engine asks of the host (CONTRACTS.md §3, §4b, §4c). The engine imports no other engine; the host
+// What this engine asks of the host (CONTRACTS.md §3, §4b, §4c, §5). The engine imports no other engine; the host
 // implements these from @rex/settlement, @rex/realism, its map and its population model, or the stubs below.
 
 export interface LedgerRow {
@@ -25,6 +25,12 @@ export interface PopulationProvider {
   headcount(market: string, day: number): number
 }
 
+/** Workers the host's pools could supply for a role in a market today (§5): the population model's number, never
+ *  this engine's. `null` when the host does not know. */
+export interface LabourSupplyProvider {
+  supply(market: string, role: string, day: number): number | null
+}
+
 export interface TransportProvider {
   /** Travel days from one market to another; Infinity when unreachable. */
   days(from: string, to: string): number
@@ -33,6 +39,7 @@ export interface TransportProvider {
 export interface Providers {
   ledger: LedgerProvider
   population: PopulationProvider
+  labour: LabourSupplyProvider
   transport: TransportProvider
 }
 
@@ -61,12 +68,30 @@ export class StubPopulation implements PopulationProvider {
   headcount(market: string): number { return this.counts[market] ?? 0 }
 }
 
+export class StubLabourSupply implements LabourSupplyProvider {
+  table: Record<string, number> = {}        // key `${market}:${role}`
+  set(market: string, role: string, workers: number): void { this.table[`${market}:${role}`] = workers }
+  supply(market: string, role: string): number | null { return this.table[`${market}:${role}`] ?? null }
+}
+
 export class StubTransport implements TransportProvider {
   table: Record<string, number> = {}        // key `${from}>${to}`
   set(from: string, to: string, days: number): void { this.table[`${from}>${to}`] = days; this.table[`${to}>${from}`] = days }
   days(from: string, to: string): number { return from === to ? 0 : (this.table[`${from}>${to}`] ?? Number.POSITIVE_INFINITY) }
 }
 
-export function stubProviders(): Providers & { ledger: StubLedger; population: StubPopulation; transport: StubTransport } {
-  return { ledger: new StubLedger(), population: new StubPopulation(), transport: new StubTransport() }
+/** A SettlementReader over plain lists, for tests of the labour market without a settlement engine on disk. */
+export class StubSettlementReader implements SettlementReader {
+  bizRows: Record<string, { id: string; inventory: string; account: string; status: string; open: boolean }[]> = {}
+  postRows: Record<string, { id: string; biz: string; role: string; wage: number; hours: number; filledBy: string | null }[]> = {}
+  productionRows: Record<string, { day: number; lines: { recipe: string; q: number }[] }> = {}
+  fixtures: Record<string, string[]> = {}
+  businesses(market: string) { return this.bizRows[market] ?? [] }
+  posts(market: string) { return this.postRows[market] ?? [] }
+  production(biz: string, day: number) { const r = this.productionRows[biz]; return r && r.day === day ? r.lines : null }
+  hasFixture(market: string, fixture: string): boolean { return (this.fixtures[market] ?? []).includes(fixture) }
+}
+
+export function stubProviders(): Providers & { ledger: StubLedger; population: StubPopulation; labour: StubLabourSupply; transport: StubTransport } {
+  return { ledger: new StubLedger(), population: new StubPopulation(), labour: new StubLabourSupply(), transport: new StubTransport() }
 }

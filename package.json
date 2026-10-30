@@ -7,7 +7,8 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ports": "node --experimental-strip-types examples/three-ports.ts"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
