@@ -59,15 +59,15 @@
     "title": "Three-compartment fatigue model (3CC): rates by joint",
     "kind": "science",
     "conf": "medium",
-    "source": "Xia and Frey Law 2008 (J Biomech): muscle in resting, active, fatigued compartments; F = fatigue rate active to fatigued, R = recovery rate fatigued to resting, per second. Fitted values from Frey Law, Looft and Heitsman 2012: ankle F 0.00589 R 0.0182; shoulder F 0.00058 R 0.00168; a 2018 extension adds a rest multiplier. MUS-3CC",
+    "source": "Xia and Frey Law 2008 (J Biomech): muscle in resting, active, fatigued compartments; F = fatigue rate active to fatigued, R = recovery rate fatigued to resting, per second. Values copied from Frey Law, Looft and Heitsman 2012 Table 1 (PMC3397684, opened 2026-10-30, 2560); the paper states no units (1 Hz steps). The 2018 rest multiplier was not reached. MUS-3CC",
     "columns": ["id", "Joint (groups)", "F (per s)", "R (per s)", "Note", "Mark", "source"],
     "rows": [
-      ["muscular.fatigue_rates.shoulder-deltoids-rotator-cuff", "Shoulder (deltoids, rotator cuff)", 0.00058, 0.00168, "fitted 2012", "proposed", "open"],
-      ["muscular.fatigue_rates.elbow-biceps-brachialis-triceps", "Elbow (biceps, brachialis, triceps)", 0.0012, 0.0036, "interpolated by the keeper between shoulder and ankle", "proposed", "open"],
-      ["muscular.fatigue_rates.grip-forearm-hand", "Grip (forearm, hand)", 0.0025, 0.0075, "interpolated; grip tires fast and recovers fast", "proposed", "open"],
-      ["muscular.fatigue_rates.trunk-erectors-abs-obliques", "Trunk (erectors, abs, obliques)", 0.001, 0.003, "interpolated", "proposed", "open"],
-      ["muscular.fatigue_rates.hip-and-knee-glutes-quads-hamstrings", "Hip and knee (glutes, quads, hamstrings)", 0.003, 0.009, "interpolated", "proposed", "open"],
-      ["muscular.fatigue_rates.ankle-calves-tibialis", "Ankle (calves, tibialis)", 0.00589, 0.0182, "fitted 2012", "proposed", "open"]
+      ["muscular.fatigue_rates.shoulder-deltoids-rotator-cuff", "Shoulder (deltoids, rotator cuff)", 0.0182, 0.00168, "Frey Law, Looft and Heitsman 2012 Table 1, Shoulder (2560)", "sourced", "MUS-3CC-2012"],
+      ["muscular.fatigue_rates.elbow-biceps-brachialis-triceps", "Elbow (biceps, brachialis, triceps)", 0.00912, 0.00094, "Frey Law, Looft and Heitsman 2012 Table 1, Elbow (2560)", "sourced", "MUS-3CC-2012"],
+      ["muscular.fatigue_rates.grip-forearm-hand", "Grip (forearm, hand)", 0.0098, 0.00064, "Frey Law, Looft and Heitsman 2012 Table 1, Hand/Grip (2560)", "sourced", "MUS-3CC-2012"],
+      ["muscular.fatigue_rates.trunk-erectors-abs-obliques", "Trunk (erectors, abs, obliques)", 0.00755, 0.00075, "Frey Law, Looft and Heitsman 2012 Table 1, Trunk (2560)", "sourced", "MUS-3CC-2012"],
+      ["muscular.fatigue_rates.hip-and-knee-glutes-quads-hamstrings", "Hip and knee (glutes, quads, hamstrings)", 0.015, 0.00149, "Frey Law, Looft and Heitsman 2012 Table 1, Knee set; the paper has no hip set, so the hip groups use it (2560)", "sourced", "MUS-3CC-2012"],
+      ["muscular.fatigue_rates.ankle-calves-tibialis", "Ankle (calves, tibialis)", 0.00589, 0.00058, "Frey Law, Looft and Heitsman 2012 Table 1, Ankle (2560)", "sourced", "MUS-3CC-2012"]
     ]
   },
   "endurance_time": {

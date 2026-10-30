@@ -55,10 +55,10 @@ describe("seconds-based three-compartment fatigue", () => {
     expect(reference.seconds).toBe(120);
     expect(reference.exhaustionSeconds).toBeNull();
     const held = stepMuscleFatigue(fresh, "hand", 0.5, reference.seconds, 1)!;
-    // The requested 50% hold cannot fail at two minutes under these supplied equations/rates.
-    expect(held.resting + held.active).toBeGreaterThan(0.5);
+    // With the sourced 2012 hand/grip rates (2560) two minutes at 50% leaves under half the fibres unfatigued.
+    expect(held.resting + held.active).toBeLessThan(0.5);
     const rates = muscularRates("hand")!;
-    expect(rates.F / (rates.F + rates.R)).toBeLessThan(0.5);
+    expect(rates.F / (rates.F + rates.R)).toBeGreaterThan(0.5);
     expect(muscularEnduranceReference(0.15)?.lowerBound).toBe(true);
     expect(muscularEnduranceReference(0.3)).toBeNull();
   });
@@ -66,7 +66,7 @@ describe("seconds-based three-compartment fatigue", () => {
     const s = { resting: 0.2, active: 0.3, fatigued: 0.5 }, R = muscularRates("hand")!.R;
     expect(stepMuscleFatigue(s, "hand", 0, 120, 0.5)!.fatigued).toBeCloseTo(0.5 * Math.exp(-R * 0.5 * 120), 14);
     const night = stepMuscleFatigue(s, "hand", 0, 8 * 3600, 1)!;
-    expect(night.fatigued).toBeCloseTo(0, 12);
+    expect(night.fatigued).toBeCloseTo(0.5 * Math.exp(-R * 8 * 3600), 14);
     expect(night.active).toBe(0);
     expect(stepMuscleFatigue(s, "hand", 0, 0, 1)).toEqual(s);
     expect(stepMuscleFatigue(fresh, "neck", 0.5, 1, 1)).toBeNull();

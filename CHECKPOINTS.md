@@ -196,6 +196,8 @@ unchanged: 3 variants x 7 days, exit 0, 187,430 transfers and 276,485 checks per
 0 conservation failures. Filtered `test/checkpoint2.test.ts`: 4 passed, 1 todo (one
 fewer todo than the 2531 validation, because shed-blood body mass is now a real test).
 
+2560 sourcing pass: `examples/human-wound.ts` re-run with the sourced muscular F and R and the 20 L/min maximal output: 3 variants, 194,285 transfers and 276,492 checks per variant, 0 conservation failures.
+
 Rows that moved: the day ledgers now sit on the hydrated body, so no organ falls below
 one (`organsUnderOne` empty), no organ is unknown, nobody is sick and no crisis is
 recorded in any variant on any day; cardiac output eases from 4.9 L/min on day 1 to
