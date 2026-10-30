@@ -112,11 +112,15 @@ export function loseBlood(w: World, body: string, ml: number): number {
   check(w, body); return actual;
 }
 
+/** The `N` in the bleeding table's "rate x minutes x (N - clotting)", read from the table's own source sentence. */
+export function bleedFactor(): number {
+  return numberIn(libraryMeta("circulation", "bleeding").source, /\(([\d.]+) - clotting\)/);
+}
+
 /** Wound rate is a host input, not a class death chance. Binding/ligation stops it. */
 export function bleed(w: World, body: string, rateMlMin: number, seconds: number, clotting: number, bound = false) {
   finite(rateMlMin, "wound rate"); finite(seconds, "time"); fraction(clotting, "clotting");
-  const factor = numberIn(libraryMeta("circulation", "bleeding").source, /\(([\d.]+) - clotting\)/);
-  return loseBlood(w, body, bound ? 0 : rateMlMin * seconds / 60 * (factor - clotting));
+  return loseBlood(w, body, bound ? 0 : rateMlMin * seconds / 60 * (bleedFactor() - clotting));
 }
 
 /** Loop metadata preserves qualitative time constants; tauSeconds is the library's cited number, null while none is cited

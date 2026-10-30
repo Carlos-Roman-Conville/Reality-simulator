@@ -60,7 +60,7 @@
     "source": "Advection-diffusion-reaction: dC/dt = -div(u C) + div(D grad C) + S - R, with u the wind field, D an effective turbulent diffusion; implemented later as a coarse cellular model on the combat grid (COMBAT 6's tiles) for releases that cross cells in seconds; the stability constraint (a cell's air must not cross more than one cell per step) sets the step. Not built; the interface is the units table.",
     "columns": ["id", "Element", "Statement", "Status", "Mark", "source"],
     "rows": [
-      ["gasdynamics.grid.cells", "Cells", "the combat map's tiles, each a small box with the units above; elevation and enclosure from the map (COMBAT 6: tile properties)", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.cells", "Cells", "the cells of a grid, each a small box with the units above; elevation and enclosure from the grid's own cell properties", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
       ["gasdynamics.grid.advection", "Advection", "the wind (ENVIRONMENT) moves a cell's air downwind by u x step; indoors, the ventilation flow", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
       ["gasdynamics.grid.diffusion-and-turbulent-mixing", "Diffusion and turbulent mixing", "each step a cell shares a fraction with its neighbours (D x step / cell size squared)", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
       ["gasdynamics.grid.buoyancy", "Buoyancy", "hot and light gases move up a level (a deck) before spreading; heavy ones pool in hollows and the low tiles", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],

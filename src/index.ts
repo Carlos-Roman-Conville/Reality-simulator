@@ -15,6 +15,7 @@ export * from "./atmosphere.ts";
 export * from "./environment.ts";
 export * from "./neurology.ts";
 export * from "./circulation.ts";
+export { bleedFactor } from "./circulation.ts"; // the bleeding table's (N - clotting) factor, by name for hosts
 export * from "./anatomy.ts";
 export * from "./muscular.ts";
 export * from "./medicine.ts";

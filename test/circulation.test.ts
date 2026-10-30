@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { libraryMeta, libraryTable } from "../src/library.ts";
 import { defaultRegistry } from "../src/registry.ts";
 import { World } from "../src/world.ts";
 import { bodyOutputs } from "../src/physiology.ts";
 import { saturation, cohbAfter } from "../src/atmosphere.ts";
-import { bleed, bleedingClass, bleedingEffects, circulationProcess, circulationRules, hazard, initialiseCirculation, loseBlood, normalBloodVolume, oxygenDelivery, regulationLoops } from "../src/circulation.ts";
+import { bleed, bleedFactor, bleedingClass, bleedingEffects, circulationProcess, circulationRules, hazard, initialiseCirculation, loseBlood, normalBloodVolume, oxygenDelivery, regulationLoops } from "../src/circulation.ts";
 
 function fixture() {
   const w = new World(defaultRegistry());
@@ -116,5 +117,11 @@ describe("conditional unmeasured hazards", () => {
     expect(hazard("thrombosis-and-embolism", { sepsis: true }).rate).toBeNull();
     expect(hazard("heart-failure", { heartDamage: 0.6 })).toMatchObject({ rate: null, unit: "state", eligible: true });
     expect(hazard("shock-circulatory", { classIIIPlus: true }).eligible).toBe(true);
+  });
+
+  it("bleedFactor is the number the bleeding table's source states, and the class table has one home", () => {
+    expect(bleedFactor()).toBe(2);
+    expect(libraryMeta("circulation", "bleeding").source).toContain("(2 - clotting)");
+    expect(() => libraryTable("medicine", "bleeding")).toThrow();
   });
 });

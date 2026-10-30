@@ -48,19 +48,6 @@
       ["medicine.wounds.amputation-the-surgeons-wound", "Amputation (the surgeon's wound)", "the treatment for gangrene, a shattered limb", "III (with tourniquet II)", "20 to 50% sepsis", "30 to 60 (stump)", "proposed", "open"]
     ]
   },
-  "bleeding": {
-    "title": "(moved to circulation.bleeding on 2026-10-29; kept here unrendered for the record)",
-    "kind": "science",
-    "conf": "high",
-    "source": "ATLS classes of haemorrhagic shock (teaching values; the current manual gives trends). Blood volume about 70 mL/kg (standard). The class is read from the cumulative loss; the loss grows by the wound's rate x elapsed minutes (a combat turn's length is the combat keeper's), and stops when bound or when the surgeon ligates. The bleeding rates and the death risks are model placeholders, not clinical rates. MED-ATLS",
-    "columns": ["id", "Class", "Loss (% of blood volume)", "Loss for a 70 kg man (mL)", "Signs", "Model: bleeding rate of an open wound of this class (mL per minute, until bound)", "Death risk per hour at this loss, untreated (model placeholder)", "Mark", "source"],
-    "rows": [
-      ["medicine.bleeding.i", "I", "up to 15", "up to 750", "pulse under 100; little change", "5 (a cut: stops on its own in 10 to 20 min)", "0", "proposed", "open"],
-      ["medicine.bleeding.ii", "II", "15 to 30", "750 to 1500", "pulse 100 to 120; anxious; pale", "30 (a deep thrust)", "1%", "proposed", "open"],
-      ["medicine.bleeding.iii", "III", "30 to 40", "1500 to 2000", "pulse 120 to 140; blood pressure falls; confused", "100 (a severed artery or a shattered limb)", "10%", "proposed", "open"],
-      ["medicine.bleeding.iv", "IV", "over 40", "over 2000", "pulse over 140; lethargic; unconscious", "300 (a great vessel)", "50%", "proposed", "open"]
-    ]
-  },
   "pain": {
     "title": "Pain (0 to 10) and shock",
     "kind": "model",
