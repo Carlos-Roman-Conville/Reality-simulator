@@ -60,7 +60,7 @@ the same id). "Split" names the columns that go to the game.
 | atmosphere.baseline, altitude, modifiers | 17 | E + L | none |
 | atmosphere.regions, scenarios | 21 | G | the ship's and town's rooms and their period provenance |
 | gasdynamics.units, box_model, sources_sinks | 26 | E + L | `Who writes / reads` |
-| gasdynamics.grid | 7 | E | `the combat map's tiles` wording becomes "a grid the host supplies" |
+| gasdynamics.grid | 7 | E | `the combat map's tiles` wording becomes "a grid the host supplies" (done: cells 2571; title, source and buoyancy 2576) |
 | chemistry.schema, substances, reactions, domains, reaction_fields | 75 | L (schema is E's contract) | `Period source in the game`, `Period example`, `Where` |
 | chemistry.scope | 8 | G policy (Rex's decisions) | all |
 | equipment.roles, assembly, wear, confidence | 27 | E | none |

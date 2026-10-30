@@ -2,6 +2,7 @@
  * Real-world formulas and constants (SI). Every function cites its source key (the host's SOURCES.md, ENG-*).
  * Nothing here is a game rule: these are the physics the engine runs on. Simplifications are named in the doc comment.
  */
+import { formulaMolarMass } from "./elements.ts";
 
 export const R_GAS = 8.314; // J/(mol K)  ENG-GAS
 export const MMHG_PER_PA = 760 / 101325;
@@ -37,8 +38,11 @@ export const CP = { water: 4186, air: 1005, copper: 385, glass: 840, iron: 450, 
 /** Higher heating values, J/kg. ENG-HHV (NIST, Engineering ToolBox). */
 export const HHV = { charcoal: 30.0e6, wood_dry: 16.0e6, ethanol: 26.8e6 } as const;
 
-/** Molar masses, kg/mol. ENG-STOICH. */
-export const M = { C: 0.012, O2: 0.032, CO2: 0.044, CO: 0.028, H2O: 0.018, N2: 0.028, air: 0.029 } as const;
+/** Molar masses, kg/mol. ENG-STOICH. Formula weights from src/elements.ts, the same set the substance rows carry; air is a mixture (28.97 g/mol rounded). */
+export const M = {
+  C: formulaMolarMass("C"), O2: formulaMolarMass("O2"), CO2: formulaMolarMass("CO2"), CO: formulaMolarMass("CO"),
+  H2O: formulaMolarMass("H2O"), N2: formulaMolarMass("N2"), air: 0.029,
+};
 
 /**
  * Charcoal (as carbon) burning: complete, C + O2 -> CO2 (1 kg C: 2.667 kg O2 -> 3.667 kg CO2);

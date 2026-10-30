@@ -104,12 +104,21 @@ describe("reaction records and solver", () => {
       const r = reaction(id), o2 = r.reactants[1].coefficient;
       const w = setup(600, [{ substance: fuel, phase, mass: kg(fuel, 2) }, { substance: "o2", phase: "gas", mass: kg("o2", o2) }]);
       const beforeMoles = Object.fromEntries(["C", "H", "O"].map(el => [el, w.elementMolesOf(el, ["vessel", "room"])]));
+      const totalMass = () => [...w.registry.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0);
+      const beforeMass = totalMass();
       const before = sensible(w);
       run(w, [r]);
       expect(w.registry.contentMass(w.registry.component("vessel"), fuel)).toBeCloseTo(kg(fuel), 12);
       expect(sensible(w) - before).toBeCloseTo(-r.heat, 6);
-      // Atoms are conserved exactly; mass follows from them and need not be additive across rows with NIST weights.
       for (const el of ["C", "H", "O"]) expect(w.elementMolesOf(el, ["vessel", "room"])).toBeCloseTo(beforeMoles[el], 12);
+      expect(totalMass()).toBeCloseTo(beforeMass, 12);
+    }
+  });
+  it("conserves total mass through every default reaction, one weight set for all rows", () => {
+    for (const r of defaultReactions) {
+      const reg = defaultRegistry();
+      const mass = (terms: Reaction["reactants"]) => terms.reduce((s, x) => s + x.coefficient * reg.substance(x.substance).molarMass, 0);
+      expect(mass(r.products), r.id).toBeCloseTo(mass(r.reactants), 12);
     }
   });
   it("charcoal burns only at 15% oxygen by volume or more, the per-kg heat follows from the row", () => {
@@ -184,11 +193,14 @@ describe("element ledger", () => {
     w.conserveElements(["vessel"]);
     run(w, [reaction("calcination")]);
   });
-  it("conserves atom moles through water formation with real molar masses", () => {
+  it("conserves total mass and atom moles through water formation with real molar masses", () => {
     const w = setup(600, [{ substance: "h2", phase: "gas", mass: kg("h2", 2) }, { substance: "o2", phase: "gas", mass: kg("o2") }]);
     const atoms = () => ["H", "O"].map(el => w.elementMolesOf(el, ["vessel", "room"]));
+    const totalMass = () => [...w.registry.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0);
+    const beforeMass = totalMass();
     expect(atoms()[0]).toBeCloseTo(4, 12);
     run(w, [reaction("water_formation")]);
+    expect(totalMass()).toBeCloseTo(beforeMass, 12);
     expect(atoms()[0]).toBeCloseTo(4, 12);
     expect(atoms()[1]).toBeCloseTo(2, 12);
     expect(w.registry.contentMass(w.registry.component("vessel"), "water") + w.registry.contentMass(w.registry.component("room"), "water"))
