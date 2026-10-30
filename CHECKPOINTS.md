@@ -175,9 +175,10 @@ tested against the medicine healing multipliers, including the day-2 work rule.
 Conservation checks cover blood volume, haemoglobin in the prescribed-loss
 probe, muscle fractions, and the inherited energy/water/nutrient/gas ledgers.
 The body mass assertion checks nutrition's existing fat-only proxy and that
-organ shells add no mass. Physical total body mass including shed blood cannot
-be validated without density/composition and coupling rules. This and the timed
-untreated-crisis case remain explicit TODO tests. Checkpoint 1's dehydration,
+organ shells add no mass. Whole-body mass including shed blood is now a real test
+(the second former TODO): shed blood leaves body mass at the library blood density
+(`circulation.quantities.blood-density`, 1.06 kg/L), traced as `mass:blood`. The
+timed untreated-crisis case remains an explicit TODO test. Checkpoint 1's dehydration,
 continued activity, and other limitations above still apply. See FLAGS.md's
 checkpoint-2 section for missing inputs; no unsupported calibration is enabled.
 

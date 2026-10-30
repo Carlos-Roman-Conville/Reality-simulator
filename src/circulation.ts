@@ -75,7 +75,7 @@ export interface CirculationOptions {
   kidneyWorking?: boolean;
 }
 
-/** Initial blood is a volume ledger, not fictitious kg or an added body mass. */
+/** Initial blood is a volume ledger inside the host body mass; shed blood leaves that mass at the library density. */
 export function initialiseCirculation(w: World, body: string, profile?: { bloodVolumeMl: number; haemoglobinGDL: number }) {
   const b = w.registry.component(body), p = b.props;
   if (p.circulation_initial_ml !== undefined) return;
@@ -98,12 +98,15 @@ function check(w: World, body: string) {
 /** Whole blood leaves with its current Hb concentration. Requested loss caps at available blood. */
 export function loseBlood(w: World, body: string, ml: number): number {
   finite(ml, "blood loss"); initialiseCirculation(w, body);
-  const p = w.registry.component(body).props, actual = Math.min(ml, p.blood_volume_ml);
+  const b = w.registry.component(body), p = b.props, actual = Math.min(ml, p.blood_volume_ml);
   const hb = p.blood_volume_ml ? p.blood_hb_g * actual / p.blood_volume_ml : 0;
   p.blood_volume_ml -= actual; p.blood_lost_ml += actual;
   p.blood_hb_g -= hb; p.blood_hb_lost_g += hb;
+  const kg = actual * normal("blood-density") / 1000; // mL x kg/L / 1000 = kg
+  b.mass -= kg;
   w.trace.record({ t: w.t, process: "circulation", quantity: "volume:blood", from: body, to: "shed-blood", amount: actual });
   w.trace.record({ t: w.t, process: "circulation", quantity: "mass:haemoglobin", from: body, to: "shed-blood", amount: hb / 1000 });
+  w.trace.record({ t: w.t, process: "circulation", quantity: "mass:blood", from: body, to: "shed-blood", amount: kg });
   check(w, body); return actual;
 }
 

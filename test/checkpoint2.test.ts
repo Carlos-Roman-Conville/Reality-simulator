@@ -95,7 +95,6 @@ describe('checkpoint 2: supported wound integration; missing kinetics explicitly
     expect(assembly.crises.some(c => c.organ === iv.id && c.kind === 'crisis')).toBe(true);
     expect(bodyOutputs(body)['circulation.quantities.oxygen-delivery-do2']).toBeNull();
     expect(body.props.blood_volume_ml + w.trace.outOf('body', 'volume:blood')).toBeCloseTo(baseline, 6);
-    expect(body.mass).toBe(FIXTURE.massKg); // blood mass conversion remains disabled
     expect(w.trace.failed()).toEqual([]);
     for (const component of w.registry.components.values()) {
       expect(component.props).not.toHaveProperty('dead');
@@ -103,6 +102,20 @@ describe('checkpoint 2: supported wound integration; missing kinetics explicitly
     }
   });
 
+  it('body mass is conserved including shed blood at the library blood density', () => {
+    const w = new World(defaultRegistry());
+    const body = w.registry.addComponent({ id: 'body', kind: 'body', material: 'flesh', mass: FIXTURE.massKg,
+      temperatureC: 37, contents: [], ports: [], condition: { capability: 1, control: 1, accuracy: 1 }, props: { male: 1 } });
+    const density = Number(libraryRow('circulation', 'quantities', 'circulation.quantities.blood-density')['Normal (70 kg man)']);
+    expect(density).toBeCloseTo(1.06, 2);
+    const shed = loseBlood(w, 'body', 1500) + loseBlood(w, 'body', 500);
+    expect(shed).toBe(2000);
+    const shedKg = w.trace.outOf('body', 'mass:blood');
+    expect(shedKg).toBeCloseTo(2000 * density / 1000, 9);
+    expect(body.mass + shedKg).toBeCloseTo(FIXTURE.massKg, 9);
+    expect(body.mass).toBeLessThan(FIXTURE.massKg);
+    expect(w.trace.failed()).toEqual([]);
+  });
+
   it.todo('BLOCKED: library thrust bleed rate and clotting drive the never-bound timed delivery failure/crisis');
-  it.todo('BLOCKED: whole-body mass conservation including shed blood requires a blood density/composition model');
 });

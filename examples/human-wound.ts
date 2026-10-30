@@ -20,7 +20,7 @@ export const WOUND_FIXTURE = { seed: 1, woundAtS: 86400, delayS: 3600,
 export const BLOCKED = [
   'No library thrust rate or clotting value: bleeding and the untreated time course are disabled.',
   'No volume-to-flow curve or cascade kinetics: no predicted haemorrhage DO2 or timed organ failure.',
-  'No thrust pain band or blood density/body-mass coupling: these remain null.',
+  'No thrust pain band: it remains null.',
 ];
 const haul = muscularActivation(HAUL_ID);
 const fresh = (): Compartments => ({ resting: 1, active: 0, fatigued: 0 });
