@@ -6,16 +6,18 @@
  *
  * Inputs on `body.props` (all optional): height_cm, age_y, male (1 or 0) for the resting rate; acclimatisation (0 to 1,
  * default 1: the table's ceilings are the acclimatised ones); core_c (default: the recovery table's resting core);
- * sheltered (1 default; 0 for a wet cold night); work_w (external work, W); intake_kcal (food energy eaten); area_m2 and h.
+ * sheltered (1 default; 0 for a wet cold night); work_w (external work, W); intake_kcal (food energy eaten); area_m2 (else
+ * DuBois from height_cm) and h (else ISO 7730's convection and radiation). On the room: rh (atmosphere's) and air_speed_ms (0).
  * Outputs by library id on `body.props.outputs` (read them with `bodyOutputs`): alertness, sleep_debt, circadian,
  * core_c, core_state, work_capacity_heat, water_deficit_pct, hydration_state, endurance_hydration, energy_balance_kcal,
- * pal, rmr_kcal, sweat_l_per_h, wbgt_c, wbgt_ceiling_c, acclimatisation, fatigue_met_hours, and the matching `*_row` ids.
+ * pal, rmr_kcal, sweat_l_per_h, breath_water_l_per_h, skin_diffusion_l_per_h, urine_l_per_h, wbgt_c, wbgt_ceiling_c,
+ * acclimatisation, fatigue_met_hours, and the matching `*_row` ids.
  */
 import type { Process } from "./scheduler.ts";
 import { addHeat, type World } from "./world.ts";
 import type { Component } from "./registry.ts";
-import { KCAL_J, SWEAT_LATENT, heatFlow, metabolicHeat, restingMetabolicRate } from "./physics.ts";
-import { libraryTable, type LibraryRow } from "./library.ts";
+import { C_TO_K, KCAL_J, M, O2_ENERGY_J_PER_L, P_SEA_LEVEL, SWEAT_LATENT, heatFlow, metabolicHeat, molesInVolume, restingMetabolicRate, waterVapourPressure } from "./physics.ts";
+import { libraryMeta, libraryRow, libraryTable, type LibraryRow } from "./library.ts";
 import { accumulateExposure } from "./atmosphere.ts";
 
 export type BodyOutputs = Record<string, number | string | null>;
@@ -26,8 +28,43 @@ export function bodyOutputs(body: Component): BodyOutputs {
   return (p.outputs ??= {});
 }
 
-/** PHYSIOLOGY.md section 4 [model, proposed]: sweat L/h = clamp(0.3 + 0.25 MET + 0.1 over, 0.3, 2.5). In FLAGS.md. */
-const SWEAT = { base: 0.3, perMet: 0.25, perOver: 0.1, min: 0.3, max: 2.5, coolFactor: 0.2, coreGateC: 37.0 } as const;
+/**
+ * Heat exchange of the skin and the breath, ISO 7730:2005 section 4 (Fanger 1970, the PMV heat balance), per m2
+ * of skin with M - W in W/m2 and the vapour pressure pa in Pa: skin temperature in comfort 35.7 - 0.028 (M - W); skin
+ * diffusion 3.05e-3 (5733 - 6.99 (M - W) - pa); respiratory latent 1.7e-5 M (5867 - pa) and dry 0.0014 M (34 - ta);
+ * radiation 3.96e-8 fcl (Tcl^4 - Tr^4) with fcl 1 (no clothing) and the mean radiant temperature taken as the air's;
+ * convection hc = max(2.38 |tcl - ta|^0.25, 12.1 sqrt(v)). The Lewis relation, 16.5 K/kPa, is ASHRAE Handbook Fundamentals
+ * ch. 9 (Thermal Comfort). Body surface area is DuBois and DuBois 1916 (Arch Intern Med 17:863), 0.007184 W^0.425 H^0.725
+ * (W kg, H cm). None is a library row yet and none was re-opened in session 2540 (web access denied): FLAGS.md, physiology.
+ */
+const PMV = { skinC: 35.7, skinPerW: 0.028, diff: 3.05e-3, diffPa: 5733, diffPerW: 6.99, resLatent: 1.7e-5, resPa: 5867,
+  resDry: 0.0014, resC: 34, rad: 3.96e-8, hcFree: 2.38, hcForced: 12.1, lewisKPerKPa: 16.5 } as const;
+const DUBOIS = { k: 0.007184, mass: 0.425, height: 0.725 } as const;
+
+/**
+ * Urine, Guyton and Hall, Textbook of Medical Physiology, ch. 29 (the library's ANA-ORG reference): a 70 kg adult excretes about 600 mOsm of
+ * solute a day; the kidney concentrates urine to at most 1,200 mOsm/L (the obligatory volume, 600/1200 = 0.5 L/day) and
+ * dilutes it to as little as 50 mOsm/L (600/50 = 12 L/day at most). Urine is taken as 1 kg/L.
+ */
+const URINE = { soluteMosmDay: 600, maxMosmL: 1200, minMosmL: 50 } as const;
+
+/** Body surface area, m2: the host's `area_m2`, else DuBois from height and mass; null when neither is known. */
+export function bodyArea(body: Component): number | null {
+  if (body.props.area_m2 !== undefined) return body.props.area_m2;
+  const h = body.props.height_cm;
+  return h === undefined ? null : DUBOIS.k * Math.pow(body.mass, DUBOIS.mass) * Math.pow(h, DUBOIS.height);
+}
+
+/** Dry (convective plus radiant) heat flow from skin at `skinC` to air at `airC`, W: the host's `h` if it gives one, else ISO 7730. */
+function dryHeatW(body: Component, area: number, skinC: number, airC: number, windMS: number): number {
+  if (body.props.h !== undefined) return heatFlow(body.props.h, area, skinC - airC);
+  const k = (c: number) => c + C_TO_K;
+  return area * (PMV.rad * (k(skinC) ** 4 - k(airC) ** 4) + convectionH(skinC, airC, windMS) * (skinC - airC));
+}
+
+function convectionH(skinC: number, airC: number, windMS: number): number {
+  return Math.max(PMV.hcFree * Math.abs(skinC - airC) ** 0.25, PMV.hcForced * Math.sqrt(windMS));
+}
 
 interface Band { lo: number; hi: number; row: LibraryRow }
 
@@ -58,6 +95,7 @@ interface Tables {
   palMin: number; palMax: number;
   needH: number; splitQuality: number; fatigueResetH: number; restCoreC: number;
   heatGainDays: number; heatLossDays: number;
+  sweatMaxLph: number; rq: number;
 }
 
 let tables: Tables | null = null;
@@ -104,6 +142,9 @@ function lib(): Tables {
     restCoreC: num(rec("core-temperature"), /returns to ([\d.]+) if sheltered/, "the resting core"),
     heatGainDays: num(String(heat["Time to gain"]), /([\d.]+) to ([\d.]+) days/, "the heat gain clock", 2),
     heatLossDays: num(String(heat["Time to lose"]), /about ([\d.]+) days/, "the heat loss clock"),
+    // the hydration table's source (PHY-HYD): "sweat rates 0.5 to over 2.5 L/h in heat"; the core_temp row's "sweat rate at max"
+    sweatMaxLph: num(libraryMeta("physiology", "hydration").source, /sweat rates [\d.]+ to over ([\d.]+) L\/h/, "the maximum sweat rate"),
+    rq: num(String(libraryRow("gasdynamics", "box_model", "gasdynamics.box_model.oxygen-and-carbon-dioxide-move-together").Formula), /produced \/ ([\d.]+)/, "the respiratory quotient"),
   };
   return tables;
 }
@@ -262,10 +303,10 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     p.fatigue_met_hours = (p.fatigue_met_hours ?? 0) + met * dtH;
     if (act.quality !== null) p.slept_effective_h = (p.slept_effective_h ?? 0) + dtH * act.quality;
 
-    // exchange with the air: h A dT, skin area 1.9 m2, h 10 in still air
-    const q = heatFlow(p.h ?? 10, p.area_m2 ?? 1.9, b.temperatureC - r.temperatureC) * dt;
-    addHeat(w, b, -q); addHeat(w, r, q);
-    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: room, amount: q });
+    // the air: temperature, vapour pressure (the room's rh, which atmosphere keeps; a room without one is dry air) and air speed
+    const area = bodyArea(b);
+    if (area === null) throw new Error(`physiology: ${body} has neither area_m2 nor height_cm for its skin area`);
+    const airC = r.temperatureC, paPa = (r.props.rh ?? 0) * waterVapourPressure(airC), windMS = r.props.air_speed_ms ?? 0;
 
     // heat stress: WBGT against the work class's ceiling, core drift above it (WBGT is the room's dry temperature unless it carries wbgt_c)
     const wbgt = r.props.wbgt_c ?? r.temperatureC;
@@ -274,22 +315,57 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     if (act.quality === null && wbgt > wbgtCeiling(met, 0)) p.heat_day = 1;
     p.core_c += over * wbgtClass(met).driftCPerHPerC * dtH;
 
-    // sweat: PHYSIOLOGY.md section 4 (SWEAT), cooling by evaporation falling with humidity; the tissue sits above 37 C to sweat fully
+    // ISO 7730 heat balance (PMV): the breath's dry and latent heat, the skin's diffusion, and the sweat the balance requires at
+    // the comfort skin temperature (ISO 7933's required evaporation, Ereq = M - W - Cres - Eres - C - R), at most the library's
+    // maximum, which the core_temp row's "sweat rate at max" takes; evaporation is capped by the Lewis relation, the rest drips
+    const netWm2 = heatWatt / area, skinC = PMV.skinC - PMV.skinPerW * netWm2;
+    const resDryW = PMV.resDry * mWatt * (PMV.resC - airC);
+    const resLatentW = Math.max(0, PMV.resLatent * mWatt * (PMV.resPa - paPa));
+    const diffW = Math.max(0, PMV.diff * area * (PMV.diffPa - PMV.diffPerW * netWm2 - paPa));
+    const requiredW = heatWatt - resDryW - resLatentW - dryHeatW(b, area, skinC, airC, windMS);
+    const evapMaxW = PMV.lewisKPerKPa * convectionH(skinC, airC, windMS) * area * Math.max(0, waterVapourPressure(skinC) - paPa) / 1000;
     const hotCore = coreRow(p.core_c).sweatAtMax;
-    let sweatLph = hotCore ? SWEAT.max
-      : Math.min(SWEAT.max, Math.max(SWEAT.min, SWEAT.base + SWEAT.perMet * met + SWEAT.perOver * over)) * (b.temperatureC > SWEAT.coreGateC ? 1 : SWEAT.coolFactor);
-    let sweatKg = sweatLph / 3600 * dt;
+    const sweatW = hotCore ? t.sweatMaxLph / 3600 * SWEAT_LATENT : Math.min(t.sweatMaxLph / 3600 * SWEAT_LATENT, Math.max(0, requiredW - diffW));
+    let breathKg = resLatentW * dt / SWEAT_LATENT;
+    let diffKg = Math.min(diffW, evapMaxW) * dt / SWEAT_LATENT;
+    let sweatKg = sweatW * dt / SWEAT_LATENT;
+    let evapSweatKg = Math.min(sweatKg, Math.max(0, evapMaxW * dt / SWEAT_LATENT - diffKg));
+    // metabolic water: oxidising glucose (6 O2 -> 6 CO2 + 6 H2O) or a fatty acid (palmitic, 23 O2 -> 16 CO2 + 16 H2O) gives one
+    // H2O per CO2, so water = RQ x O2, with the O2 of the MET cost (STPD litres at physics.ts's energy per litre) and the
+    // library's RQ (gasdynamics box_model); protein's share (its nitrogen leaves as urea) is not separated
+    const metabolicKg = t.rq * molesInVolume(P_SEA_LEVEL, mWatt / O2_ENERGY_J_PER_L / 1000, C_TO_K) * M.H2O * dt;
+    // urine: the kidney passes the surplus over the body's starting water, between the obligatory and the most dilute volume
+    const urineDay = (osm: number) => URINE.soluteMosmDay / osm / 86400 * dt;
+    let urineKg = Math.min(urineDay(URINE.minMosmL), Math.max(urineDay(URINE.maxMosmL), metabolicKg - (p.waterDeficitKg ?? 0) - breathKg - diffKg - sweatKg));
     const held = b.contents.find(x => x.substance === "water" && x.phase === "liquid");
-    if (held && sweatKg > held.mass) { sweatKg = held.mass; sweatLph = sweatKg * 3600 / dt; }
-    const evapJ = sweatKg * SWEAT_LATENT * Math.max(0, 1 - (r.props.rh ?? 0.6));
-    addHeat(w, b, -evapJ);
-    p.waterDeficitKg = (p.waterDeficitKg ?? 0) + sweatKg;
+    if (held) reg.addContent(b, "water", "liquid", metabolicKg);
+    p.waterDeficitKg = (p.waterDeficitKg ?? 0) - metabolicKg;
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: "oxidation", to: body, amount: metabolicKg, note: "metabolic water" });
+    const outKg = breathKg + diffKg + sweatKg + urineKg;
+    if (held && outKg > held.mass) {
+      const s = held.mass / outKg;
+      breathKg *= s; diffKg *= s; sweatKg *= s; evapSweatKg *= s; urineKg *= s;
+    }
+    const dripKg = sweatKg - evapSweatKg, lostKg = breathKg + diffKg + sweatKg + urineKg;
+    const sweatLph = sweatKg * 3600 / dt;
+    const dryJ = dryHeatW(b, area, b.temperatureC, airC, windMS) * dt, resDryJ = resDryW * dt;
+    const skinLatentJ = (diffKg + evapSweatKg) * SWEAT_LATENT, breathLatentJ = breathKg * SWEAT_LATENT;
+    addHeat(w, b, -(dryJ + resDryJ + skinLatentJ + breathLatentJ)); addHeat(w, r, dryJ + resDryJ);
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: room, amount: dryJ, note: "skin convection and radiation" });
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: room, amount: resDryJ, note: "breath, dry" });
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "sweat-latent", amount: skinLatentJ });
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "breath-latent", amount: breathLatentJ });
+    p.waterDeficitKg = (p.waterDeficitKg ?? 0) + lostKg;
     p.sweat_kg = (p.sweat_kg ?? 0) + sweatKg;
+    p.urine_kg = (p.urine_kg ?? 0) + urineKg;
     p.waterDeficitPct = p.waterDeficitKg / mass * 100;
-    if (held) reg.addContent(b, "water", "liquid", -sweatKg);
-    reg.addContent(r, "water", "gas", sweatKg);
-    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: sweatKg, note: "sweat" });
-    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "sweat-latent", amount: evapJ });
+    if (held) reg.addContent(b, "water", "liquid", -lostKg);
+    reg.addContent(r, "water", "gas", breathKg + diffKg + evapSweatKg);
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: evapSweatKg, note: "sweat" });
+    if (dripKg > 0) w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: "drip", amount: dripKg, note: "sweat" });
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: diffKg, note: "skin diffusion" });
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: breathKg, note: "breath" });
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: "urine", amount: urineKg, note: "urine" });
 
     // exposure
     accumulateExposure(b, r, dt);
@@ -316,6 +392,7 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     out.acclimatisation = p.acclimatisation;
     out.core_c = p.core_c; out.core_state = core.state; out.core_row = String(core.row.id); out.work_capacity_heat = core.workCapacity;
     out.sweat_l_per_h = sweatLph;
+    out.breath_water_l_per_h = breathKg * 3600 / dt; out.skin_diffusion_l_per_h = diffKg * 3600 / dt; out.urine_l_per_h = urineKg * 3600 / dt;
     out.water_deficit_pct = p.waterDeficitPct; out.hydration_state = hyd.effect; out.hydration_row = String(hyd.row.id); out.endurance_hydration = hyd.endurance;
   } };
 }

@@ -206,7 +206,7 @@ describe("deficiency", () => {
   });
 
   it("sodium: sweat adds to the day's use; iron: blood lost and menstrual days add theirs", () => {
-    const sweaty = build({ withPhysiology: true, body: MAN });
+    const sweaty = build({ withPhysiology: true, body: MAN, met: metOf("smithing") }); // a 22 C rest needs no sweat (ISO 7730 heat balance)
     sweaty.sch.run(sweaty.w, 600, 600);
     sweaty.sch.run(sweaty.w, 5 * HOUR, 600);
     const traced = sweaty.w.trace.transfers.filter(f => f.note === "sweat").reduce((a, f) => a + f.amount, 0);

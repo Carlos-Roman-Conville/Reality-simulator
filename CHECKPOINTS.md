@@ -63,8 +63,8 @@ are not exercised. No unsupported calibration has been enabled for this checkpoi
 
 | Module / FLAGS topics touched | Scope and limitation |
 | --- | --- |
-| Physiology: sweat coefficients, skin area/h, thermoregulating tissue vs core | The inherited PHYSIOLOGY/ENG-HT model is exercised unchanged; energy bookkeeping is not validation of heat control. The fixture loses its full initial 40 kg water by day 7 and continues work. This is an exposed model failure, not a plausible surviving human. |
-| Physiology: urine/breath losses, hydration threshold shift, core cooling, shade bonus, heat-day definition, cold drift | Only sweat/food/drinking move water; absent loss, cooling and cold paths remain absent. The daily sheltered core reset is the library rule; constant final core does not prove thermal safety. No shade bonus is added; heat acclimatisation retains its existing any-hot-step definition. |
+| Physiology: sweat, skin area/h, thermoregulating tissue vs core | Superseded by `hydration-week` (2540, below): ISO 7730 heat balance, DuBois area. Until 2540 the fixture lost its full 40 kg of water by day 7. The comfort skin temperature, the lack of clothing and the dripping are FLAGS limits. Energy bookkeeping is still not validation of heat control. |
+| Physiology: hydration threshold shift, core cooling, shade bonus, heat-day definition, cold drift | Urine, breath, skin diffusion and metabolic water now move water (2540). Cooling and cold paths remain absent. The daily sheltered core reset is the library rule; a constant final core does not prove thermal safety. No shade bonus is added; heat acclimatisation keeps its any-hot-step definition. |
 | Physiology: sleep quality and debt cap | Continuous six/four-hour nights use no unsupported quality weights or debt cap. No split-night or sleep-quality calibration is claimed. |
 | Nutrition: starting fat, lean catabolism, starvation clock, glycogen water/body mass | Initial fat and water are declared host inputs. Mass is the existing fat-only composition proxy: it excludes changing water and glycogen mass, food oxidation and lean tissue. No survival/death or starvation-stage inference is made. |
 | Nutrition: deficiency stages, pools without reserves, recovery clocks | Only numeric pooled reserves and stage 1 are exercised. Sodium is depleted on day 1; magnesium later. Unpooled nutrients have no invented reserve; stages 2/3 stay disabled. A seven-day run cannot validate long deficiency/recovery times. |
@@ -76,9 +76,61 @@ are not exercised. No unsupported calibration has been enabled for this checkpoi
 | Neurology: sleep clearance, baseline driver sizes and decay times, deficiency/genetics, liver function | The example explicitly marks asleep; the existing immediate adenosine reset and exercise/heat drivers are exercised. No deficiency effect size, starvation/hunger driver or liver model is fabricated. Day-end circuit snapshots do not prove cognition or dehydration survival. |
 | Neurology: EC50/tolerance/rebound, inverted-U circuits, sleep quality, outputs/ranges | No drugs or calibration overrides are supplied. EC50 occupancies stay null and tolerance build stays off. Inverted-U terms and sleep quality remain disabled; circuit row ids, existing baseline-centred reads and clamps are reported, not validated against measured performance. |
 
-The most important downstream warning is the dehydration/continued-activity result.
-Conservation passes precisely because the water ledger tracks this depletion;
-it must not be presented as a successful physiological survival prediction.
+The dehydration/continued-activity warning that stood here is fixed by 2540 (below).
+Survival and activity shutdown under real dehydration remain untested.
+
+### hydration-week (2540, 2026-10-30): sweat and water out
+
+Test `test/hydration-week.test.ts`; the week's ledger now prints a `water` line per day.
+The legacy sweat constants are gone (FLAGS.md, physiology). The water ledger is:
+
+- in: drink, food water, and metabolic water (RQ x O2 by stoichiometry, with the library's RQ)
+- out: sweat, skin diffusion and breath (ISO 7730 terms), and urine (Guyton and Hall:
+  0.5 L/day obligatory, any surplus up to 12 L/day)
+
+Sweat is the evaporation the heat balance requires at the ISO 7730 comfort skin
+temperature, less the skin diffusion, at most the hydration source's 2.5 L/h.
+A sourced sweat fit by MET and WBGT could not be opened (web access denied); see FLAGS.md.
+
+Day 7 of the unchanged fixture (3 kg drink a day, 18–24 C, MET 3–6):
+
+| Water | kg |
+| --- | --- |
+| In | 4.311 (food and drink 3.813, metabolic 0.498) |
+| Out | 4.311 |
+| Out: sweat (of which about 0.87 dripped) | 2.395 |
+| Out: urine | 0.953 |
+| Out: skin diffusion | 0.570 |
+| Out: breath | 0.393 |
+| Deficit | 0.359 (0.51%, row `physiology.hydration.0-to-1`) |
+
+Days 2–7 repeat within 0.01 kg. Day 1 passes 1.21 kg of urine while the first surplus clears.
+
+Across the week the deficit stays between -0.90% and 1.59%. The peak is day 1 at 17:58,
+after the 15:00–17:00 carpentry and smithing hours. Every minute is inside the table's
+mild band (the rows under 2%, "1 to 2": thirst, Endurance pool x0.95).
+
+The daily water out, 4.3 kg, is above the library's 3.7 L/day total need (PHY-HYD) for a
+man doing eight hours of MET 3 to 6 work. Mass is 69.537 kg on day 7: the fat-only proxy,
+unchanged.
+
+A MET 6 worker in a 32 C, 50% room (BoM WBGT 31.4 C, core 37.85 C after an hour) loses
+water in the first hour as follows:
+
+| Hot fixture, first hour | L |
+| --- | --- |
+| Sweat | 0.728 |
+| Breath | 0.042 |
+| Urine (obligatory) | 0.021 |
+| Skin diffusion | 0.013 |
+| Metabolic water made | 0.055 |
+| Net loss | 0.75 |
+
+Both the sweat and the net loss are inside the hydration source's 0.5 to 2.5 L/h.
+
+Water closes for the body and for body plus room every minute. Water leaving to the
+`urine` and `drip` sinks and arriving from `oxidation` is traced. The sodium pool still
+reaches its depletion level on day 1, so `deficiency_sodium` stays 1.
 
 ## Checkpoint 2 — human wound (2531, 2026-10-30): partial, acceptance blocked
 

@@ -34,7 +34,8 @@ export function runHorseStable() {
   const started = performance.now(), w = new World(defaultRegistry()), sch = new Scheduler();
   const { profile, rmrKcalDay, heartOutputLMin } = horseRows();
   const body = component('horse', 'body', STABLE.massKg, profile.temperatureC);
-  body.props = { rmr_kcal_day: rmrKcalDay };
+  // No horse skin-area row (FLAGS, independence): the former human stand-in, 1.9 m2 and h 10, is declared here, not in physiology.
+  body.props = { rmr_kcal_day: rmrKcalDay, area_m2: 1.9, h: 10 };
   body.contents = [{ substance: 'water', phase: 'liquid', mass: STABLE.massKg * HUMAN.waterKg / HUMAN.massKg }];
   const room = component('stable', 'room', airDensity(P_SEA_LEVEL, STABLE.minC + C_TO_K) * STABLE.volumeM3, STABLE.minC);
   room.props = { volume_m3: STABLE.volumeM3, pressurePa: P_SEA_LEVEL, ach: DOOR.open };

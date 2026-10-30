@@ -114,7 +114,7 @@ describe("energy", () => {
     const cap = x.w.registry.heatCapacity(x.body), t0 = x.body.temperatureC;
     x.sch.run(x.w, 3 * 3600, 10);
     const sum = (to: string, from: string) => x.w.trace.transfers.filter(f => f.quantity === "energy" && f.to === to && f.from === from).reduce((a, f) => a + f.amount, 0);
-    const net = sum("body", "metabolism") - sum("room", "body") - sum("sweat-latent", "body");
+    const net = sum("body", "metabolism") - sum("room", "body") - sum("sweat-latent", "body") - sum("breath-latent", "body");
     expect(cap * (x.body.temperatureC - t0)).toBeCloseTo(net, 3);
   });
 });
@@ -214,11 +214,17 @@ describe("water", () => {
     x.sch.run(x.w, 2 * 3600, 10);
     expect(x.w.trace.checks.length).toBeGreaterThan(1000);
     expect(x.w.trace.failed()).toEqual([]);
-    const sweat = x.w.trace.transfers.filter(f => f.note === "sweat").reduce((a, f) => a + f.amount, 0);
+    // sweat, skin diffusion, breath and urine all leave the body; what evaporates reaches the room, drips and urine leave both
+    const water = (pred: (f: (typeof x.w.trace.transfers)[number]) => boolean) => x.w.trace.transfers.filter(f => f.quantity === "mass:water" && pred(f)).reduce((a, f) => a + f.amount, 0);
+    const sweat = water(f => f.note === "sweat"), lost = water(f => f.from === "body"), toRoom = water(f => f.from === "body" && f.to === "room");
+    const made = water(f => f.note === "metabolic water");
     expect(sweat).toBeGreaterThan(1);
-    expect(x.w.registry.contentMass(x.body, "water")).toBeCloseTo(40 - sweat + 0.5, 9);
-    expect(x.w.registry.contentMass(x.room, "water")).toBeCloseTo(sweat, 9);
-    expect(x.out.water_deficit_pct).toBeCloseTo((sweat - 0.5) / 70 * 100, 9);
+    expect(water(f => f.note === "urine")).toBeGreaterThan(0);
+    expect(water(f => f.note === "breath")).toBeGreaterThan(0);
+    expect(made).toBeGreaterThan(0);
+    expect(x.w.registry.contentMass(x.body, "water")).toBeCloseTo(40 - lost + made + 0.5, 9);
+    expect(x.w.registry.contentMass(x.room, "water")).toBeCloseTo(toRoom, 9);
+    expect(x.out.water_deficit_pct).toBeCloseTo((lost - made - 0.5) / 70 * 100, 9);
   });
 
   it("reports the deficit's row and its effect", () => {

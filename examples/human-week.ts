@@ -21,7 +21,7 @@ import { P_SEA_LEVEL, airDensity, C_TO_K, KCAL_J } from '../src/physics.ts';
 
 export const FIXTURE = { date: '2026-10-29', days: 7, stepS: 60, massKg: 70, waterKg: 40,
   fatKg: 15, volumeM3: 40, minC: 18, maxC: 24, minHour: 5, maxHour: 15, daylightH: 12,
-  watchDays: [3, 5], drinkKg: 0.5 } as const;
+  watchDays: [3, 5], drinkKg: 0.5, drinkHours: [7, 10, 12, 15, 18, 21] } as const;
 export const MEALS: Record<number, MealItem[]> = {
   7: [{ food: 'nutrition.foods.oatmeal-dry', kg: 0.15 }, { food: 'nutrition.foods.milk-goat', kg: 0.25 }],
   12: [{ food: 'nutrition.foods.bread-fresh', kg: 0.3 }, { food: 'nutrition.foods.cheese-suffolk-or-cheddar', kg: 0.1 }, { food: 'nutrition.foods.oranges', kg: 0.2 }],
@@ -70,7 +70,7 @@ export function runHumanWeek(extend?: (w: World, body: Component, room: Componen
     world.env.outsideC = diurnalC(h, FIXTURE.maxC, FIXTURE.minC, FIXTURE.maxHour, FIXTURE.minHour);
     if (world.t % 3600 === 0) {
       if (MEALS[h]) eatMeal(world, 'body', MEALS[h]!);
-      if ([7, 10, 12, 15, 18, 21].includes(h)) ingest(world, 'body', { waterKg: FIXTURE.drinkKg });
+      if ((FIXTURE.drinkHours as readonly number[]).includes(h)) ingest(world, 'body', { waterKg: FIXTURE.drinkKg });
     }
   } });
   sch.add(roomAirProcess('room'));
@@ -84,9 +84,10 @@ export function runHumanWeek(extend?: (w: World, body: Component, room: Componen
   sch.add(nutritionProcess('body', opts)); sch.add(neurologyProcess('body', opts));
   extend?.(w, body, room, sch);
   let peak = 0, cursor = 0, pendingKcal = 0;
-  let energyIn = 0, energyOut = 0, stored = 0, waterIn = 0, waterOut = 0;
+  let energyIn = 0, energyOut = 0, stored = 0, waterIn = 0, waterOut = 0, metabolicWater = 0;
+  const waterOutBy: Record<string, number> = {};
   const days: { day: number; kcalIn: number; kcalOut: number; storedKcal: number; massKg: number;
-    waterInKg: number; waterOutKg: number; waterKg: number; waterDeficitKg: number;
+    waterInKg: number; metabolicWaterKg: number; waterOutKg: number; waterOutByKg: Record<string, number>; waterKg: number; waterDeficitKg: number;
     roomCo2PeakPpm: number; outputs: ReturnType<typeof bodyOutputs>; circuits: Record<string, number | string | null> }[] = [];
   sch.add({ name: 'audit', every: 1, step(world, dt) {
     const out = bodyOutputs(body);
@@ -100,7 +101,8 @@ export function runHumanWeek(extend?: (w: World, body: Component, room: Componen
       }
       if (x.quantity === 'mass:water') {
         if (x.to === 'body') waterIn += x.amount;
-        if (x.from === 'body') waterOut += x.amount;
+        if (x.to === 'body' && x.from === 'oxidation') metabolicWater += x.amount;
+        if (x.from === 'body') { waterOut += x.amount; waterOutBy[x.note ?? x.to] = (waterOutBy[x.note ?? x.to] ?? 0) + x.amount; }
       }
     }
     cursor = world.trace.transfers.length;
@@ -113,10 +115,12 @@ export function runHumanWeek(extend?: (w: World, body: Component, room: Componen
     peak = Math.max(peak, roomGasFraction(world, room, 'co2') * 1e6);
     if ((world.t + dt) % 86400 === 0) {
       days.push({ day: days.length + 1, kcalIn: energyIn, kcalOut: energyOut, storedKcal: stored, massKg: body.mass,
-        waterInKg: waterIn, waterOutKg: waterOut, waterKg: world.registry.contentMass(body, 'water'),
+        waterInKg: waterIn, metabolicWaterKg: metabolicWater, waterOutKg: waterOut, waterOutByKg: { ...waterOutBy },
+        waterKg: world.registry.contentMass(body, 'water'),
         waterDeficitKg: body.props.waterDeficitKg, roomCo2PeakPpm: peak, outputs: { ...out },
         circuits: Object.fromEntries(neuroCircuits().map(c => [c.rowId, out[c.id]!])) });
-      energyIn = energyOut = stored = waterIn = waterOut = peak = 0;
+      energyIn = energyOut = stored = waterIn = waterOut = metabolicWater = peak = 0;
+      for (const k of Object.keys(waterOutBy)) delete waterOutBy[k];
     }
   } });
   sch.run(w, FIXTURE.days * 86400, FIXTURE.stepS);
@@ -133,6 +137,8 @@ if ((import.meta as ImportMeta & { main?: boolean }).main) {
   for (const d of run.days) {
     console.log([d.day, d.kcalIn, d.kcalOut, d.storedKcal, d.massKg, d.waterDeficitKg,
       d.outputs.sleep_debt, d.outputs.alertness, d.outputs.core_c, d.roomCo2PeakPpm].map(v => typeof v === 'number' ? v.toFixed(3) : v).join(' '));
+    console.log('water', JSON.stringify({ in_kg: +d.waterInKg.toFixed(3), metabolic_kg: +d.metabolicWaterKg.toFixed(3), out_kg: +d.waterOutKg.toFixed(3),
+      ...Object.fromEntries(Object.entries(d.waterOutByKg).map(([k, v]) => [`${k.replace(' ', '_')}_kg`, +v.toFixed(3)])), deficit_pct: +(d.waterDeficitKg / FIXTURE.massKg * 100).toFixed(3), hydration_row: d.outputs.hydration_row }));
     console.log('nutrients', JSON.stringify(Object.fromEntries(Object.entries(d.outputs).filter(([k]) => k.startsWith('deficiency_') || k.startsWith('pool_')))));
     console.log('circuits', JSON.stringify(d.circuits));
   }

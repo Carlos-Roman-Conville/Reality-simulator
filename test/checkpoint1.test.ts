@@ -34,7 +34,7 @@ describe('checkpoint 1: an integrated human week', () => {
       expect(d.kcalIn).toBeCloseTo(kcal, 9);
       expect(Math.abs(d.kcalIn - d.kcalOut - d.storedKcal)).toBeLessThan(d.kcalOut * 0.01);
       expect(d.outputs.energy_unplaced_kcal).toBeCloseTo(0, 6);
-      expect(d.waterInKg).toBeCloseTo(foodWater + 6 * FIXTURE.drinkKg, 9);
+      expect(d.waterInKg - d.metabolicWaterKg).toBeCloseTo(foodWater + 6 * FIXTURE.drinkKg, 9); // metabolic water: physiology (2540)
       water += d.waterInKg - d.waterOutKg;
       expect(d.waterKg).toBeCloseTo(water, 8);
       expect(d.waterDeficitKg).toBeCloseTo(FIXTURE.waterKg - water, 8);
