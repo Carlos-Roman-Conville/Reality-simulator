@@ -17,4 +17,6 @@ export * from "./circulation.ts";
 export * from "./anatomy.ts";
 export * from "./muscular.ts";
 export * from "./medicine.ts";
+export * from "./ecology.ts";
+export * from "./population.ts";
 export * from "./lab/still.ts";
