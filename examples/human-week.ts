@@ -43,7 +43,8 @@ function schedule(watch: boolean): ScheduleEntry[] {
     ...[8, 9, 10, 11, 13, 14, 15, 16].map((h, i) => ({ fromH: h, toH: h + 1, activity: work[i % work.length]! })),
   ];
 }
-export function runHumanWeek() {
+/** Optional checkpoint processes run after the week physiology and before its audit. */
+export function runHumanWeek(extend?: (w: World, body: Component, room: Component, sch: Scheduler) => void) {
   const started = performance.now(), w = new World(defaultRegistry()), sch = new Scheduler();
   const body = component('body', 'body', FIXTURE.massKg, 37);
   body.props = { height_cm: 175, age_y: 30, male: 1, fat_kg: FIXTURE.fatKg };
@@ -81,6 +82,7 @@ export function runHumanWeek() {
   } });
   sch.add(breathingProcess('body', 'room', { every: 1 }));
   sch.add(nutritionProcess('body', opts)); sch.add(neurologyProcess('body', opts));
+  extend?.(w, body, room, sch);
   let peak = 0, cursor = 0, pendingKcal = 0;
   let energyIn = 0, energyOut = 0, stored = 0, waterIn = 0, waterOut = 0;
   const days: { day: number; kcalIn: number; kcalOut: number; storedKcal: number; massKg: number;

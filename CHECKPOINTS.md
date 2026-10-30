@@ -79,3 +79,57 @@ are not exercised. No unsupported calibration has been enabled for this checkpoi
 The most important downstream warning is the dehydration/continued-activity result.
 Conservation passes precisely because the water ledger tracks this depletion;
 it must not be presented as a successful physiological survival prediction.
+
+## Checkpoint 2 — human wound (2531, 2026-10-30): partial, acceptance blocked
+
+Run `node --experimental-strip-types examples/human-wound.ts`.
+Gate: `npx vitest run && npx tsc --noEmit && node --experimental-strip-types examples/human-wound.ts > /dev/null`
+(PowerShell uses `$null` for the redirect and separate commands with exit checks.)
+
+The example runs three independent copies of checkpoint 1 with the same seed:
+bound immediately, bound after one hour, and never bound. Output is interleaved
+by day for comparison. A small optional extension hook in `runHumanWeek` adds
+checkpoint processes before its existing audit; default checkpoint-1 behavior
+and tests remain unchanged. Anatomy adds zero-mass organ/tissue views. Medicine
+creates a class-II thrust at day 2 05:00. The left hand hauls for one minute at
+08:00 on days 1 and 2 using the activation row and its MET in physiology, then
+rests while the ordinary week duties continue. Medicine uses the day's work/rest,
+nutrition and sleep factors. Organ snapshots run hourly after breathing and
+medicine; muscle fractions and the existing mass proxy are checked every minute.
+
+The daily ledger includes library-id blood volume, DO2 and medicine outputs,
+organ functions below one and unknown organs, unknown thrust pain as null, sick
+and wound lists, left-hand peak/end fatigue and crisis records. Right-hand
+fatigue is null because it is not simulated. The three simulations are isolated,
+not three people sharing one room. No wound-to-strength multiplier is invented.
+
+**This checkpoint is not fully accepted.** The task's requested untreated
+haemorrhage trajectory cannot be computed from the supplied library: there is
+no thrust bleed rate or clotting value, no blood-volume-to-cardiac-output curve,
+and no numeric downstream organ-cascade kinetics. Rates stay null; binding is
+scheduled and recorded, but all three runs retain their blood and produce no
+haemorrhage crisis. A separate test prescribes the circulation table's loss
+amounts, verifies class III/IV perfusion and the anatomy crisis record, and
+verifies that no dead flag is set. That is a response to supplied loss, not a
+predicted untreated wound course or a quantified DO2 failure.
+
+The clean wound row gives 14–30 days, beyond the seven-day integrated run.
+`healingReference` separately advances a bound wound with neutral healing
+factors through the row's maximum. Seed 1 heals on its drawn day (14); seed 2
+draws infection and remains paused. Neither result forces infection or clears
+it. The integrated wounds remain open at day 7; their actual daily progress is
+tested against the medicine healing multipliers, including the day-2 work rule.
+
+Conservation checks cover blood volume, haemoglobin in the prescribed-loss
+probe, muscle fractions, and the inherited energy/water/nutrient/gas ledgers.
+The body mass assertion checks nutrition's existing fat-only proxy and that
+organ shells add no mass. Physical total body mass including shed blood cannot
+be validated without density/composition and coupling rules. This and the timed
+untreated-crisis case remain explicit TODO tests. Checkpoint 1's dehydration,
+continued activity, and other limitations above still apply. See FLAGS.md's
+checkpoint-2 section for missing inputs; no unsupported calibration is enabled.
+
+Validation: full gate passed on 2026-10-30: 216 tests passed in 18 files,
+2 explicit checkpoint-2 TODOs; `npx tsc --noEmit` passed; the shell example
+exited 0. Existing still and checkpoint-1 tests were unchanged and passed.
+The TODOs mean a green executable gate does not imply full checkpoint acceptance.
