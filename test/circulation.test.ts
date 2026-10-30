@@ -56,7 +56,9 @@ describe("circulation library and transfers", () => {
   it("recovers by the host's experimental tau with finite fluid and Hb dilution", () => {
     const { w, b, out } = fixture();
     loseBlood(w, "body", 1500); b.props.circulation_fluid_ml = 1500;
-    const tau = 86400; // Experimental input: the table has no numeric tau.
+    // The library's tau is null (no cited source, flags/circulation.md), so this stays a named host override.
+    expect(regulationLoops()["circulation.homeostasis.volume-and-salt-kidney"].tauSeconds).toBeNull();
+    const tau = 86400;
     const process = circulationProcess("body", { volumeTauSeconds: tau, kidneyWorking: true });
     process.step(w, tau / 2); process.step(w, tau / 2);
     expect(b.props.blood_volume_ml).toBeCloseTo(4900 - 1500 / Math.E, 9);
@@ -73,6 +75,7 @@ describe("circulation library and transfers", () => {
     circulationProcess("body").step(w, 86400);
     expect(b.props.blood_volume_ml).toBe(3400);
     expect(out.aerobic_today).toBeNull();
+    expect(circulationRules("quantities")["circulation.quantities.maximal-cardiac-output"]["Normal (70 kg man)"]).toBeNull();
     expect(out["circulation.quantities.oxygen-delivery-do2"]).toBeNull();
     expect(bleedingEffects(2100, 4900)).toMatchObject({ pressure: null, pressureUpperBound: 50 });
     expect(bleedingClass(0.4 * 4900, 4900).Class).toBe("III");

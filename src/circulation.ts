@@ -69,8 +69,9 @@ export interface CirculationOptions {
   /** Actual host flow/resistance, never inferred from volume by an invented curve. */
   resistance?: number;
   cardiacOutputLMin?: number;
+  /** Overrides the library's maximal cardiac output (null until a cited one exists). */
   maximalCardiacOutputLMin?: number;
-  /** Explicit experimental time constant; no numeric one exists in the library. */
+  /** Overrides the library's volume tau (null until a cited one exists). */
   volumeTauSeconds?: number;
   kidneyWorking?: boolean;
 }
@@ -117,10 +118,11 @@ export function bleed(w: World, body: string, rateMlMin: number, seconds: number
   return loseBlood(w, body, bound ? 0 : rateMlMin * seconds / 60 * (factor - clotting));
 }
 
-/** Loop metadata preserves qualitative time constants; no conversion of 'days' to a guessed number. */
+/** Loop metadata preserves qualitative time constants; tauSeconds is the library's cited number, null while none is cited
+ * (no conversion of 'days' to a guessed number). */
 export function regulationLoops() {
   return Object.fromEntries(libraryTable("circulation", "homeostasis").map(r => [String(r.id), {
-    target: r.Target, correction: r["Corrects by"], timeConstant: r["Time constant"], tauSeconds: null, failsWhen: r["Fails when"],
+    target: r.Target, correction: r["Corrects by"], timeConstant: r["Time constant"], tauSeconds: typeof r["tau (s)"] === "number" ? r["tau (s)"] : null, failsWhen: r["Fails when"],
   }]));
 }
 
@@ -131,12 +133,16 @@ export function circulationProcess(body: string, options: CirculationOptions = {
   for (const key of ["resistance", "cardiacOutputLMin", "maximalCardiacOutputLMin", "volumeTauSeconds"] as const) {
     const v = options[key]; if (v !== undefined) { finite(v, key); if ((key === "resistance" || key === "volumeTauSeconds") && v === 0) throw new Error(`circulation: zero ${key}`); }
   }
+  const libTau = regulationLoops()["circulation.homeostasis.volume-and-salt-kidney"].tauSeconds;
+  const libMax = row("quantities", "maximal-cardiac-output")["Normal (70 kg man)"];
+  const tau = options.volumeTauSeconds ?? libTau ?? undefined;
+  const maxCo = options.maximalCardiacOutputLMin ?? (typeof libMax === "number" ? libMax : undefined);
   return { name: "circulation", every: options.every ?? 1, step(w, dt) {
     finite(dt, "time"); initialiseCirculation(w, body);
     const b = w.registry.component(body), p = b.props, out = bodyOutputs(b);
-    if (options.volumeTauSeconds !== undefined && options.kidneyWorking === true) {
+    if (tau !== undefined && options.kidneyWorking === true) {
       const supply = p.circulation_fluid_ml ?? 0; finite(supply, "replacement fluid");
-      const ml = Math.min(supply, Math.max(0, p.circulation_initial_ml - p.blood_volume_ml) * -Math.expm1(-dt / options.volumeTauSeconds));
+      const ml = Math.min(supply, Math.max(0, p.circulation_initial_ml - p.blood_volume_ml) * -Math.expm1(-dt / tau));
       p.circulation_fluid_ml = supply - ml; p.blood_volume_ml += ml; p.blood_received_ml += ml;
       w.trace.record({ t: w.t, process: "circulation", quantity: "volume:blood", from: `${body}:replacement-fluid`, to: body, amount: ml });
       w.trace.check(w.t, `volume:replacement-fluid:${body}`, supply, p.circulation_fluid_ml + ml, 1e-6);
@@ -158,7 +164,7 @@ export function circulationProcess(body: string, options: CirculationOptions = {
     out["circulation.quantities.cardiac-output"] = co;
     out["circulation.quantities.oxygen-delivery-do2"] = delivery(co);
     out["circulation.quantities.mean-arterial-pressure"] = effects.pressure;
-    out.aerobic_today = delivery(options.maximalCardiacOutputLMin);
+    out.aerobic_today = delivery(maxCo);
     for (const r of libraryTable("circulation", "bleeding")) out[String(r.id)] = r.id === effects.row.id ? 1 : 0;
     for (const [organ, value] of Object.entries(effects.perfusion)) out[`circulation.quantities.perfusion-per-organ.${organ}`] = value;
     out["circulation.blood_gas.saturation-sao2"] = sat;
