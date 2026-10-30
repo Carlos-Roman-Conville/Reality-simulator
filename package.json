@@ -1,0 +1,11 @@
+{
+  "name": "reality-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A universal reality, life and civilisation simulation platform: physics, organisms, cognition, economy, government, society, history. Games are plugins on top.",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}
