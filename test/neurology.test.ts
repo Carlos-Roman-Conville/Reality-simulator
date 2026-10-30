@@ -212,7 +212,7 @@ describe("the circuits at rest and under the interaction rules", () => {
     for (const c of neuroCircuits()) expect(x.out[`${c.id}_row`]).toBe(`neurology.circuits.${c.id}`);
   });
   it("gives a substance no acute effect without an EC50 (flagged), though it has a concentration", () => {
-    const x = build();
+    const x = build({ params: { ec50: { alcohol: null } } });   // the library's alcohol EC50 switched off
     dose(x.w, "body", "alcohol", 35);
     run(x, 90 * MIN);
     expect(Number(x.out.conc_alcohol)).toBeGreaterThan(0.03);
@@ -264,7 +264,7 @@ describe("the circuits at rest and under the interaction rules", () => {
     expect(breathingDrive(5, 5, 5, 2)).toBe(0);
   });
   it("blocks memory encoding over 0.08 g/dL of alcohol (the blackout) and not under it", () => {
-    const x = build();
+    const x = build({ params: { ec50: { alcohol: null } } });   // isolates the block from the acute effect on the other systems
     dose(x.w, "body", "alcohol", 35);
     run(x, 20 * MIN);
     expect(Number(x.out.conc_alcohol)).toBeLessThan(0.08);
@@ -344,7 +344,7 @@ describe("the four clocks", () => {
     expect(Number(fresh.out.dependence_gaba)).toBe(0);
     expect(Number(fresh.out.withdrawal_gaba)).toBe(0);
     expect(fresh.out.alcohol_withdrawal_stage).toBe("none");
-    const noRate = drinkDays(5, { ec50: { alcohol: 0.05 }, reboundPeakH: { alcohol: 24 } }).x;   // k_tol null
+    const noRate = drinkDays(5, { ec50: { alcohol: 0.05 }, kTol: null, reboundPeakH: { alcohol: 24 } }).x;   // k_tol null
     run(noRate, MIN);
     expect(Number(noRate.out.sensitivity_gaba)).toBe(1);
     expect(Number(noRate.out.dependence_gaba)).toBe(0);
@@ -394,11 +394,19 @@ describe("the fence", () => {
     const imports = [...text.matchAll(/^import .* from "([^"]+)"/gm)].map(m => m[1]);
     expect(imports.every(i => i!.startsWith("./"))).toBe(true);
   });
-  it("is also free of numbers the tables do not carry in its tolerance and clock paths: switched off by default", () => {
+  it("runs tolerance on the library's EC50 and k_tol with no parameters, and null switches it off", () => {
+    const sub = neuroSubstance("alcohol");
+    expect(typeof sub.ec50).toBe("number");
+    expect(typeof sub.kTol).toBe("number");
     const x = build();
     dose(x.w, "body", "alcohol", 35);
     for (let d = 0; d < 3; d++) run(x, DAY);
-    expect(Number(x.out.sensitivity_gaba)).toBe(1);
-    expect(Number(x.out.dependence_gaba)).toBe(0);
+    expect(Number(x.out.sensitivity_gaba)).toBeLessThan(1);
+    const y = build({ params: { kTol: null } });
+    dose(y.w, "body", "alcohol", 35);
+    for (let d = 0; d < 3; d++) run(y, DAY);
+    expect(Number(y.out.sensitivity_gaba)).toBe(1);
+    expect(Number(y.out.dependence_gaba)).toBe(0);
+    for (const s of neuroSubstances().filter(s => s.key !== "alcohol")) { expect(s.ec50, s.key).toBeNull(); expect(s.kTol, s.key).toBeNull(); }
   });
 });

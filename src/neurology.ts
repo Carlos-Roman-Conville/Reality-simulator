@@ -2,8 +2,8 @@
  * Signalling systems, baseline drivers, one-compartment kinetics, the four receptor clocks, the eleven circuits and the
  * interaction rules on a `body` component (kind "body", `props`). Every table number comes from `data/library/neurology.json`
  * through library.ts (`systems`, `baseline`, `pk`, `receptor`, `circuits`, `interactions`); the rule texts are parsed, so a
- * changed table changes the model. What NEUROLOGY.md asks for and the library cannot support (every EC50, the tolerance rate,
- * the rebound peak of most substances, the sizes of several drivers, the inverted-U shapes) is listed in FLAGS.md and left
+ * changed table changes the model. What NEUROLOGY.md asks for and the library cannot support (the EC50 and tolerance rate of all but alcohol, whose
+ * pk-table values are design values, the rebound peak of most substances, the sizes of several drivers, the inverted-U shapes) is listed in FLAGS.md and left
  * disabled here: a `null` parameter switches its path off, and the caller may supply the number (`NeuroParams`).
  *
  * Tones: a system's tone is 1 at rest (0 to 2). tone = (1 + driver moves + sum of substance effects x sensitivity + withdrawal
@@ -212,6 +212,10 @@ export interface NeuroSubstance {
   standardDose: { lo: number; hi: number; unit: "g" | "mg" } | null;
   /** The unit a concentration is quoted in: g/dL for the alcohol form, mg/L otherwise. */
   concUnit: "g/dL" | "mg/L";
+  /** The library's EC50 in `concUnit`, null where the pk table gives none (no acute effect). */
+  ec50: number | null;
+  /** The library's tolerance rate per day per unit of mean occupancy, null where the pk table gives none. */
+  kTol: number | null;
 }
 
 const KEYS: [string, string][] = [
@@ -220,6 +224,8 @@ const KEYS: [string, string][] = [
 ];
 
 let substanceList: NeuroSubstance[] | null = null;
+
+const numOrNull = (v: unknown) => typeof v === "number" ? v : null;
 
 function parseSubstance(key: string, row: LibraryRow): NeuroSubstance {
   const elim = String(row.Elimination), vd = String(row["Volume of distribution (L/kg)"]), dose = String(row["Standard dose"]);
@@ -242,6 +248,7 @@ function parseSubstance(key: string, row: LibraryRow): NeuroSubstance {
     elimination, vdMan, vdWoman, accumulates: /accumulates/.test(vd), hits,
     standardDose: amt ? { lo: num(amt[1]), hi: num(amt[2] ?? amt[1]), unit: amt[3] as "g" | "mg" } : null,
     concUnit: zero ? "g/dL" : "mg/L",
+    ec50: numOrNull(row["EC50 (g/dL for alcohol, mg/L otherwise)"]), kTol: numOrNull(row["k_tol (per day per unit of mean occupancy)"]),
   };
 }
 
@@ -449,9 +456,9 @@ export function breathingDrive(opioidEffect: number, gabaEffect: number, alcohol
 
 /** The numbers the library calls placeholders and does not give. Each `null` or absent entry switches its path off (FLAGS.md). */
 export interface NeuroParams {
-  /** EC50 per substance key, in the concentration unit of `NeuroSubstance.concUnit`. Absent: the substance has no acute effect. */
-  ec50?: Record<string, number>;
-  /** The tolerance rate k_tol per day per unit of mean occupancy. Null or absent: no tolerance builds. */
+  /** EC50 per substance key, in the concentration unit of `NeuroSubstance.concUnit`; overrides the pk table's column, null switches the substance's acute effect off. */
+  ec50?: Record<string, number | null>;
+  /** The tolerance rate k_tol per day per unit of mean occupancy; overrides the pk table's column (the mean of its numbers), null switches tolerance off. */
   kTol?: number | null;
   /** Hours from the last dose to the rebound peak, per substance key. Absent: no withdrawal for it (opioids: the library's range). */
   reboundPeakH?: Record<string, number>;
@@ -497,8 +504,8 @@ export function dose(w: World, bodyId: string, key: string, amount: number, o: {
 /** The neurology process: kinetics each step, the tones and circuits, and the tolerance clocks at each day's close. Run it after `physiologyProcess`. */
 export function neurologyProcess(body: string, o: NeurologyOptions = {}): Process {
   const clockH0 = o.clockH0 ?? 0, dayStartH = o.dayStartH ?? 12, params = o.params ?? {};
-  const kTol = params.kTol ?? null;
   const systems = neuroSystems(), substances = neuroSubstances(), circuits = neuroCircuits();
+  const libK = substances.flatMap(s => s.kTol === null ? [] : [s.kTol]), kTol = params.kTol !== undefined ? params.kTol : libK.length ? libK.reduce((a, b) => a + b, 0) / libK.length : null;
   const reboundPeak = (key: string): number | null => params.reboundPeakH?.[key] ?? (key === "laudanum" ? clocks().opioidPeakH : null);
 
   return { name: "neurology", every: o.every ?? 10, step(w, dt) {
@@ -548,8 +555,8 @@ export function neurologyProcess(body: string, o: NeurologyOptions = {}): Proces
       }
       const central = p[`neu_c_${key}`] ?? 0;
       conc[key] = s.accumulates ? null : concentration(s, central, b.mass, male);
-      const ec = params.ec50?.[key];
-      occ[key] = conc[key] != null && ec !== undefined ? occupancy(conc[key]!, ec) : null;
+      const ec = params.ec50 && key in params.ec50 ? params.ec50[key] : s.ec50;
+      occ[key] = conc[key] != null && ec != null ? occupancy(conc[key]!, ec) : null;
       if (s.accumulates) out[`burden_${key}`] = central;
       else if (conc[key] !== null) out[`conc_${key}`] = conc[key]!;
       out[`occupancy_${key}`] = occ[key];
