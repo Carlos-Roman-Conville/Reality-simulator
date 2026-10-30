@@ -80,3 +80,52 @@ export function metabolicHeat(met: number, massKg: number): number {
 export const SWEAT_LATENT = 2.43e6;
 
 export const C_TO_K = 273.15;
+
+/** ASHRAE 2023 HVAC Applications ch.6 eq.2 and table 1: still air V=0,
+ * unoccupied surface Fa=0.5, k_m = 0.089 Fa / L, kg/(m2 s Pa).
+ * https://handbook.ashrae.org/Handbooks/A23/SI/A23_Ch06/a23_ch06_si.aspx
+ * Pool correlation extrapolated to a warm vessel; no boiling or surface condensation here.
+ */
+export function surfaceEvaporationKgPerS(area: number, waterC: number, partialPa: number): number {
+  return 0.089 * 0.5 / waterLatentHeat(waterC) * Math.max(0, area)
+    * Math.max(0, waterVapourPressure(waterC) - partialPa);
+}
+
+/** Brick heat capacity/density: LBNL Buildings library.
+ * https://simulationresearch.lbl.gov/modelica/releases/v1.1_build0_rc2/help/Buildings_HeatTransfer_Data_Solids.html
+ * Thickness and whole-assembly U: CIBSE Domestic Heating Design Guide table 6.1,
+ * solid brick 228 mm, dense plaster. Plaster thermal mass is neglected.
+ * https://mcscertified.com/wp-content/uploads/2020/04/Guidance-on-U-Values-from-Domestic-Heating-Design-Guide.pdf
+ * h=10 W/(m2 K) retains the scenario's ENG-HT free-convection assumption.
+ */
+export const BRICK_WALL = { thicknessM: 0.228, density: 1920, cp: 790, U: 2.11, h: 10 } as const;
+
+/** Counterflow effectiveness, NTU=UA/Cmin, Cr=Cmin/Cmax; Cr=0 for isothermal condensation.
+ * https://fchartsoftware.com/ees/heat_transfer_library/heat_exchangers/hs1000.htm
+ * Includes the equal-capacity limit to avoid 0/0.
+ */
+export function counterflowEffectiveness(ntu: number, capacityRatio: number): number {
+  if (Number.isNaN(ntu) || !Number.isFinite(capacityRatio) || ntu < 0 || capacityRatio < 0 || capacityRatio > 1) throw new Error("invalid NTU or capacity ratio");
+  if (ntu === 0) return 0;
+  if (!Number.isFinite(ntu)) return 1;
+  if (capacityRatio === 1) return ntu / (1 + ntu);
+  const numerator = -Math.expm1(-ntu * (1 - capacityRatio));
+  return numerator / (1 - capacityRatio + capacityRatio * numerator);
+}
+
+/** Churchill-Chu horizontal-cylinder natural convection, Nu=hD/k (Ra<1e12).
+ * https://www.fchartsoftware.com/ees/heat_transfer_library/free_convection/hs3045.htm
+ * Equation: https://nrel.gov/docs/fy11osti/51825.pdf
+ * Fixed liquid-water properties at 40 C (a named property approximation):
+ * k=0.628 W/(m K), nu=0.658e-6 m2/s, alpha=1.51e-7 m2/s, beta=0.000385 /K.
+ * https://staff.washington.edu/calebktw/water_properties.html
+ * Neglects copper and condensate-film resistances; U is water-side controlled.
+ */
+export function condenserWaterCoefficient(deltaC: number, diameterM: number): number {
+  if (!Number.isFinite(diameterM) || diameterM <= 0) throw new Error("positive condenser diameter required");
+  const nu = 0.658e-6, alpha = 1.51e-7, k = 0.628, beta = 0.000385;
+  const pr = nu / alpha;
+  const ra = 9.807 * beta * Math.abs(deltaC) * diameterM ** 3 / (nu * alpha);
+  const nusselt = (0.60 + 0.387 * ra ** (1 / 6) / (1 + (0.559 / pr) ** (9 / 16)) ** (8 / 27)) ** 2;
+  return nusselt * k / diameterM;
+}

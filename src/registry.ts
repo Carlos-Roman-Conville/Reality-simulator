@@ -2,7 +2,7 @@
  * Service 1: the registry. Stable ids for substances (properties only, never behaviour), materials (what a component is
  * made of), components (equipment, organs, structures: a thermal mass with contents and ports) and assemblies.
  */
-import { CP } from "./physics.ts";
+import { BRICK_WALL, CP } from "./physics.ts";
 
 export type Phase = "solid" | "liquid" | "gas";
 
@@ -94,6 +94,7 @@ export function defaultRegistry(): Registry {
   r.addMaterial({ id: "glass", name: "Glass", cp: CP.glass, maxTemperatureC: 500, corrodedBy: [] });
   r.addMaterial({ id: "iron", name: "Iron", cp: CP.iron, maxTemperatureC: 1200, corrodedBy: ["aqua_fortis"] });
   r.addMaterial({ id: "wood", name: "Wood", cp: 1700, maxTemperatureC: 250, corrodedBy: [] });
+  r.addMaterial({ id: "wall_brick", name: "Wall brick (LBNL)", cp: BRICK_WALL.cp, maxTemperatureC: 1400, corrodedBy: [] });
   r.addMaterial({ id: "brick", name: "Brick", cp: 840, maxTemperatureC: 1400, corrodedBy: [] });
   r.addMaterial({ id: "flesh", name: "Flesh", cp: 3500, maxTemperatureC: 45, corrodedBy: [] });
   r.addMaterial({ id: "air_mass", name: "Air (a room's)", cp: CP.air, maxTemperatureC: 1e9, corrodedBy: [] });

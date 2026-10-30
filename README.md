@@ -16,7 +16,7 @@ build it; real formulas with real numbers; no made-up rules to make things work)
 ## What the first build proves
 
 A character, a charcoal heater, a copper vessel of water, a worm condenser in a tub, pipes and a collector, in a
-room that is a box of air. From the formulas in `src/physics.ts` (Antoine, latent heat, specific heats, heats of
+room with brick walls and a box of air. From the formulas in `src/physics.ts` (Antoine, latent heat, specific heats, heats of
 combustion, stoichiometry, convection, the ideal gas, the box model) and nothing else: boiling at the pressure's
 boiling point (100 C at sea level, 92.5 at 2,256 m), distillate at the net heat over the latent heat, the room's
 oxygen falling and CO2 rising from the fire (CO when starved), the distiller sweating by PHYSIOLOGY.md's rate, a
@@ -35,10 +35,47 @@ vessel, and water and charcoal conserved every step with the trace saying where 
     src/lab/still.ts   the scenario
     test/              vitest
 
-Simplifications are named in the doc comments (lumped temperatures, explicit steps, no evaporation below boiling,
-instantaneous vapour transport, a room with no walls to soak up heat, so it runs hot: 60 C after two hours of an
-open charcoal fire with the door open). None is a game rule; each can be replaced by fuller physics without changing the
-services. Plain TypeScript, no DOM, so it runs in Node and in a browser alike.
+The vessel now evaporates below boiling from its free surface: ASHRAE's still-air pool form
+`m_dot = (0.089 * 0.5 / L) A (p_sat - p_partial)`. The trace records water entering the room,
+latent cooling and carried sensible enthalpy. Its free surface is inferred from the unchanged exterior
+area by assuming a cylinder whose height equals its diameter (exterior bottom + sides = five free surfaces).
+
+Four brick walls surround an assumed cubic room of the unchanged volume. They store heat at
+1920 kg/m3 and 790 J/(kg K), with 228 mm thickness and a tabulated assembly U of 2.11 W/(m2 K).
+Air exchanges heat with them through h A dT. The outside branch removes the indoor film resistance
+from the table's U to avoid counting that film twice. Both directions and wall storage appear in the trace.
+The two-hour temperature regression uses an analytical upper envelope from heat input, wall capacity,
+and indoor conductance (below 36 C for the default case); this is a derived bound, not a measured-room claim.
+
+The counterflow condenser uses effectiveness-NTU with the correct isothermal-condensation limit,
+`Cr = 0`, `epsilon = 1 - exp(-UA/Ccold)`, `Ccold = m_dot_coolant cp`. Its U comes from the
+Churchill-Chu water-side natural-convection correlation, varying with temperature difference.
+New explicit condenser assumptions are a 90 mm tube diameter (F-Chart example) and 1 kg/min
+coolant recirculation (~1 L/min, Euro 30 operating range). The same tub supplies and receives that
+water, so it still warms; this assumes circulation, not an external supply of cold water.
+Condensate leaves saturated and mixes thermally with the collector; there is no subcooling section.
+
+Remaining named simplifications: lumped temperatures (including wall mass and body), explicit one-second
+steps, instantaneous vapour transport, cubic room geometry without roof/floor heat exchange, negligible
+plaster thermal mass, pool-correlation extrapolation toward boiling, fixed water transport properties
+at 40 C, negligible copper/condensate-film thermal resistance and forced-convection enhancement,
+and the existing h, combustion oxygen threshold, body, wear and control approximations.
+These are models, not game rules. The five services remain unchanged in shape. Plain TypeScript,
+no DOM, so it runs in Node and in a browser alike. Per-step conservation checks remain for water and
+charcoal; energy is verified by focused balance tests, not a new whole-world energy ledger.
+
+## Sources
+
+The original formulas retain their ENG-* source keys from the pirate engine design. Sources added here:
+
+- [ASHRAE HVAC Applications, chapter 6](https://handbook.ashrae.org/Handbooks/A23/SI/A23_Ch06/a23_ch06_si.aspx): equation 2, still-air coefficient 0.089 and table 1 unoccupied factor 0.5; latent evaporation load.
+- [LBNL Buildings material library](https://simulationresearch.lbl.gov/modelica/releases/v1.1_build0_rc2/help/Buildings_HeatTransfer_Data_Solids.html): brick density and specific heat.
+- [CIBSE Domestic Heating Design Guide, table 6.1 via MCS](https://mcscertified.com/wp-content/uploads/2020/04/Guidance-on-U-Values-from-Domestic-Heating-Design-Guide.pdf): 228 mm solid brick with dense plaster, U=2.11.
+- [F-Chart effectiveness-NTU](https://fchartsoftware.com/ees/heat_transfer_library/heat_exchangers/hs1000.htm): counterflow capacity rates, NTU and phase-change limit.
+- [F-Chart Churchill-Chu correlation](https://www.fchartsoftware.com/ees/heat_transfer_library/free_convection/hs3045.htm) and [NREL SAM technical manual](https://nrel.gov/docs/fy11osti/51825.pdf): horizontal-cylinder Nusselt correlation.
+- [F-Chart water-cylinder example](https://fchart.com/ees/heat_transfer_library/free_convection/hs3040.htm): 90 mm diameter and gravitational acceleration.
+- [University of Washington water properties](https://staff.washington.edu/calebktw/water_properties.html): liquid transport properties used at 40 C.
+- [Spirits Unlimited Euro 30 instructions](https://www.spiritsunlimited.co.nz/upload/euro30_instructions.pdf): 0.5-1 L/min cooling-water operating range; here recirculated from the tub.
 
 ## Next (the belt)
 

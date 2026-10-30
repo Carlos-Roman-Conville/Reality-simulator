@@ -5,7 +5,7 @@
 import type { Process } from "./scheduler.ts";
 import type { World } from "./world.ts";
 import type { Component } from "./registry.ts";
-import { C_TO_K, M, airDensity, carbonCombustion, heatFlow, metabolicHeat, molesInVolume, SWEAT_LATENT, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
+import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, airDensity, carbonCombustion, heatFlow, metabolicHeat, molesInVolume, SWEAT_LATENT, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
 
 /** A seeded random for reproducible control noise and measurement noise (mulberry32). */
 export function rng(seed: number) {
@@ -82,10 +82,51 @@ export function lossesProcess(room: string, components: string[]): Process {
   } };
 }
 
+/** Free-surface evaporation below boiling: ASHRAE coefficient in physics.ts.
+ * Vapour enters room air; latent heat is removed from the vessel. Explicit lumped step.
+ */
+export function evaporationProcess(vessel: string, room: string): Process {
+  return { name: "evaporation", every: 1, step(w, dt) {
+    const reg = w.registry, v = reg.component(vessel), r = reg.component(room);
+    const liquid = reg.contentMass(v, "water", "liquid");
+    if (dt <= 0 || liquid <= 0 || v.temperatureC < 1 || v.temperatureC >= waterBoilingPoint(r.props.pressurePa)) return;
+    const partial = reg.contentMass(r, "water", "gas") / M.H2O * R_GAS * (r.temperatureC + C_TO_K) / r.props.volume_m3;
+    const temperature = v.temperatureC, L = waterLatentHeat(temperature);
+    // Limit to available sensible energy above Antoine's 1 C lower domain, including the departing water's capacity.
+    const energyLimited = reg.heatCapacity(v) * (temperature - 1) / (L + CP.water * (temperature - 1));
+    const kg = Math.min(liquid, energyLimited, surfaceEvaporationKgPerS(v.props.freeSurface_m2 ?? 0, temperature, partial) * dt);
+    if (kg <= 0) return;
+    reg.addContent(v, "water", "liquid", -kg);
+    const roomEnergy = reg.heatCapacity(r) * r.temperatureC;
+    reg.addContent(r, "water", "gas", kg);
+    r.temperatureC = (roomEnergy + kg * CP.waterVapour * temperature) / reg.heatCapacity(r);
+    addHeat(w, v, -kg * L);
+    w.trace.record({ t: w.t, process: "evaporation", quantity: "mass:water", from: vessel, to: room, amount: kg });
+    w.trace.record({ t: w.t, process: "evaporation", quantity: "energy", from: vessel, to: "latent", amount: kg * L });
+    w.trace.record({ t: w.t, process: "evaporation", quantity: "energy", from: vessel, to: room, amount: kg * CP.water * temperature, note: "carried enthalpy relative to liquid at 0 C; vapour mixes at departure temperature" });
+  } };
+}
+
+/** Lumped wall: h A (Tair-Twall), then U_out A (Twall-Toutside).
+ * The tabulated whole-wall U includes the indoor film; remove 1/h from its resistance
+ * so the explicit indoor film is not counted twice. Sources: BRICK_WALL in physics.ts.
+ */
+export function wallsProcess(room: string, walls: string): Process {
+  return { name: "walls", every: 1, step(w, dt) {
+    const r = w.registry.component(room), wall = w.registry.component(walls);
+    const area = wall.props.area_m2, h = wall.props.h;
+    const qIn = heatFlow(h, area, r.temperatureC - wall.temperatureC) * dt;
+    const uOut = 1 / (1 / wall.props.U - 1 / h);
+    const qOut = heatFlow(uOut, area, wall.temperatureC - w.env.outsideC) * dt;
+    addHeat(w, r, -qIn); addHeat(w, wall, qIn - qOut);
+    w.trace.record({ t: w.t, process: "walls", quantity: "energy", from: qIn >= 0 ? room : walls, to: qIn >= 0 ? walls : room, amount: Math.abs(qIn) });
+    w.trace.record({ t: w.t, process: "walls", quantity: "energy", from: qOut >= 0 ? walls : "outside", to: qOut >= 0 ? "outside" : walls, amount: Math.abs(qOut) });
+  } };
+}
+
 /**
  * Boiling in a vessel: when the water's vapour pressure reaches the pressure over it, the temperature holds at the boiling
  * point and the surplus heat vaporises water at the latent heat; the vapour goes down the gas edge to the condenser.
- * Below the boiling point a covered still evaporates little; the first build ignores that (named simplification).
  */
 export function boilingProcess(vessel: string, room: string): Process {
   return { name: "boiling", every: 1, step(w, dt) {
@@ -113,25 +154,36 @@ export function boilingProcess(vessel: string, room: string): Process {
   } };
 }
 
-/**
- * Condensation in a worm cooled by a tub: the condenser can remove heat at U A (T_vapour - T_tub) per second; what it
- * condenses goes to the collector as liquid at the tub's temperature and the latent heat warms the tub; what it cannot
- * condense escapes to the room as vapour.
+/** Counterflow condenser with isothermal steam (Cr=0): epsilon=1-exp(-UA/Ccold).
+ * Coolant recirculates from and returns to the lumped tub; no external cold-water supply.
+ * Water-side natural convection sets U; small circulation's forced-convection enhancement
+ * is neglected. Liquid leaves at saturation temperature (no subcooling section), then mixes
+ * with the collector. Sources and property approximations are in physics.ts.
  */
 export function condensationProcess(condenser: string, tub: string, collector: string, room: string): Process {
   return { name: "condensation", every: 1, step(w, dt) {
     const c = w.registry.component(condenser), tb = w.registry.component(tub), col = w.registry.component(collector), r = w.registry.component(room), reg = w.registry;
     const vap = reg.contentMass(c, "water", "gas");
-    if (vap <= 0) return;
+    if (vap <= 0 || dt <= 0) return;
     const tv = c.props.vapourTempC ?? 100;
     const L = waterLatentHeat(tv);
-    const qMax = heatFlow(c.props.U ?? 500, c.props.area_m2 ?? 0.3, Math.max(0, tv - tb.temperatureC)) * dt * c.condition.capability;
+    const delta = Math.max(0, tv - tb.temperatureC);
+    const flow = Math.min(Math.max(0, c.props.coolantKgPerS ?? 0), reg.contentMass(tb, "water", "liquid") / dt);
+    const coldCapacityRate = flow * CP.water;
+    const ua = condenserWaterCoefficient(delta, c.props.diameter_m) * c.props.area_m2 * c.condition.capability;
+    const effectiveness = coldCapacityRate > 0 ? counterflowEffectiveness(ua / coldCapacityRate, 0) : 0;
+    c.props.effectiveness = effectiveness;
+    c.props.U = ua / c.props.area_m2;
+    // Finite tub inventory also bounds a long step; the recirculating stream returns its heat.
+    const qMax = Math.min(effectiveness * coldCapacityRate * delta * dt, reg.heatCapacity(tb) * delta);
     const kgCond = Math.min(vap, qMax / L);
     const kgLost = vap - kgCond;
     reg.addContent(c, "water", "gas", -vap);
     if (kgCond > 0) {
+      const collectorEnergy = reg.heatCapacity(col) * col.temperatureC + kgCond * CP.water * tv;
       reg.addContent(col, "water", "liquid", kgCond);
-      col.temperatureC = tb.temperatureC;
+      col.temperatureC = collectorEnergy / reg.heatCapacity(col);
+      w.trace.record({ t: w.t, process: "condensation", quantity: "energy", from: condenser, to: collector, amount: kgCond * CP.water * tv, note: "saturated liquid sensible enthalpy, reference 0 C" });
       addHeat(w, tb, kgCond * L);
       w.trace.record({ t: w.t, process: "condensation", quantity: "mass:water", from: condenser, to: collector, amount: kgCond });
       w.trace.record({ t: w.t, process: "condensation", quantity: "energy", from: "latent", to: tub, amount: kgCond * L });
@@ -167,7 +219,7 @@ export function roomProcess(room: string): Process {
     w.trace.record({ t: w.t, process: "ventilation", quantity: "energy", from: q > 0 ? "outside" : room, to: q > 0 ? room : "outside", amount: Math.abs(q) });
     // humidity
     const nWater = reg.contentMass(r, "water", "gas") / M.H2O;
-    const pWater = nWater * 8.314 * tK / V;
+    const pWater = nWater * R_GAS * (r.temperatureC + C_TO_K) / V;
     r.props.rh = Math.min(1.5, pWater / waterVapourPressure(Math.min(100, r.temperatureC)));
     r.props.co2ppm = roomGasFraction(w, r, "co2") * 1e6;
     r.props.o2frac = roomGasFraction(w, r, "o2");
