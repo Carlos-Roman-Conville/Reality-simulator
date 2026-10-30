@@ -5,4 +5,6 @@ export * from "./trace.ts";
 export * from "./scheduler.ts";
 export * from "./world.ts";
 export * from "./process.ts";
+export * from "./reactions.ts";
+export * from "./elements.ts";
 export * from "./lab/still.ts";

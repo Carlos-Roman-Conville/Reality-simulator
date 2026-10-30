@@ -3,7 +3,7 @@
  * every step checks conservation of each tracked quantity against the recorded flows, so an experiment can be read back
  * to see why it failed.
  */
-export interface Transfer { t: number; process: string; quantity: string; from: string; to: string; amount: number; note?: string }
+export interface Transfer { t: number; process: string; quantity: string; from: string; to: string; amount: number; note?: string; chemicalChange?: boolean }
 
 export interface Check { t: number; quantity: string; expected: number; actual: number; tolerance: number; ok: boolean }
 

@@ -2,6 +2,7 @@
 import { Registry } from "./registry.ts";
 import { Graph } from "./graph.ts";
 import { Trace } from "./trace.ts";
+import { atomicMass, formulaAtoms } from "./elements.ts";
 
 export class World {
   t = 0; // seconds
@@ -11,6 +12,7 @@ export class World {
   /** Quantities whose total across named components must stay constant (plus recorded flows out of the system). */
   conserved: { quantity: string; substance?: string; components: string[]; initial: number; tolerance: number; entered: number; left: number }[] = [];
   private cursor = 0; // the first transfer not yet folded into the conserved tallies
+  private elements: { element: string; components: string[]; initial: number; tolerance: number; net: number; cursor: number }[] = [];
   env: Record<string, number> = {};
   constructor(registry: Registry) { this.registry = registry; }
 
@@ -22,6 +24,27 @@ export class World {
   }
   conserve(substance: string, components: string[], tolerance = 1e-6) {
     this.conserved.push({ quantity: `mass:${substance}`, substance, components, initial: this.massOf(substance, components), tolerance, entered: 0, left: 0 });
+  }
+  /** kg of an element from n(substance) * atoms/formula * atomic mass.
+   * This preserves atom accounting even for the registry's rounded molecular weights.
+   * Component shells are inert; this ledger covers their reactive contents only.
+   */
+  elementMassOf(element: string, components: string[]): number {
+    return components.reduce((sum, id) => sum + this.registry.component(id).contents.reduce(
+      (m, x) => m + x.mass * this.elementPerKg(x.substance, element), 0), 0);
+  }
+  private elementPerKg(substance: string, element: string): number {
+    const s = this.registry.substance(substance);
+    return (formulaAtoms(s.formula)[element] ?? 0) * atomicMass[element] / s.molarMass;
+  }
+  /** Enrol all registered elements before running processes; checked by every afterStep(). */
+  conserveElements(components = [...this.registry.components.keys()], tolerance = 1e-9) {
+    const elements = new Set([...this.registry.substances.values()].flatMap(s => Object.keys(formulaAtoms(s.formula))));
+    for (const element of elements) {
+      if (!atomicMass[element]) throw new Error(`no atomic mass for ${element}`);
+      this.elements.push({ element, components: [...components], initial: this.elementMassOf(element, components),
+        tolerance, net: 0, cursor: this.trace.transfers.length });
+    }
   }
   /** The conservation check: current total + what the trace says left the set of components = initial + what entered. */
   afterStep() {
@@ -35,5 +58,15 @@ export class World {
       }
     }
     for (const c of this.conserved) this.trace.check(this.t, c.quantity, c.initial + c.entered - c.left, this.massOf(c.substance!, c.components), c.tolerance);
+    for (const c of this.elements) {
+      for (; c.cursor < ts.length; c.cursor++) {
+        const x = ts[c.cursor];
+        // Chemical conversion is internal, not an exchange with an imaginary reservoir.
+        if (x.chemicalChange || !x.quantity.startsWith("mass:")) continue;
+        const from = c.components.includes(x.from), to = c.components.includes(x.to);
+        if (from !== to) c.net += (to ? 1 : -1) * x.amount * this.elementPerKg(x.quantity.slice(5), c.element);
+      }
+      this.trace.check(this.t, `element:${c.element}`, c.initial + c.net, this.elementMassOf(c.element, c.components), c.tolerance);
+    }
   }
 }

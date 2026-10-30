@@ -1,0 +1,165 @@
+{
+  "_about": "Mirrors chemistry.reactions: Id, Reaction (name), Reactants, Products, Conditions, Rate, Heat, Where, Mark, plus source and formation enthalpies. Heat is J/mol of reaction as written at 298.15 K. Formation values: NBS tables and NIST WebBook CaO, Ca(OH)2, CO2, H2O entries. All seed kinetics are explicitly models, not measured rates.",
+  "reactions": [
+    {
+      "id": "comb_c_full",
+      "name": "Carbon combustion",
+      "reactants": [
+        {
+          "substance": "charcoal",
+          "phase": "solid",
+          "coefficient": 1
+        },
+        {
+          "substance": "o2",
+          "phase": "gas",
+          "coefficient": 1
+        }
+      ],
+      "products": [
+        {
+          "substance": "co2",
+          "phase": "gas",
+          "coefficient": 1
+        }
+      ],
+      "conditions": {
+        "minimumTemperatureC": 400,
+        "note": "[model] 400 C ignition threshold from the pirate reaction table; charcoal ignition depends on surface and preparation. Complete oxidation only."
+      },
+      "heat": -393510,
+      "where": "heated vessel",
+      "mark": "[model] Charcoal treated as standard-state carbon; no oxygen-starved branch.",
+      "source": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Mask=1",
+      "formationEnthalpiesJPerMol": {
+        "charcoal:solid": 0,
+        "o2:gas": 0,
+        "co2:gas": -393510
+      },
+      "rate": {
+        "kind": "complete",
+        "note": "[model] Complete within the step above the minimum temperature, limited by reagents and available sensible heat. The cited thermochemical sources supply no applicable bulk first-order Arrhenius parameters."
+      }
+    },
+    {
+      "id": "water_formation",
+      "name": "Water formation (steam)",
+      "reactants": [
+        {
+          "substance": "h2",
+          "phase": "gas",
+          "coefficient": 1
+        },
+        {
+          "substance": "o2",
+          "phase": "gas",
+          "coefficient": 0.5
+        }
+      ],
+      "products": [
+        {
+          "substance": "water",
+          "phase": "gas",
+          "coefficient": 1
+        }
+      ],
+      "conditions": {
+        "minimumTemperatureC": 500,
+        "note": "[model] Lower end of 500-590 C autoignition range; not a universal ignition temperature. https://www.ncbi.nlm.nih.gov/sites/books/NBK55861/bin/10-LaboratoryChemicalSafetySummaries.pdf"
+      },
+      "heat": -241826,
+      "where": "heated vessel",
+      "mark": "[model] Steam product, standard gas formation enthalpy; no flame kinetics.",
+      "source": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Mask=1",
+      "formationEnthalpiesJPerMol": {
+        "h2:gas": 0,
+        "o2:gas": 0,
+        "water:gas": -241826
+      },
+      "rate": {
+        "kind": "complete",
+        "note": "[model] Complete within the step above the minimum temperature, limited by reagents and available sensible heat. The cited thermochemical sources supply no applicable bulk first-order Arrhenius parameters."
+      }
+    },
+    {
+      "id": "calcination",
+      "name": "Limestone calcination",
+      "reactants": [
+        {
+          "substance": "limestone",
+          "phase": "solid",
+          "coefficient": 1
+        }
+      ],
+      "products": [
+        {
+          "substance": "quicklime",
+          "phase": "solid",
+          "coefficient": 1
+        },
+        {
+          "substance": "co2",
+          "phase": "gas",
+          "coefficient": 1
+        }
+      ],
+      "conditions": {
+        "minimumTemperatureC": 825,
+        "note": "[model] Threshold from NOAA decomposition temperature; CO2 partial-pressure equilibrium omitted. https://cameochemicals.noaa.gov/report?key=CH25005"
+      },
+      "heat": 178000,
+      "where": "heated iron vessel vented to room",
+      "mark": "[model] Delta H = -635090 -393510 +1206900 = +178300 J/mol, rounded to +178 kJ/mol. Constant standard reaction enthalpy.",
+      "source": "https://srd.nist.gov/JPCRD/jpcrdS2Vol11.pdf",
+      "formationEnthalpiesJPerMol": {
+        "limestone:solid": -1206900,
+        "quicklime:solid": -635090,
+        "co2:gas": -393510
+      },
+      "rate": {
+        "kind": "complete",
+        "note": "[model] Complete within the step above the minimum temperature, limited by reagents and available sensible heat. The cited thermochemical sources supply no applicable bulk first-order Arrhenius parameters."
+      }
+    },
+    {
+      "id": "slaking",
+      "name": "Quicklime slaking",
+      "reactants": [
+        {
+          "substance": "quicklime",
+          "phase": "solid",
+          "coefficient": 1
+        },
+        {
+          "substance": "water",
+          "phase": "liquid",
+          "coefficient": 1
+        }
+      ],
+      "products": [
+        {
+          "substance": "slaked_lime",
+          "phase": "solid",
+          "coefficient": 1
+        }
+      ],
+      "conditions": {
+        "minimumTemperatureC": 0,
+        "note": "[model] Liquid-water contact required; 0 C is the water phase boundary, not an activation threshold."
+      },
+      "heat": -65000,
+      "where": "vessel with liquid water",
+      "mark": "[model] Delta H = -986090 -(-635090 -285830) = -65170 J/mol, rounded to -65 kJ/mol. No dissolution or boiling coupling.",
+      "source": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C1305620&Mask=2",
+      "formationEnthalpiesJPerMol": {
+        "quicklime:solid": -635090,
+        "water:liquid": -285830,
+        "slaked_lime:solid": -986090
+      },
+      "rate": {
+        "kind": "complete",
+        "note": "[model] Complete within the step above the minimum temperature, limited by reagents and available sensible heat. The cited thermochemical sources supply no applicable bulk first-order Arrhenius parameters."
+      }
+    }
+  ]
+}

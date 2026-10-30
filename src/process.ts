@@ -54,10 +54,10 @@ export function combustionProcess(heater: string, room: string): Process {
     reg.addContent(r, "o2", "gas", -cc.kgO2);
     reg.addContent(r, "co2", "gas", cc.kgCO2);
     reg.addContent(r, "co", "gas", cc.kgCO);
-    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:charcoal", from: heater, to: "burned", amount: kg });
-    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:o2", from: room, to: "burned", amount: cc.kgO2 });
-    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co2", from: "burned", to: room, amount: cc.kgCO2 });
-    if (cc.kgCO > 0) w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co", from: "burned", to: room, amount: cc.kgCO });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:charcoal", from: heater, to: "burned", chemicalChange: true, amount: kg });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:o2", from: room, to: "burned", chemicalChange: true, amount: cc.kgO2 });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co2", from: "burned", to: room, chemicalChange: true, amount: cc.kgCO2 });
+    if (cc.kgCO > 0) w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co", from: "burned", to: room, chemicalChange: true, amount: cc.kgCO });
     // heat: the heater's efficiency (an open charcoal fire to a pot: about 0.3; a well-set furnace 0.5) goes to the vessel edge, the rest to the room
     const eff = (h.props.efficiency ?? 0.3) * h.condition.capability;
     const toVessel = cc.heatJ * eff, toRoom = cc.heatJ - toVessel;

@@ -29,6 +29,9 @@ vessel, and water and charcoal conserved every step with the trace saying where 
     src/registry.ts    substances (properties only), materials, components with ports, the default set
     src/graph.ts       typed edges
     src/process.ts     combustion, losses, boiling, condensation, the room box, the body, the thermometer, wear, control
+    src/reactions.ts   data-driven vessel reactions, limiting reagents, reaction heat and gas release
+    src/elements.ts    chemical formula parser and atomic masses for the element ledger
+    data/reactions.json four sourced reaction records with stoichiometry, conditions and rate models
     src/scheduler.ts   fast and slow steps in a declared order
     src/world.ts       the world, the conserved ledger and the per-step check
     src/trace.ts       transfers, checks, notes, summary
@@ -64,6 +67,29 @@ These are models, not game rules. The five services remain unchanged in shape. P
 no DOM, so it runs in Node and in a browser alike. Per-step conservation checks remain for water and
 charcoal; energy is verified by focused balance tests, not a new whole-world energy ledger.
 
+`reactionProcess(vessel, reactions = defaultReactions)` runs the reaction records in order. Reagents and an
+optional catalyst must be in the vessel; gas products follow its first outgoing gas edge (connect that edge to
+the room for an open vessel), or remain inside if there is no edge. Reaction enthalpy and gas sensible enthalpy
+are separate traced transfers. Calcination absorbs 178 kJ/mol and slaking releases 65 kJ/mol, rounded from the
+formation enthalpies recorded in the data. Endothermic conversion stops when available sensible heat reaches
+the record's minimum temperature and can resume after reheating.
+
+Call `world.conserveElements()` after assembling the world and before running the scheduler to check element
+mass every step. An optional component list tracks a smaller boundary, provided it includes every participant
+in any reaction crossing that boundary. Chemical conversion traces do not count as external element supplies;
+actual gas transport and other boundary transfers do. The ledger uses formula atom counts (including parentheses),
+registered molar masses and CIAAW atomic weights. It covers contents; equipment shells remain inert. New hydrogen
+and lime molar masses follow the existing rounded H/C/O masses, keeping total mass additive in the seeded reactions.
+
+Reaction simplifications: irreversible, perfectly mixed reactions; constant heat capacities and standard reaction
+enthalpies referenced to 25 C; threshold ignition; no pressure-dependent equilibrium, dissolution, or automatic
+phase-change coupling; instantaneous gas transport. All four seed records explicitly use the requested **[model]
+complete-within-step** fallback because their cited thermochemical sources do not provide applicable bulk kinetic
+parameters. Records with sourced first-order Arrhenius parameters use `k = k0 exp(-Ea/RT)` and consume the fraction
+`1-exp(-k dt)` of the limiting reagent at the step's initial temperature. No measured kinetic parameters are invented.
+The existing still heater retains its oxygen-starvation and charcoal heating-value model; the new carbon record
+represents complete combustion of standard-state carbon and therefore uses its standard formation enthalpy.
+
 ## Sources
 
 The original formulas retain their ENG-* source keys from the pirate engine design. Sources added here:
@@ -79,6 +105,9 @@ The original formulas retain their ENG-* source keys from the pirate engine desi
 - [NIST Chemistry WebBook](https://webbook.nist.gov/chemistry/): molar mass, c_p, melting and boiling points per substance row in `data/substances.json` (each row links its own entry).
 - [Engineering ToolBox specific heat](https://www.engineeringtoolbox.com/specific-heat-metals-d_152.html) (also [solids](https://www.engineeringtoolbox.com/specific-heat-solids-d_154.html), [air](https://www.engineeringtoolbox.com/air-specific-heat-capacity-d_705.html)) and the [IT'IS tissue database](https://itis.swiss/virtual-population/tissue-properties/database/heat-capacity/): material c_p in `data/materials.json`.
 - [IUPAC CIAAW atomic weights](https://ciaaw.org/atomic-weights.htm): the formula check in `test/registry.test.ts`.
+- [IUPAC Arrhenius equation](https://goldbook.iupac.org/terms/view/A00446): rate coefficient; integration assumes first-order limiting-reagent decay at fixed step temperature.
+- [NBS thermodynamic tables, Wagman et al. (1982)](https://srd.nist.gov/JPCRD/jpcrdS2Vol11.pdf): calcite formation enthalpy and heat capacity, standard-state reference and Hess's law data. [NIST CaO](https://webbook.nist.gov/cgi/cbook.cgi?ID=C1305788&Mask=2), [Ca(OH)2](https://webbook.nist.gov/cgi/cbook.cgi?ID=C1305620&Mask=2), [CO2](https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Mask=1), [liquid water](https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Mask=2), [steam](https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Mask=1), and [hydrogen](https://webbook.nist.gov/cgi/cbook.cgi?ID=C1333740&Mask=1): formation enthalpies and heat capacities used in the reaction records and added substances.
+- [NOAA calcium carbonate](https://cameochemicals.noaa.gov/report?key=CH25005): 825 C decomposition threshold. [National Research Council laboratory chemical safety summaries](https://www.ncbi.nlm.nih.gov/sites/books/NBK55861/bin/10-LaboratoryChemicalSafetySummaries.pdf): hydrogen autoignition range, whose lower end supplies the modeled 500 C threshold. Carbon's modeled 400 C threshold retains the pirate reaction table's condition.
 
 Substances and materials live in `data/substances.json` and `data/materials.json` (loaded by `defaultRegistry()`); a null
 field means no standard value was found. The pirate table's `smoke` row (soot and tars, not one substance) and its
@@ -86,6 +115,6 @@ tagged-substance template are not carried over.
 
 ## Next (the belt)
 
-Wire the equipment catalogue and the substance database (`body/data/*.json`) into the registry; the reaction solver
-over the reaction records; the grid transport; the body as organ components on the graph; the dashboard's
+Wire the equipment catalogue and further substance records (`body/data/*.json`) into the registry; expand reaction
+coverage and measured kinetics; the grid transport; the body as organ components on the graph; the dashboard's
 Simulation Laboratory driving this package; the pirate game importing it.
