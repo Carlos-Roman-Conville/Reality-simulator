@@ -11,7 +11,7 @@ export type Command =
   | { type: 'defineRecipe'; recipe: Recipe }
   | { type: 'openInventory'; holder: string; market: string }
   | { type: 'openMarket'; id: string; mode: MarketMode }
-  | { type: 'setMarketGood'; market: string; good: string; consumptionPerDay?: number | null; targetReserve?: number | null; productionPerDay?: number | null; basePrice?: number | null }
+  | { type: 'setMarketGood'; market: string; good: string; consumptionPerDay?: number | null; targetReserve?: number | null; productionPerDay?: number | null; basePrice?: number | null; perCapitaPerDay?: number | null }
   | { type: 'addStock'; inventory: string; good: string; units: number }      // the host seeds or imports stock
   | { type: 'removeStock'; inventory: string; good: string; units: number }   // the host's exit (a quest, a wreck); refused beyond stock
   | { type: 'moveStock'; from: string; to: string; good: string; units: number }
@@ -89,7 +89,7 @@ function setMarketGood(ctx: Ctx, cmd: Extract<Command, { type: 'setMarketGood' }
   const mkt = market(ctx, cmd.market)
   good(ctx, cmd.good)
   const entry = marketGood(mkt, cmd.good)
-  for (const key of ['consumptionPerDay', 'targetReserve', 'productionPerDay', 'basePrice'] as const) {
+  for (const key of ['consumptionPerDay', 'targetReserve', 'productionPerDay', 'basePrice', 'perCapitaPerDay'] as const) {
     if (!(key in cmd)) continue
     const value = cmd[key]
     if (value === undefined) continue

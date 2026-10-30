@@ -13,7 +13,7 @@ export interface EconomyConfig {
   tickOrder: readonly string[]
 }
 
-export const TICK_ORDER = ['production', 'advance'] as const   // steps 3-5 add spoilage, consumption, prices, shipments
+export const TICK_ORDER = ['production', 'spoilage', 'consumption', 'prices', 'advance'] as const   // step 5 adds shipments
 
 export function defaultConfig(): EconomyConfig {
   return { priceRule: { kind: 'base' }, inputsAnyChoice: 'first-available', tickOrder: TICK_ORDER }

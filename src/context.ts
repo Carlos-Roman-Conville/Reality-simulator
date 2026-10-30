@@ -63,6 +63,7 @@ export function adjust(ctx: Ctx, inv: Inventory, goodId: string, delta: number, 
 
 export function marketGood(mkt: Market, goodId: string): MarketGood {
   return (mkt.goods[goodId] ??= {
-    consumptionPerDay: null, targetReserve: null, productionPerDay: null, basePrice: null, producedToday: 0, producedLast: 0,
+    consumptionPerDay: null, targetReserve: null, productionPerDay: null, basePrice: null, perCapitaPerDay: null, price: null,
+    producedToday: 0, producedLast: 0, consumedLast: 0, unmetLast: 0,
   })
 }

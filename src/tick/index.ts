@@ -1,14 +1,77 @@
 // One day, in the configured order (CONTRACTS.md §9: the host runs settlement.tick, then economy.tick(N)).
-// Step 2 has two steps: `production` rolls today's observed production into producedLast; `advance` ends the day.
-// Steps 3-5 add spoilage, consumption, prices and shipments, each a module here.
+// Each step is a function here; the order is config. Nothing in a step is a game rule: every rate is host data
+// on a good or a market good, and every formula is a config key.
 
-import type { Ctx } from '../context.ts'
+import { adjust, marketGood, must, type Ctx } from '../context.ts'
+import { price as priceOf } from '../queries.ts'
 
 type Step = (ctx: Ctx) => void
 
+/** An abstract market adds its planned `productionPerDay` to its own stock (CONTRACTS.md §6); a settlement-run market
+ *  produced through `produce` already. Then today's totals roll into `producedLast`. */
 export function production(ctx: Ctx): void {
   for (const mkt of Object.values(ctx.state.markets)) {
+    if (mkt.mode === 'abstract') {
+      const inv = must(ctx.state.inventories, mkt.inventory, 'inventory')
+      for (const [good, entry] of Object.entries(mkt.goods)) {
+        if (entry.productionPerDay === null || entry.productionPerDay <= 0) continue
+        adjust(ctx, inv, good, entry.productionPerDay, 'abstract-production')
+        entry.producedToday += entry.productionPerDay
+      }
+    }
     for (const entry of Object.values(mkt.goods)) { entry.producedLast = entry.producedToday; entry.producedToday = 0 }
+  }
+}
+
+/** Every inventory loses `spoilagePerDay` of each good that has one (E6). Goods with null spoil nothing (open). */
+export function spoilage(ctx: Ctx): void {
+  for (const inv of Object.values(ctx.state.inventories)) {
+    for (const [good, units] of Object.entries(inv.stock)) {
+      const rate = ctx.state.goods[good]?.spoilagePerDay ?? null
+      if (rate === null || rate <= 0 || units <= 0) continue
+      const lost = units * rate
+      adjust(ctx, inv, good, -lost, 'spoilage')
+      ctx.events.push({ type: 'spoiled', inventory: inv.id, good, units: lost })
+    }
+  }
+}
+
+/** Demand per market good: `consumptionPerDay` when the host set it, else headcount × `perCapitaPerDay` when both exist,
+ *  else none (open). Demand draws the market's own stock; what it cannot meet is `unmet` (E5). After the draw, a
+ *  market good below its target reserve raises a `shortage` event (E7). */
+export function consumption(ctx: Ctx): void {
+  const day = ctx.state.day
+  for (const mkt of Object.values(ctx.state.markets)) {
+    const inv = must(ctx.state.inventories, mkt.inventory, 'inventory')
+    for (const [good, entry] of Object.entries(mkt.goods)) {
+      let demand = entry.consumptionPerDay
+      if (demand === null && entry.perCapitaPerDay !== null) demand = ctx.providers.population.headcount(mkt.id, day) * entry.perCapitaPerDay
+      const have = inv.stock[good] ?? 0
+      const taken = demand === null ? 0 : Math.min(demand, have)
+      const unmet = demand === null ? 0 : demand - taken
+      if (taken > 0) adjust(ctx, inv, good, -taken, 'consumption')
+      entry.consumedLast = taken
+      entry.unmetLast = unmet
+      if (demand !== null) ctx.events.push({ type: 'consumed', market: mkt.id, good, units: taken, unmet })
+      if (entry.targetReserve !== null && entry.targetReserve > 0) {
+        const stock = inv.stock[good] ?? 0
+        if (stock < entry.targetReserve) {
+          ctx.events.push({ type: 'shortage', market: mkt.id, good, stock, targetReserve: entry.targetReserve, shortage: 1 - stock / entry.targetReserve })
+        }
+      }
+    }
+  }
+}
+
+/** Write today's price per market good by `config.priceRule` (E8); a good with no base price keeps null (E9). */
+export function prices(ctx: Ctx): void {
+  for (const mkt of Object.values(ctx.state.markets)) {
+    for (const [good, entry] of Object.entries(mkt.goods)) {
+      const next = priceOf(ctx.state, ctx.config, mkt.id, good)
+      if (next === null) { entry.price = null; continue }
+      if (next !== entry.price) ctx.events.push({ type: 'priceSet', market: mkt.id, good, price: next, was: entry.price })
+      marketGood(mkt, good).price = next
+    }
   }
 }
 
@@ -17,7 +80,7 @@ export function advance(ctx: Ctx): void {
   ctx.state.day += 1
 }
 
-export const STEPS: Record<string, Step> = { production, advance }
+export const STEPS: Record<string, Step> = { production, spoilage, consumption, prices, advance }
 
 export function tick(ctx: Ctx): void {
   ctx.state.tickTrace = []

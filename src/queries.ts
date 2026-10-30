@@ -24,7 +24,8 @@ export function shortage(state: EconomyState, market: string, good: string): num
   return Math.max(0, Math.min(1, 1 - marketStock(state, market, good) / entry.targetReserve))
 }
 
-/** The price of a good in a market by the configured rule; null when the host has set no base price (open). */
+/** The price of a good in a market by the configured rule, computed now; null when the host has set no base price (open).
+ *  The tick writes the same number to `MarketGood.price` once a day (step `prices`). */
 export function price(state: EconomyState, config: EconomyConfig, market: string, good: string): number | null {
   const entry = state.markets[market]?.goods[good]
   if (!entry || entry.basePrice === null) return null

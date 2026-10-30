@@ -48,8 +48,12 @@ export interface MarketGood {
   targetReserve: number | null
   productionPerDay: number | null   // the planned rate for an abstract market; observed production is `producedLast`
   basePrice: number | null
-  producedToday: number             // units produced into this market so far today (through `produce`)
+  perCapitaPerDay: number | null    // consumption per head per day, used with the population provider when consumptionPerDay is null
+  price: number | null              // the price the tick last set by config.priceRule; null until a base price exists
+  producedToday: number             // units produced into this market so far today (through `produce`, or an abstract market's rate)
   producedLast: number              // yesterday's total, rolled at tick
+  consumedLast: number              // yesterday's consumption taken from the market's stock
+  unmetLast: number                 // yesterday's demand the stock could not meet
 }
 
 export type MarketMode = 'settlement' | 'abstract'
