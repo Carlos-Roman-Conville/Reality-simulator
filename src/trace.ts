@@ -25,8 +25,23 @@ export class Trace {
   }
   failed() { return this.checks.filter(c => !c.ok); }
   /** Sum of a quantity moved into a component by all processes. */
-  into(component: string, quantity: string) { return this.transfers.filter(x => x.to === component && x.quantity === quantity).reduce((a, x) => a + x.amount, 0); }
-  outOf(component: string, quantity: string) { return this.transfers.filter(x => x.from === component && x.quantity === quantity).reduce((a, x) => a + x.amount, 0); }
+  into(component: string, quantity: string) { this.fold(); return this.inSums.get(`${component}\0${quantity}`) ?? 0; }
+  outOf(component: string, quantity: string) { this.fold(); return this.outSums.get(`${component}\0${quantity}`) ?? 0; }
+  // Running sums per (component, quantity), folded in order from the first transfer not yet seen: the same additions in the
+  // same order as summing the whole list, so the same numbers, without re-reading the list on every call (2569).
+  private inSums = new Map<string, number>();
+  private outSums = new Map<string, number>();
+  private folded = 0;
+  private fold() {
+    const ts = this.transfers;
+    if (this.folded > ts.length) { this.inSums.clear(); this.outSums.clear(); this.folded = 0; }
+    for (; this.folded < ts.length; this.folded++) {
+      const x = ts[this.folded];
+      const i = `${x.to}\0${x.quantity}`, o = `${x.from}\0${x.quantity}`;
+      this.inSums.set(i, (this.inSums.get(i) ?? 0) + x.amount);
+      this.outSums.set(o, (this.outSums.get(o) ?? 0) + x.amount);
+    }
+  }
   summary(): string {
     const byProcess = new Map<string, number>();
     for (const x of this.transfers) byProcess.set(`${x.process}:${x.quantity}`, (byProcess.get(`${x.process}:${x.quantity}`) ?? 0) + x.amount);
