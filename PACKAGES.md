@@ -109,26 +109,32 @@ flag (`QUESTIONS.md` Q3, Q4).
 
 ## 4. Provider interfaces (the adapter implements; the engine declares)
 
+As built (`src/providers.ts`, step 1):
+
 ```ts
-interface LabourProvider {           // the population model, or named characters
+interface LabourProvider {           // the population model, or named characters; not Economy's
   available(person, day): boolean                        // false while aboard, dead, away (the host knows; Q2)
-  draw(role, requires, hours, day): PoolDraw | null      // unnamed workers from a district pool
+  draw(pool, role, requires, wanted, day): number        // workers an unnamed pool supplies today, at most wanted
   productivity(holder, role): number                     // 0..n; the adapter maps skill bands to this
 }
-interface MaterialProvider {         // @rex/economy, or a JSON inventory stub until it exists
-  available(inventory, recipe): number                   // output units the inputs on hand allow
-  consume(inventory, recipe, units): void
-  produce(inventory, recipe, units): void
+interface MaterialProvider {         // @rex/economy (CONTRACTS.md s4a), or the in-memory stub until it exists
+  available(inventory, recipe): number                   // output units the inputs on hand allow; Infinity if no inputs
+  produce(inventory, recipe, units): void                // consume inputs, add outputs; units <= floor(available)
+  have(inventory, material): number                      // stock on hand, for projects
+  take(inventory, material, units): number               // draw for a project; returns what was taken
+  rates(recipe): { unitsPerFixtureDay, labourPerUnit }   // (proposed, CONTRACTS.md s13a; not yet in code)
 }
-interface UtilityProvider {          // @rex/realism later; a constant 1 first
-  capacity(building, recipe): number
+interface UtilityProvider {          // @rex/realism later; the stub returns Infinity
+  capacity(building, recipe, state): number
 }
-interface PriceProvider {            // @rex/economy; the stub returns the data file's number
-  valueOf(subject: title | bldg | parcel, day): number   // for sales the host does not price itself
+interface PriceProvider {            // @rex/economy, goods and inventories; property valuation is open (CONTRACTS.md s12.3)
+  valueOf(subject, day): number                          // not called by any engine code today; sell takes a price
 }
 ```
 
-Nothing in `@rex/settlement` imports the packages behind these; tests use in-memory stubs.
+Nothing in `@rex/settlement` imports the packages behind these; tests use in-memory stubs. What each side of the
+Settlement-Economy seam expects and promises (ledger provider, the settlement reader, the day order, the Q) is in
+[CONTRACTS.md](CONTRACTS.md), agreed with the economy keeper before any code on either side changes for it.
 
 ## 5. The id scheme
 
@@ -140,6 +146,7 @@ Nothing in `@rex/settlement` imports the packages behind these; tests use in-mem
 | `bldg.<n>` | engine | `bldg.0012` | reused after demolition |
 | `title.<n>` | engine | `title.0012` | moved between subjects |
 | `lease.<n>`, `txn.<n>`, `acct.<n>`, `biz.<n>`, `post.<n>`, `asg.<n>`, `proj.<n>`, `office.<n>`, `perm.<n>` | engine | | |
+| `inv.<n>`, `mkt.<n>`, `ship.<n>`, `ord.<n>`, `org.<n>` | **@rex/economy** (CONTRACTS.md s10) | `inv.0007` | minted here; `Business.inventory` holds one as an opaque string |
 | person ids | **host** | `intp-m`, `player`, `town`, `pool.dist.0003` | minted by the engine: it never invents people |
 | fixture ids | **host** | `forge`, `brewhouse` (today's 25 from `recipes.json`) | interpreted by the engine |
 | role ids | **host** | `cooper`, `planter` (today's 43 occupations) | interpreted |

@@ -45,6 +45,8 @@ the heir of an `inherit` is named by the host (no law of succession); offices gr
    with the map-derivation worked example.
 4. [TESTS.md](TESTS.md): package and adapter test specs, ending in the acceptance test A1.
 5. [QUESTIONS.md](QUESTIONS.md): what only Rex can answer, and what is assumed meanwhile.
+6. [CONTRACTS.md](CONTRACTS.md): the Settlement-Economy contract (ledger, materials, rates, the reader, the day
+   order), the economy keeper's proposal with this keeper's amendments; code on either side waits on its agreement.
 
 ## Marks
 

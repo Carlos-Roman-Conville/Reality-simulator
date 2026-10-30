@@ -41,3 +41,7 @@ Inherited from [HQ/PRINCIPLES.md](../../HQ/PRINCIPLES.md) and [Toolchain/SCOPE.m
   clean. Step 2 (the pirate adapter, T0 guard, A1, A2) built the same evening on Rex's verbatim approval. Next:
   step 3 (the derived map) once Rex gives the footprint classes (Q1); step 4 sign-off once he confirms the
   starting title rows (Q6).
+- 2026-10-30: Rex reorganised the keepers; this one owns the engine, makes no pirate narrative or government
+  decisions, and implements no production or labour calculation beyond today's until the Economy contract is
+  agreed. The economy keeper's proposal was answered the same day in `CONTRACTS.md` (counter-proposal: rates via
+  the provider, `TransactionKind` to string, a `pay` command, `setWage`); code for it waits on their confirmation.
