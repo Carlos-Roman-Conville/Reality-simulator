@@ -100,15 +100,16 @@ describe("reaction records and solver", () => {
     }
   });
   it("carbon and water formation obey stoichiometry, limiting oxygen and their cited heat", () => {
-    for (const [id, fuel, phase] of [["comb_c_full", "charcoal", "solid"], ["water_formation", "h2", "gas"]] as const) {
-      const r = reaction(id), o2 = r.reactants[1].coefficient;
-      const w = setup(600, [{ substance: fuel, phase, mass: kg(fuel, 2) }, { substance: "o2", phase: "gas", mass: kg("o2", o2) }]);
+    // charcoal burns with oxygen in excess (its minO2 floor would stop an oxygen-limited burn at 15%); water formation is oxygen-limited
+    for (const [id, fuel, phase, fuelMol, o2Mol] of [["comb_c_full", "charcoal", "solid", 1, 20], ["water_formation", "h2", "gas", 2, 0.5]] as const) {
+      const r = reaction(id);
+      const w = setup(600, [{ substance: fuel, phase, mass: kg(fuel, fuelMol) }, { substance: "o2", phase: "gas", mass: kg("o2", o2Mol) }]);
       const beforeMoles = Object.fromEntries(["C", "H", "O"].map(el => [el, w.elementMolesOf(el, ["vessel", "room"])]));
       const totalMass = () => [...w.registry.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0);
       const beforeMass = totalMass();
       const before = sensible(w);
       run(w, [r]);
-      expect(w.registry.contentMass(w.registry.component("vessel"), fuel)).toBeCloseTo(kg(fuel), 12);
+      expect(w.registry.contentMass(w.registry.component("vessel"), fuel)).toBeCloseTo(kg(fuel, fuelMol - 1), 12);
       expect(sensible(w) - before).toBeCloseTo(-r.heat, 6);
       for (const el of ["C", "H", "O"]) expect(w.elementMolesOf(el, ["vessel", "room"])).toBeCloseTo(beforeMoles[el], 12);
       expect(totalMass()).toBeCloseTo(beforeMass, 12);
@@ -133,12 +134,29 @@ describe("reaction records and solver", () => {
     expect(thin.trace.transfers).toHaveLength(0);
     const rich = air(3); // 25% oxygen
     run(rich, [r]);
-    expect(rich.registry.contentMass(rich.registry.component("vessel"), "charcoal")).toBeCloseTo(kg("charcoal"), 12);
+    expect(rich.registry.contentMass(rich.registry.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
     const edge = air(5.6), reg = edge.registry; // 1 / 6.6 = 15.15%
     run(edge, [r], 1);
     expect(reg.contentMass(reg.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
     expect(heatPerKg(reg, r)).toBeCloseTo(-393510 / reg.substance("charcoal").molarMass, 6);
     expect(-heatPerKg(reg, r) / 1e6).toBeCloseTo(32.8, 1);
+  });
+  it("minO2 is a floor: a sealed vessel of charcoal at 21% oxygen ends at 0.15, not 0, and still balances", () => {
+    const r = reaction("comb_c_full");
+    const w = setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal", 5) },
+      { substance: "o2", phase: "gas", mass: kg("o2", 2.1) }, { substance: "n2", phase: "gas", mass: kg("n2", 7.9) }], false);
+    const beforeMoles = Object.fromEntries(["C", "O", "N"].map(el => [el, w.elementMolesOf(el, ["vessel", "room"])]));
+    const totalMass = () => [...w.registry.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0);
+    const beforeMass = totalMass();
+    run(w, [r], 5);
+    const reg = w.registry, vessel = reg.component("vessel");
+    const gas = vessel.contents.filter(x => x.phase === "gas").map(x => x.mass / reg.substance(x.substance).molarMass);
+    const o2 = reg.contentMass(vessel, "o2") / reg.substance("o2").molarMass;
+    expect(o2 / gas.reduce((s, n) => s + n, 0)).toBeCloseTo(0.15, 12);
+    expect(o2).toBeCloseTo(1.5, 12);
+    expect(reg.contentMass(vessel, "charcoal")).toBeCloseTo(kg("charcoal", 4.4), 12);
+    for (const el of ["C", "O", "N"]) expect(w.elementMolesOf(el, ["vessel", "room"])).toBeCloseTo(beforeMoles[el], 12);
+    expect(totalMass()).toBeCloseTo(beforeMass, 12);
   });
   it("rejects an oxygen condition with neither a source nor a [model] mark, or out of range", () => {
     const w = setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal") }, { substance: "o2", phase: "gas", mass: kg("o2") }]);

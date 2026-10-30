@@ -61,13 +61,28 @@ function validate(reg: Registry, reaction: Reaction) {
 
 /** Oxygen volume fraction of a vessel's gas: o2 moles over all gas moles (ideal gas, so mole and volume fractions agree). */
 function oxygenFraction(reg: Registry, v: { contents: { substance: string; phase: Phase; mass: number }[] }): number {
+  const { o2, total } = gasMoles(reg, v);
+  return total > 0 ? o2 / total : 0;
+}
+
+function gasMoles(reg: Registry, v: { contents: { substance: string; phase: Phase; mass: number }[] }): { o2: number; total: number } {
   let o2 = 0, total = 0;
   for (const x of v.contents) if (x.phase === "gas") {
     const n = x.mass / reg.substance(x.substance).molarMass;
     total += n;
     if (x.substance === "o2") o2 += n;
   }
-  return total > 0 ? o2 / total : 0;
+  return { o2, total };
+}
+
+/** Largest extent that leaves the vessel's oxygen fraction at minO2 or above: (o2 + d x) / (total + dn x) = minO2,
+ * d and dn being the reaction's gas o2 and gas mole change per extent. Infinity when the reaction cannot lower the fraction. */
+function oxygenFloorExtent(reg: Registry, v: { contents: { substance: string; phase: Phase; mass: number }[] }, reaction: Reaction, minO2: number): number {
+  const gas = (terms: Reagent[], only?: string) => terms.reduce((s, x) => s + (x.phase === "gas" && (only === undefined || x.substance === only) ? x.coefficient : 0), 0);
+  const d = gas(reaction.products, "o2") - gas(reaction.reactants, "o2");
+  const dn = gas(reaction.products) - gas(reaction.reactants);
+  const { o2, total } = gasMoles(reg, v), slope = minO2 * dn - d;
+  return slope > 0 ? Math.max(0, (o2 - minO2 * total) / slope) : Infinity;
 }
 
 /** Vessel reactions, in record order. Reactants/catalysts must be inside the vessel.
@@ -77,7 +92,8 @@ function oxygenFraction(reg: Registry, v: { contents: { substance: string; phase
  * Hess's law and constant-cp sensible enthalpy, relative to 298.15 K (25 C):
  * https://srd.nist.gov/JPCRD/jpcrdS2Vol11.pdf and each record's formation enthalpies.
  * Endothermic extent is also limited by sensible heat above the minimum temperature.
- * conditions.minO2 is the oxygen volume fraction of the vessel's gas under which the reaction does not run.
+ * conditions.minO2 is the oxygen volume fraction of the vessel's gas under which the reaction does not run,
+ * and a floor: a step's extent is capped so the vessel's oxygen fraction does not fall below it.
  * Named simplifications: constant heat capacities, irreversible reactions, threshold ignition,
  * perfect mixing, no pressure/equilibrium kinetics, instantaneous gas transport along the first
  * outgoing gas edge (no edge means retained gas). Gas carries sensible enthalpy to its receiver.
@@ -102,6 +118,8 @@ export function reactionProcess(vessel: string, reactions: readonly Reaction[] =
         const k = reaction.rate.k0PerS * Math.exp(-reaction.rate.activationEnergyJPerMol / (R_GAS * (v.temperatureC + C_TO_K)));
         extent *= -Math.expm1(-k * dt);
       }
+      if (reaction.conditions.minO2 !== undefined) extent = Math.min(extent, oxygenFloorExtent(reg, v, reaction, reaction.conditions.minO2));
+      if (extent <= 0) continue;
       const cap = reg.heatCapacity(v);
       if (!(cap > 0)) throw new Error(`no heat capacity in ${vessel}`);
       const molarCapacity = (terms: Reagent[]) => terms.reduce((sum, x) => {
