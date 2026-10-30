@@ -56,6 +56,17 @@ quantities as data (the balance lane's); the game's own use of the adapter.
 **(Rex)** his decision, restated. **(proposed)** this keeper's suggestion. **(open)** only Rex can answer; the
 engine carries a config key or refuses meanwhile. No value is filled in silently.
 
+## Scope added by Rex (2026-10-30; recorded, nothing built)
+
+- **Burial services as resource flows:** coffins (a Carpentry good), burial labour (a service post), transport of
+  the body, and burial land (a Settlement parcel use; the economy sees the fee and the labour, never the plot).
+- **Waste management as resource flows:** refuse, night soil and offal as goods with negative or zero price that
+  someone must carry away; their effect on health is Reality & Species' (sanitation, decomposition), the carrying
+  and the fee are this engine's. Both land as recipes and services in the host's data when designed; see PLAN step 12.
+
+`RESEARCH.md` holds the period values proposed for the economy's open rows in `STARTING_TOWN.md` (researched /
+estimate / fiction).
+
 ## Boundaries (what is deliberately not here)
 
 - Persons, skills and skill bands as attributes of people, population counts, nutrition: the host and `realism`.
