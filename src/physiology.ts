@@ -175,6 +175,7 @@ export function palRange() { return { min: lib().palMin, max: lib().palMax }; }
 
 /** Resting rate of a body from its props, kcal/day, or null when height, age or sex is missing. */
 export function bodyRmr(body: Component): number | null {
+  if (body.props.rmr_kcal_day !== undefined) return body.props.rmr_kcal_day; // a species' own formula (anatomy.speciesRmr)
   const { height_cm: h, age_y: a, male } = body.props;
   if (h === undefined || a === undefined || male === undefined) return null;
   return restingMetabolicRate(body.mass, h, a, male === 1);

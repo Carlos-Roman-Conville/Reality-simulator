@@ -133,3 +133,22 @@ Validation: full gate passed on 2026-10-30: 216 tests passed in 18 files,
 2 explicit checkpoint-2 TODOs; `npx tsc --noEmit` passed; the shell example
 exited 0. Existing still and checkpoint-1 tests were unchanged and passed.
 The TODOs mean a green executable gate does not imply full checkpoint acceptance.
+
+## Independence (2532, 2026-10-30): the engine alone, a horse in a stable
+
+Run `node --experimental-strip-types examples/horse-stable.ts`; test `test/independence.test.ts`.
+Thirty days, a 500 kg horse (the `anatomy.species` "A horse (example)" column) in a 60 m3 stable with the
+library's 2 ACH, the human-week weather extrema, no stable-hand hazards. Ration 1 x Kleiber RMR
+(70 x kg^0.75 = 7,402 kcal/day) fed hourly, water drunk to the deficit. Per day the ledger prints kcal in and
+out, stored kcal and mass proxy, water in and held, CO2 peak (about 1,070 ppm), ventilation, heart output
+(0.07 L/min/kg x mass = 35 L/min), organ functions and MET-hours. The run closes: 30 days, 0 conservation
+failures (water, O2/CO2/N2, elements), energy in = out, no NaN. Nothing under `src/` or `examples/` mentions
+the game; `package.json` has no game dependency; no game import exists.
+
+**What it cannot show (FLAGS.md, independence).** There is no hay or horse-oats row, so feed is kcal and water
+only; no horse MET, so the two working hours run at rest (workMet null) and the energy balance is zero by
+construction of the ration; no horse respiratory, haemoglobin, skin-area, sweat or muscle rows, so breathing
+uses the human per-kg profile as a named stand-in, circulation is off, muscle fatigue is null and organ
+functions stay 1 (no insult is applied). The test asserts the horse's own rows (RMR, cardiac output, blood
+volume, set point) and that breathing equals the profile function of the stable's air. It shows the engine
+takes a second species from library columns with no game code; it does not validate equine physiology.

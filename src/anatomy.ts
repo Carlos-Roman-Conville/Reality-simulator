@@ -50,6 +50,12 @@ export function speciesProfile(column: "Human default" | "A horse (example)" = "
     respiratory: human ? respiratoryProfile() : null };
 }
 
+/** The species' resting rate from its RMR-formula field (kcal/day), or null when the field is not a power law (the human's is Mifflin-St Jeor in physiology). */
+export function speciesRmr(profile: SpeciesProfile, massKg: number): number | null {
+  const m = /([\d.]+) x kg\^([\d.]+)/.exec(String(profile.fields["anatomy.species.rmr-formula"]));
+  return m ? Number(m[1]) * Math.pow(massKg, Number(m[2])) : null;
+}
+
 export interface OrganState {
   component: string;
   row: LibraryRow;
@@ -158,7 +164,7 @@ export function connectOrganInput(w: World, a: BodyAssembly, organ: string, sour
   a.signals[id] = { component: source, output };
 }
 
-/** Floors cite E:/AI Programs/Games/RPG's/pirate-ship/files/pirate-ship/body/ANATOMY.md
+/** Floors cite the host game's ANATOMY.md
  * section 3a (2026-10-29). Reaching a floor opens
  * a crisis immediately; durations are observations for the host, never death rolls. */
 const floors: Record<string, number> = { brain: 0.2, heart: 0.2, lungs: 0.2, liver: 0.1, kidneys: 0.1 };

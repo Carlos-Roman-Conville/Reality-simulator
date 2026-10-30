@@ -5,7 +5,7 @@
  * library.ts and the rule texts are parsed, so a changed table changes the model. What the docs ask for and the library cannot
  * support is listed in FLAGS.md and left disabled here (a `null` rate switches that path off).
  *
- * Sources of the formulas (all in the library's rows; the pirate dashboard's respiratory calculator, `resp` in
+ * Sources of the formulas (all in the library's rows; the host dashboard's respiratory calculator, `resp` in
  * body/dashboard.html, and world/ATMOSPHERE.md section 2 carry them in code and prose):
  * - pressure: the barometric formula in physics.ts (`pressureAtAltitude`, ATM-STD); inspired PO2 = FiO2 (P - 47 mmHg).
  * - alveolar gas equation (ATM-ALV): PAO2 = FiO2 (P - 47) - PaCO2 / 0.8; arterial PO2 = PAO2 less the A-a gradient.
@@ -44,7 +44,7 @@ function grab(text: string, rx: RegExp, what: string, group = 1): number {
 const cell = (file: string, table: string, id: string, column: string) => String(libraryRow(file, table, id)[column]);
 
 /**
- * Coefficients of the pirate dashboard's respiratory calculator (`resp`, body/dashboard.html) that no library table carries.
+ * Coefficients of the host dashboard's respiratory calculator (`resp`, body/dashboard.html) that no library table carries.
  * They are illustrative placeholders there (its caption says so); FLAGS.md lists each as a NOTE.
  */
 export const CALCULATOR = {

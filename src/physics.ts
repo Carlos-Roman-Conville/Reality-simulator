@@ -1,5 +1,5 @@
 /**
- * Real-world formulas and constants (SI). Every function cites its source key (files/pirate-ship/SOURCES.md, ENG-*).
+ * Real-world formulas and constants (SI). Every function cites its source key (the host's SOURCES.md, ENG-*).
  * Nothing here is a game rule: these are the physics the engine runs on. Simplifications are named in the doc comment.
  */
 
