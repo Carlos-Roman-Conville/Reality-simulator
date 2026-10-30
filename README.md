@@ -6,8 +6,29 @@ constraint, public works, offices and permissions. A game supplies its history, 
 story through an adapter; the engine never imports a game. Modelled on `../realism` (Rex: a reusable backend
 like Toolchain/realism, not an extension of the pirate town's slot system).
 
-**Status: design and plan only. No code. Nothing in any game changed.** Implementation waits on Rex approving
-`MIGRATION.md` and answering the questions it names.
+**Status: architecture approved and step 1 built (Rex, 2026-10-29, agreeing with ChatGPT's review). Nothing in
+any game changed.** Steps 2 onward wait on the answers `MIGRATION.md` names per step.
+
+## Run
+
+    npm install --offline      # vitest and typescript from the cache (the realism lock file)
+    npm test                   # U1 to U12 and the hamlet example
+    npm run typecheck
+
+## Built so far (step 1, 2026-10-29)
+
+`src/`: the records (`state.ts`), ids (`ids.ts`), tunables with placeholder bands (`config.ts`, every number
+proposed), the four provider interfaces with in-memory stubs (`providers.ts`), the command union and handlers
+(`commands.ts`: land, property with `transferable` terms, leases, the ledger, projects, layouts, businesses, posts,
+assignments, offices, permissions, money), the seven tick steps (`tick/`), the reducer and a `Runner`
+(`reduce.ts`), queries (`queries.ts`). `examples/hamlet.ts`: three parcels, two construct projects, a sawyer's line,
+no game data. `test/engine.test.ts`: one describe per TESTS.md U-row, 16 tests.
+
+What the code encodes of Rex's answers: a sale changes the holder and nothing else (U3); a title can refuse a
+buyer (U3, Q6); assignments never end on their own (U4); a business runs while its operator is away if a manager
+is available (U7, Q2); layouts change only through projects unless `config.freeLayout` is set (U8, Q8 default);
+the heir of an `inherit` is named by the host (no law of succession); offices grant permits only with the power
+(U10). The engine still names nobody (U12).
 
 ## Read in this order
 
@@ -38,15 +59,19 @@ because its owner or manager changes; the story-driven transformation system sta
 story and institution references; parcels, buildings, businesses and titles get their own ids. Property and
 economy stay independent of the ghost and death question.
 
-## Planned shape (when built)
+## Shape
 
     package.json        @rex/settlement, TypeScript, vitest, no dependencies (as realism)
     src/ids.ts          prefixes, counters, retirement
     src/state.ts        the records, JSON-safe, versioned
-    src/reduce.ts       the command union, one entry point
-    src/tick/           decay, projects, staffing, production, wages, public works, expiry
-    src/queries.ts      holderOf, assignmentsOf, hasFixture, physical, economic, production, mapLayer
+    src/config.ts       condition bands, freeLayout, hoursPerDay, the tick order (placeholders, proposed)
+    src/commands.ts     the command union and every handler
+    src/context.ts      the reduce context: copy, mint, accounts, pay, right of use, office powers
+    src/reduce.ts       reduce(state, command, config, providers) -> { state, events }; Runner
+    src/tick/           decay, projects, staffing, production, wages (+ publicWorks), expiry
+    src/queries.ts      holderOf, assignmentsOf, hasFixture, physical, economic, production, ledger, mapLayer
     src/providers.ts    LabourProvider, MaterialProvider, UtilityProvider, PriceProvider + stubs
-    scripts/derive_map.py   requirements -> dimensions, districts, first parcels (no typed counts)
-    examples/           a hamlet with no game data: the reuse proof
-    test/               one test per rule (TESTS.md U1 to U12)
+    src/events.ts       the events reduce returns
+    examples/hamlet.ts  a hamlet with no game data: the reuse proof
+    test/               one describe per TESTS.md U-row
+    (later) scripts/derive_map.py   requirements -> dimensions, districts, first parcels (step 3, no typed counts)

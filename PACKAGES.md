@@ -39,7 +39,7 @@ the engine stores and compares the string and never interprets it.
 | `Parcel` | `id`, `district`, `footprint` (tile polygon), `access[]` (road, harbour, path: opaque), `zoning` (opaque), `buildings[]`, `vacant`, `splitFrom`, `mergedInto` | **subdividable**: `split(parcel, line)` mints children and retires the parent (never reused); `merge` likewise. A parcel is land, never renamed |
 | `Building` | `id`, `parcel`, `footprint`, `storeys`, `condition` (0 to 1, with named bands as data: ruined / poor / sound / fine, proposed), `layout: Layout`, `fixtures[]` (equipment ids, opaque: `forge`, `brewhouse` ...), `builtOn`, `demolishedOn` | the **physical** axis. `fixtures` is where the 25 `facilities.list` ids live |
 | `Layout` | `rooms[]` {`id`, `name`, `tiles[]`, `use` (opaque)}, `placements[]` {`fixture`, `room`, `at`}, `version` | **persistent**: saved with the building; renovation projects write new versions; the scene renders from it |
-| `Title` | `id`, `subject` (`parcel.*` or `bldg.*`), `holder` (opaque: a slug, `player`, `town`, `none`), `class` (opaque: private / player / public / vacant, proposed), `encumbrances[]` (lease ids), `since: txn` | the **legal** axis. One holder per title; a parcel title and a building title may differ (ground landlord vs house owner: 1650 to 1730 leasehold practice is the adapter's to source) |
+| `Title` | `id`, `subject` (`parcel.*` or `bldg.*`), `holder` (opaque: a slug, `player`, `town`, `none`), `class` (opaque: private / player / public / vacant, proposed), `encumbrances[]` (lease ids), `since: txn`, `transferable` (`{ sale: boolean, to?: string[] }`: not every property is purchasable, Rex via paste 2026-10-29) | the **legal** axis. One holder per title; a parcel title and a building title may differ (ground landlord vs house owner: 1650 to 1730 leasehold practice is the adapter's to source) |
 | `Lease` | `id`, `title`, `tenant` (opaque), `scope` (whole / rooms[]), `rent` {amount, per: day}, `start`, `end`, `terms` (opaque data), `status` | many per title |
 | `Transaction` | `id`, `day`, `kind` (sale / lease / lease-end / inherit / transfer / seizure / grant / permit / wage / rent / purchase), `from`, `to`, `subject`, `amount`, `authority` (office id or null), `note` | the **ledger**: append-only; every ownership change is one row; wages and rents are rows too so the treasury reconciles |
 | `Account` | `id`, `holder`, `balance` | money is conserved across accounts (a `sale` debits one and credits another) |
@@ -111,6 +111,7 @@ flag (`QUESTIONS.md` Q3, Q4).
 
 ```ts
 interface LabourProvider {           // the population model, or named characters
+  available(person, day): boolean                        // false while aboard, dead, away (the host knows; Q2)
   draw(role, requires, hours, day): PoolDraw | null      // unnamed workers from a district pool
   productivity(holder, role): number                     // 0..n; the adapter maps skill bands to this
 }

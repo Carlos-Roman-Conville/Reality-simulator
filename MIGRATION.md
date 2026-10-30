@@ -5,6 +5,11 @@ the nine endings working exactly as today, and every step ends with the alignmen
 (`TESTS.md` T0) green. Nothing starts until Rex approves this plan; steps 3, 6 and 9 each also wait on a named
 answer in `QUESTIONS.md`. Marks: **(Rex)** his; **(proposed)** mine; **(open)** Rex's call.
 
+**Authorised 2026-10-29 (Rex, agreeing with ChatGPT's review):** the architecture; step 1 in full (records, the
+ledger, assignments, projects) in the package. Still open before their steps: the map's dimensions (step 3), the
+starting titles and faction ownership restrictions (steps 4 and 6). Step 1 was built the same day in this folder
+(README, "Built so far").
+
 Workers follow Rex's belt rule: Codex for solvers and the reducer, Sonnet for data-driven modules and adapters,
 one module per task; Fable only for design and review. No whole-game Opus session.
 

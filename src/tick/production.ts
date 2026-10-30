@@ -1,0 +1,47 @@
+// Step 4: Q = min(Q_equipment, Q_labour, Q_materials, Q_utilities), the brief's first approximation, per line.
+// Lines share the day's labour in order. The engine never knows what a recipe makes.
+import { bandOf } from '../config.ts'
+import { setStatus } from '../commands.ts'
+import type { Ctx } from '../context.ts'
+
+export function production(ctx: Ctx): void {
+  const { labour, materials, utilities } = ctx.providers
+  const day = ctx.state.settlement.day
+  for (const biz of Object.values(ctx.state.businesses)) {
+    if (biz.status !== 'staffed' && biz.status !== 'producing') { delete ctx.state.production[biz.id]; continue }
+    let labourDays = 0
+    for (const id of biz.posts) {
+      const post = ctx.state.posts[id]
+      if (post.filledBy) labourDays += (post.hours / ctx.config.hoursPerDay) * labour.productivity(post.filledBy, post.role)
+    }
+    const lines: { recipe: string; q: number; caps: Record<string, number> }[] = []
+    let produced = false
+    for (const line of biz.lines) {
+      let equipment = Number.POSITIVE_INFINITY
+      for (const fixture of line.equipment) {
+        let count = 0
+        for (const premises of biz.premises) {
+          const bldg = ctx.state.buildings[premises.bldg]
+          if (!bldg || bldg.demolishedOn !== null) continue
+          const factor = bandOf(ctx.config, bldg.condition).outputFactor
+          count += bldg.fixtures.filter((item) => item === fixture).length * factor
+        }
+        equipment = Math.min(equipment, count * line.unitsPerFixtureDay)
+      }
+      const labourCap = line.labourPerUnit > 0 ? labourDays / line.labourPerUnit : Number.POSITIVE_INFINITY
+      const materialCap = materials.available(biz.inventory, line.recipe)
+      let utility = Number.POSITIVE_INFINITY
+      for (const premises of biz.premises) utility = Math.min(utility, utilities.capacity(premises.bldg, line.recipe, ctx.state))
+      const q = Math.max(0, Math.floor(Math.min(equipment, labourCap, materialCap, utility)))
+      const finite = (value: number) => (Number.isFinite(value) ? value : -1)
+      lines.push({ recipe: line.recipe, q, caps: { equipment: finite(equipment), labour: finite(labourCap), materials: finite(materialCap), utilities: finite(utility) } })
+      if (q > 0) {
+        materials.produce(biz.inventory, line.recipe, q)
+        labourDays -= q * line.labourPerUnit
+        produced = true
+      }
+    }
+    ctx.state.production[biz.id] = { day, lines }
+    setStatus(ctx, biz.id, produced ? 'producing' : 'staffed')
+  }
+}

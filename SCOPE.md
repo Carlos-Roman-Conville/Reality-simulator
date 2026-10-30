@@ -9,7 +9,8 @@ production, authority). Design only as of 2026-10-29; the pirate game's town is 
 
 | Folder | What | State |
 |---|---|---|
-| (this folder) | README, dependency map, package boundaries, migration plan, test specs, Rex's questions. | idea (design only) |
+| [src/](src/), [test/](test/), [examples/](examples/) | The engine (step 1 built 2026-10-29: records, ledger, assignments, projects, businesses, tick), its tests and the hamlet. | active |
+| (design docs) | README, dependency map, package boundaries, migration plan, test specs, Rex's questions. | active |
 
 ## Read first
 
@@ -22,7 +23,7 @@ production, authority). Design only as of 2026-10-29; the pirate game's town is 
 
 ## Ignore
 
-- None yet (no `node_modules`, no generated output).
+- `node_modules/`.
 
 ## Rules that apply here
 
@@ -35,5 +36,6 @@ Inherited from [HQ/PRINCIPLES.md](../../HQ/PRINCIPLES.md) and [Toolchain/SCOPE.m
 
 ## Current state
 
-- 2026-10-29: folder created with the design set. Waiting on Rex: approve the plan; Q1, Q2, Q6 before steps 3,
-  6 and 4. Next: step 1 (the package skeleton) on the belt once approved.
+- 2026-10-29: folder created with the design set; Rex approved the architecture and step 1 (agreeing with
+  ChatGPT's review) and answered Q2; Q1 and Q6 answered in part. Step 1 built: `npm test` 16 green, typecheck
+  clean. Next: step 2 (the pirate adapter shell and the T0 guard) once Rex sets the starting titles (Q6).

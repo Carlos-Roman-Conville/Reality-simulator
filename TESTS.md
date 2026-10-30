@@ -42,7 +42,7 @@ alignment command the `AlignmentState` JSON is byte-identical to a run without t
 | T4 | transfer and inheritance are host-named | `inherit(title, 'farm-daughter')` for `port.farm` | the holder changes; no succession rule in the engine was consulted (the command carried the heir); `AlignmentState` identical |
 | T5 | one owner, many tenants | the player owns the warehouse building; `bigwig`'s business leases rooms; a second business leases others | both leases coexist; rents reach the player's account; `operatorChanged` never fires |
 | T6 | the facility boolean is derived | starting fixtures per building | `hasFacility('stl.port', id)` equals the hand list the economy data would have had, for all 25 ids, in the starting state; removing the only `forge` fixture flips `forge` to false |
-| T7 | arrangements do not move the alignment engine | `assign(intp-m, employment, post at port.farm)` then the alignment `recruit(intp-m)` | `CharacterState.location` goes to `aboard` exactly as today; the employment assignment still exists (or ends, per Rex's answer to Q2; the test encodes whichever he gives); `develop(port.farm)` behaves as today |
+| T7 | arrangements do not move the alignment engine (Q2 answered) | `intp-m` holds the farm's title and operates its business with a manager post filled by `farm-daughter` and two pool posts; then the alignment `recruit(intp-m)` | `CharacterState.location` goes to `aboard` exactly as today; every assignment of `intp-m` still exists; `LabourProvider.available('intp-m')` is false so his own post is unfilled that day; the business stays `staffed` and `producing` through the manager and the pool; `develop(port.farm)` behaves as today |
 | T8 | unnamed workers come from the pool | a post with holder `pool.dist.housing` | `LabourProvider.draw` is called with the district's role counts from the POPULATION record; the wage row's `to` is the pool id; no character slug is minted |
 | T9 | production is constrained | the butcher shop with 1 `salting-house`, 2 filled posts, 10 units of inputs, utility 1 | `Q` equals the smallest of the four; after a `tick` the inventory moved by `Q`; the business is `producing` |
 | T10 | the brewery is optional and constructible | no brewery in `port.json` | `hasFacility('brewhouse')` is false at the start; after `construct` with `brewhouse` fixtures, Brewing posts and inputs, a Brewing recipe produces; nothing in `institutions.json` or `UPGRADES.md` was needed |
@@ -89,6 +89,20 @@ conditions. Record `S0 = AlignmentState`, `P0 = townPosition`, `E0 = ending`.
   assignment, unless Rex's answer to Q2 says employment ends; then the test asserts that one change and nothing
   else).
 - `physical('port.bakery')` reads the building's condition band; `economic('port.bakery')` is `producing`.
+
+## Acceptance (A2, adapter): property transfers reach the story without touching alignment
+
+**(Rex via paste, 2026-10-29.)** Buying the butcher shop may change the butcher's relationship with the player while
+the shop's institutional alignment stays unchanged until its own story conditions are met.
+
+Setup as A1. Action: `sell` the butcher shop's building to `player`; `tick`. Must hold: the engine returned a
+`titleChanged` event; the adapter's bridge forwarded it to the story's listener as a **relationship** hook
+(`{kind: 'titleChanged', place: 'port.bakery', from, to}`; what the hook does to hearts or dialogue is the story
+keeper's data, not asserted here beyond "it was called once with these fields"); the bridge issued **no** alignment
+command; `AlignmentState` is byte-identical; `slot.owner`, `slot.developed`, `slot.pos` of `port.bakery` unchanged.
+Then run A1's line 7 (`supply`, `recruit`, `develop`, `sleep`): the slot develops and transforms exactly as a run
+without the sale. Also: a `sell` of a title whose terms forbid transfer to `player` is refused with no event and no
+ledger row (Q6).
 
 A second run of the same script with the settlement engine **absent** (the adapter's bridge disabled) produces
 the same alignment trace; a run of the package's `examples/` hamlet with the same command kinds and no pirate
