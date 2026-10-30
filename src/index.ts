@@ -14,4 +14,5 @@ export * from "./atmosphere.ts";
 export * from "./neurology.ts";
 export * from "./circulation.ts";
 export * from "./anatomy.ts";
+export * from "./muscular.ts";
 export * from "./lab/still.ts";

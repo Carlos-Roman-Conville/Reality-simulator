@@ -1,0 +1,206 @@
+/** Library-driven muscular indices. No tissue mass/energy is created: physiology owns
+ * metabolic work and nutrition owns mass. Unsupported mechanisms remain null (FLAGS.md).
+ * Equations: MUSCULAR.md sections 4 and 5a; all fitted constants come from library.ts. */
+import { libraryColumns, libraryRow, libraryTable } from "./library.ts";
+import type { Trace } from "./trace.ts";
+
+const table = (name: string) => libraryTable("muscular", name);
+const training = (slug: string) => libraryRow("muscular", "training", `muscular.training.${slug}`);
+function numbers(text: unknown): number[] {
+  return (String(text).match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+}
+function bounded(value: number, lo: number, hi: number, name: string): number {
+  if (!Number.isFinite(value) || value < lo || value > hi) throw new Error(`muscular: invalid ${name}: ${value}`);
+  return value;
+}
+export function muscularRange(id: string): readonly [number, number] {
+  const row = libraryRow("muscular", "values", id);
+  const match = /^(\d+) to (\d+)/.exec(String(row.Range));
+  if (!match) throw new Error(`muscular: ${id} is not a numeric index`);
+  return [Number(match[1]), Number(match[2])];
+}
+const indexMax = () => muscularRange("muscular.values.contractile-was-development")[1];
+export const muscularTables = () => ({ groups: table("groups"), values: table("values"),
+  adaptation: table("adaptation"), patterns: table("patterns"), tendons: table("tendons"), training: table("training") });
+
+/** Only memberships explicitly named by fatigue_rates; no inferred joint for chest/back/neck. */
+const rateGroups = [
+  ["delt_front", "delt_mid", "delt_rear", "rotator_cuff"],
+  ["biceps", "brachialis", "triceps"],
+  ["forearm_flex", "forearm_ext", "hand"],
+  ["erectors", "abs", "obliques"],
+  ["glute_max", "glute_med", "quads", "hamstrings"],
+  ["calves", "tibialis"],
+];
+const rateSlugs = ["shoulder-deltoids-rotator-cuff", "elbow-biceps-brachialis-triceps", "grip-forearm-hand",
+  "trunk-erectors-abs-obliques", "hip-and-knee-glutes-quads-hamstrings", "ankle-calves-tibialis"];
+export function muscularRates(group: string) {
+  libraryRow("muscular", "groups", group);
+  const i = rateGroups.findIndex(groups => groups.includes(group));
+  if (i < 0) return null;
+  const row = libraryRow("muscular", "fatigue_rates", `muscular.fatigue_rates.${rateSlugs[i]}`);
+  return { id: String(row.id), F: Number(row["F (per s)"]), R: Number(row["R (per s)"]) };
+}
+
+/** At the row's MET only. There are 30 activation columns for 31 groups: diaphragm is null. */
+export function muscularActivation(actionId: string) {
+  const row = libraryRow("muscular", "activations", actionId);
+  return { id: actionId, met: Number(row["Intensity (MET)"]), groups: Object.fromEntries(table("groups").map(g => {
+    const id = String(g.id), value = row[id];
+    return [id, typeof value === "number" ? value / indexMax() : null];
+  })) as Record<string, number | null> };
+}
+
+export interface Compartments { resting: number; active: number; fatigued: number }
+/** Explicit seconds, with the doc's one-second steps (a shorter final step is allowed).
+ * At rest active fibres are released; MF then follows the documented exact exponential.
+ * Transfers and sum-to-one checks are returned through the shared Trace when supplied. */
+export function stepMuscleFatigue(state: Compartments, group: string, effort: number, seconds: number,
+  recoveryMultiplier: number, trace?: Trace, t = 0): Compartments | null {
+  bounded(effort, 0, 1, "effort"); bounded(seconds, 0, Infinity, "seconds");
+  bounded(recoveryMultiplier, 0, 1, "recovery multiplier");
+  for (const value of Object.values(state)) bounded(value, 0, 1, "compartment");
+  if (Math.abs(state.resting + state.active + state.fatigued - 1) > 1e-12) throw new Error("muscular: compartments must sum to one");
+  const rates = muscularRates(group);
+  if (!rates) return null;
+  const s = { ...state }, R = rates.R * recoveryMultiplier;
+  const move = (from: keyof Compartments, to: keyof Compartments, amount: number, time: number) => {
+    s[from] -= amount; s[to] += amount;
+    if (amount) trace?.record({ t: time, process: "muscular", quantity: `muscle-fraction:${group}`,
+      from: `${group}:${from}`, to: `${group}:${to}`, amount });
+  };
+  const check = (time: number) => {
+    const total = s.resting + s.active + s.fatigued;
+    trace?.check(time, `muscle-fraction:${group}`, 1, total, 1e-12);
+    if (Math.abs(total - 1) > 1e-12 || Object.values(s).some(x => x < 0 || x > 1)) throw new Error("muscular: compartment conservation failed");
+  };
+  if (seconds === 0) return s;
+  if (effort === 0) {
+    move("active", "resting", s.active, t);
+    move("fatigued", "resting", s.fatigued * -Math.expm1(-R * seconds), t);
+    check(t + seconds);
+  } else {
+    for (let elapsed = 0; elapsed < seconds;) {
+      const dt = Math.min(1, seconds - elapsed);
+      const recruit = effort * s.resting * dt, fatigue = rates.F * s.active * dt, recover = R * s.fatigued * dt;
+      move("resting", "active", recruit, t + elapsed);
+      move("active", "fatigued", fatigue, t + elapsed);
+      move("fatigued", "resting", recover, t + elapsed);
+      elapsed += dt; check(t + elapsed);
+    }
+  }
+  return s;
+}
+
+/** A reference observation, not a stopping threshold for 3CC (the rows are inconsistent). */
+export function muscularEnduranceReference(effort: number) {
+  const row = table("endurance_time").find(r => Number(r["Effort (% of the group's max)"]) / indexMax() === effort);
+  if (!row) return null;
+  const text = String(row["Endurance time (fresh)"]);
+  return { id: String(row.id), seconds: numbers(text)[0]! * (text.includes("min") ? 60 : 1),
+    lowerBound: text.startsWith("over"), exhaustionSeconds: null };
+}
+
+export interface MuscleState {
+  contractile: number; oxidative: number | null; condition: number;
+  min: number; max: number; idleDays: number; tension: number; aerobic: number;
+  compartments: Compartments | null;
+}
+export type MuscleSide = "L" | "R" | "one";
+export interface MuscularState {
+  groups: Record<string, Partial<Record<MuscleSide, MuscleState>>>;
+  patterns: Record<string, Partial<Record<MuscleSide, { recruitment: number; practice: number; adaptation: null }>>>;
+  tendons: Record<string, { tolerance: number | null; adaptation: null; injury: null }>;
+}
+/** Genetic limits and initial levels are host inputs, not inferred from game stats. */
+export function createMuscularState(initial: { contractile: number; oxidative: number | null; min: number; max: number; recruitment: number }): MuscularState {
+  bounded(initial.min, 0, indexMax(), "genetic minimum");
+  bounded(initial.max, initial.min, indexMax(), "genetic maximum");
+  bounded(initial.contractile, initial.min, initial.max, "contractile");
+  if (initial.oxidative !== null) bounded(initial.oxidative, 0, indexMax(), "oxidative");
+  bounded(initial.recruitment, 0, indexMax(), "recruitment");
+  const sides = (s: unknown): MuscleSide[] => s === "L/R" ? ["L", "R"] : ["one"];
+  return {
+    groups: Object.fromEntries(table("groups").map(row => [String(row.id), Object.fromEntries(sides(row.Sides).map(side => [side, {
+      contractile: initial.contractile, oxidative: initial.oxidative, min: initial.min, max: initial.max,
+      condition: 1, idleDays: 0, tension: 0, aerobic: 0,
+      compartments: muscularRates(String(row.id)) ? { resting: 1, active: 0, fatigued: 0 } : null,
+    }]))])),
+    patterns: Object.fromEntries(table("patterns").map(row => [String(row.id), Object.fromEntries(sides(row.Sides).map(side =>
+      [side, { recruitment: initial.recruitment, practice: 0, adaptation: null }]))])),
+    tendons: Object.fromEntries(table("tendons").map(row => [String(row.id), { tolerance: null, adaptation: null, injury: null }])),
+  };
+}
+
+/** Three separate signals; effort and oxidativeShare are fractions, activation uses the library percent.
+ * Linear load-factor interpolation is used between the two stated anchors. Pattern shares are host inputs. */
+export function muscularStimuli(activation: number, effort: number, reps: number, minutes: number, oxidativeShare: number,
+  patternShare: number) {
+  for (const [name, v] of Object.entries({ activation, effort, patternShare })) bounded(v, 0, 1, name);
+  bounded(reps, 0, Infinity, "reps"); bounded(minutes, 0, Infinity, "minutes"); bounded(oxidativeShare, Number.MIN_VALUE, 1, "oxidative share");
+  const threshold = Number(training("overload-threshold-tension").Value) / indexMax();
+  const upper = numbers(training("tension-stimulus-per-action").Value).at(-1)! / indexMax();
+  const load = Math.max(0, Math.min(1, (effort - threshold) / (upper - threshold)));
+  const aerobicRule = numbers(training("aerobic-stimulus-per-action").Value);
+  const [divisor, , duration, low, high] = aerobicRule;
+  return { tension: activation * indexMax() * reps * load,
+    aerobic: minutes > duration! && effort >= low! / indexMax() && effort <= high! / indexMax()
+      ? activation * indexMax() * minutes / divisor! * Math.min(1, effort / oxidativeShare) : 0,
+    practice: minutes * patternShare };
+}
+
+export interface MuscularDay {
+  tension: number; aerobic: number; used: boolean; hoursSinceHardSession: number;
+  /** Resolved multipliers from the training rows; ambiguous intermediate gate values are the caller's. */
+  proteinGate: number; energyGate: number; sleepGate: number; ageGate: number;
+}
+/** One overnight conversion, MUSCULAR.md 5a. No invented k_o, k_n or k_t.
+ * Consumed tension is the gated portion; unconverted signal carries to the next night. */
+export function adaptMuscleDay(state: MuscleState, day: MuscularDay): MuscleState {
+  for (const key of ["proteinGate", "energyGate", "sleepGate", "ageGate"] as const) bounded(day[key], 0, 1, key);
+  for (const key of ["tension", "aerobic", "hoursSinceHardSession"] as const) bounded(day[key], 0, Infinity, key);
+  const s = { ...state };
+  const cap = muscularRange("muscular.values.stimulus-tension-stimulus-aerobic")[1];
+  s.tension = Math.min(cap, s.tension + day.tension); s.aerobic = Math.min(cap, s.aerobic + day.aerobic);
+  s.idleDays = day.used ? 0 : s.idleDays + 1;
+  const windowText = String(training("conversion-window").Note);
+  const recoveryHours = /hoursSinceLastHardSession \/ ([\d.]+)/.exec(windowText);
+  const fatigueLimit = /fatigue over ([\d.]+)/.exec(windowText);
+  if (!recoveryHours || !fatigueLimit) throw new Error("muscular: conversion window schema changed");
+  const rest = state.compartments === null ? null : state.compartments.fatigued > Number(fatigueLimit[1]) ? 0 : Math.min(1, day.hoursSinceHardSession / Number(recoveryHours[1]));
+  const novice = training("conversion-rate-novice-development-under-40"), trained = training("conversion-rate-trained-development-40-to-70"), advanced = training("conversion-rate-advanced-over-70");
+  const rate = s.contractile < numbers(novice.Constant)[0]! ? novice : s.contractile <= numbers(trained.Constant)[1]! ? trained : advanced;
+  if (rest !== null && s.max > 0) {
+    const consumed = s.tension * rest * day.proteinGate * day.energyGate * day.sleepGate * day.ageGate;
+    s.contractile = Math.min(s.max, s.contractile + Number(rate.Value) / numbers(rate.Unit)[0]! * consumed * (1 - s.contractile / s.max));
+    s.tension -= consumed;
+  }
+  const disuse = numbers(training("disuse-decay").Value);
+  if (s.idleDays > disuse[0]!) s.contractile = Math.max(s.min, s.contractile - Math.abs(disuse[1]!));
+  return s;
+}
+
+/** Banister's daily impulse followed by decay on subsequent days; base is host supplied.
+ * These are MET-hour sums, not a calibrated VO2 ceiling or the circulation aerobic_today. */
+export function muscularBanisterDay(state: { fitness: number; fatigue: number }, loadMetHours: number, base: number) {
+  bounded(loadMetHours, 0, Infinity, "daily load");
+  for (const v of [state.fitness, state.fatigue, base]) bounded(v, 0, Infinity, "Banister state");
+  const value = (slug: string) => Number(libraryRow("physiology", "banister", `physiology.banister.${slug}`).Value);
+  const fitness = state.fitness * Math.exp(-1 / value("tau-fitness")) + loadMetHours;
+  const fatigue = state.fatigue * Math.exp(-1 / value("tau-fatigue")) + loadMetHours;
+  return { fitness, fatigue, performance: base + value("k1-fitness-gain") * fitness - value("k2-fatigue-weight") * fatigue };
+}
+
+export function muscularOutputs(state: MuscularState) {
+  return {
+    fatigue: Object.fromEntries(Object.entries(state.groups).map(([id, sides]) => [id,
+      Object.fromEntries(Object.entries(sides).map(([side, s]) => [side, s.compartments?.fatigued ?? null]))])),
+    patternSkill: Object.fromEntries(Object.entries(state.patterns).map(([id, sides]) => [id,
+      Object.fromEntries(Object.entries(sides).map(([side, s]) => [side, s.recruitment]))])),
+    limbStrength: Object.fromEntries(table("limb_strength").map(row => [String(row.id), null])),
+    oxidativeAdaptation: null, tendonAdaptation: null, neuralAdaptation: null, massKg: null,
+  };
+}
+
+/** Useful to adapters validating their action coverage, including missing group columns. */
+export const muscularActivationColumns = () => libraryColumns("muscular", "activations");
