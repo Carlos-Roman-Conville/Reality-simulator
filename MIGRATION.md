@@ -92,7 +92,7 @@ Each phase keeps every test green and never leaves a number in two places.
 | Phase | Work | Where | Worker |
 |---|---|---|---|
 | 0 | Boundaries (this document). Rules: the package imports nothing from any game; the game imports `@rex/realism` only; every library row has a stable `id`; game adapters key by that id; the build renders docs from one copy. | done | body keeper |
-| 1 | Engine's own data to files: `data/substances.json`, `materials.json` (belt 2508), `reactions.json` (2509); fuller physics (2507). | package | belt, queued |
+| 1 | Engine's own data to files: `data/substances.json`, `materials.json` (belt 2508), `reactions.json` (2509); fuller physics (2507); the planner's 2511 verified the substance rows against their cited pages. | package | done 2026-10-29, 33 tests |
 | 2 | `split-data.py` in the package: reads the game's 18 data files, writes library files by the map in §3 (universal columns, `id`, `source` keys) and rewrites the game's files to adapter rows (`id` plus game columns). One-time, reviewed as a diff, run when Rex says. `sources.json` split by `Kind`. | package + game | Sonnet, one task per data file group (body, air and chemistry, equipment, world) |
 | 3 | The game's `build-body-data.py` reads two roots (the package's `data/` and the game's adapters) and renders the docs and `data.js` from both, so the dashboard and the game show the same authoritative numbers. The package gets its own `build-docs.py` and reference docs. | both | Sonnet |
 | 4 | Processes as engine modules, from the docs' formulas: `physiology.ts` (energy, heat, sleep, hydration), `nutrition.ts` (pools, absorption, depletion), `circulation.ts` (DO2, bleeding classes, loops), `neurology.ts` (tone, kinetics, clocks), `anatomy.ts` (organ function, damage, cascade), `muscular.ts` (3CC fatigue, four-level adaptation), `atmosphere.ts` (altitude, box model, grid), `population.ts`, `ecology.ts`. Each with tests against the cited numbers (the sleep-debt table, the Widmark curve, the alveolar gas equation, the logistic stock). The body becomes organ components on the connection graph. | package | Codex for solvers, Sonnet for data-driven modules; one module per task |
@@ -116,7 +116,7 @@ number; the game decides what it means.
 ## 7. Decisions and open items
 
 - **Phase 2 runs after Phase 1's three belt tasks land (Rex, 2026-10-29)**, so the split script sees the
-  final schema. Queued as belt tasks 2510 (the library side, in this repo) and 2511 (the game side), with
+  final schema. Queued as belt tasks 2512 (the library side, in this repo) and 2513 (the game side), with
   `Needs:` on 2507 to 2509.
 - **(open)** Whether place tables (climate, currents, stocks) go to the library at once as
   `data/places/jamaica.json` or stay in the game until a second game needs a place. Until Rex decides they
