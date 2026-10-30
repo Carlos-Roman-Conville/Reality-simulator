@@ -6,19 +6,15 @@ import type { Process } from "./scheduler.ts";
 import { addHeat, type World } from "./world.ts";
 import type { Component } from "./registry.ts";
 import { physiologyProcess } from "./physiology.ts";
-import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, airDensity, carbonCombustion, heatFlow, molesInVolume, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
+import { roomAirProcess, roomGasFraction } from "./atmosphere.ts";
+import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, carbonCombustion, heatFlow, waterBoilingPoint, waterLatentHeat } from "./physics.ts";
+
+export { roomGasFraction };
 
 /** A seeded random for reproducible control noise and measurement noise (mulberry32). */
 export function rng(seed: number) {
   let a = seed >>> 0;
   return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
-
-/** The room's air as a component: its contents are the gases (kg), its temperature the air's; props volume_m3, ach, pressurePa. */
-export function roomGasFraction(w: World, room: Component, gas: string): number {
-  const total = room.contents.filter(x => x.phase === "gas").reduce((a, x) => a + x.mass / w.registry.substance(x.substance).molarMass, 0);
-  const n = w.registry.contentMass(room, gas, "gas") / w.registry.substance(gas).molarMass;
-  return total > 0 ? n / total : 0;
 }
 
 /**
@@ -194,38 +190,8 @@ export function condensationProcess(condenser: string, tub: string, collector: s
   } };
 }
 
-/** The room's box model: ventilation exchanges its gases and heat with the outside at ACH; humidity from its vapour. */
-export function roomProcess(room: string): Process {
-  return { name: "room", every: 1, step(w, dt) {
-    const r = w.registry.component(room), reg = w.registry;
-    const V = r.props.volume_m3, ach = r.props.ach ?? 0, Q = ach * V / 3600 * dt; // m3 exchanged this step
-    const frac = Math.min(1, Q / V);
-    const tK = r.temperatureC + C_TO_K, outsideC = w.env.outsideC ?? r.temperatureC;
-    const rho = airDensity(r.props.pressurePa, tK);
-    const outside: Record<string, number> = { o2: 0.2095 * M.O2 / M.air, n2: 0.7905 * M.N2 / M.air, co2: 0.0004 * M.CO2 / M.air, co: 0, water: (w.env.outsideWaterKgPerKgAir ?? 0.012) };
-    for (const gas of ["o2", "n2", "co2", "co", "water"]) {
-      const have = reg.contentMass(r, gas, "gas");
-      const want = outside[gas] * rho * V;             // kg of this gas in a room-volume of outside air
-      const d = (want - have) * frac;
-      if (Math.abs(d) < 1e-15) continue;
-      reg.addContent(r, gas, "gas", d);
-      w.trace.record({ t: w.t, process: "ventilation", quantity: `mass:${gas}`, from: d > 0 ? "outside" : room, to: d > 0 ? room : "outside", amount: Math.abs(d) });
-    }
-    // heat exchange with outside by the same air change
-    const cap = reg.heatCapacity(r);
-    const q = (outsideC - r.temperatureC) * cap * frac;
-    addHeat(w, r, q);
-    w.trace.record({ t: w.t, process: "ventilation", quantity: "energy", from: q > 0 ? "outside" : room, to: q > 0 ? room : "outside", amount: Math.abs(q) });
-    // humidity
-    const nWater = reg.contentMass(r, "water", "gas") / M.H2O;
-    const pWater = nWater * R_GAS * (r.temperatureC + C_TO_K) / V;
-    r.props.rh = Math.min(1.5, pWater / waterVapourPressure(Math.min(100, r.temperatureC)));
-    r.props.co2ppm = roomGasFraction(w, r, "co2") * 1e6;
-    r.props.o2frac = roomGasFraction(w, r, "o2");
-    r.props.coppm = roomGasFraction(w, r, "co") * 1e6;
-    void molesInVolume;
-  } };
-}
+/** The room's box model: ventilation exchanges its gases and heat with the outside at ACH; humidity from its vapour. It lives in atmosphere.ts. */
+export function roomProcess(room: string): Process { return roomAirProcess(room); }
 
 /**
  * A body in the room. The process is `physiologyProcess` (physiology.ts): metabolic heat by MET, the air exchange, sweat

@@ -32,6 +32,7 @@ vessel, and water and charcoal conserved every step with the trace saying where 
     src/library.ts     the typed loader for data/library: libraryTable(file, table) rows keyed by column, cached
     src/physiology.ts  the human body process: energy (RMR, MET, PAL), heat (WBGT, core drift), sleep, water, acclimatisation
     src/nutrition.ts   nutrient pools, absorption, deficiency stages, glycogen and fat, from the nutrition tables
+    src/atmosphere.ts  altitude, the room box, gas sources and sinks, units, the transport grid, and the respiratory side (air to blood)
     src/reactions.ts   data-driven vessel reactions, limiting reagents, reaction heat and gas release
     src/elements.ts    chemical formula parser and atomic masses for the element ledger
     data/reactions.json four sourced reaction records with stoichiometry, conditions and rate models
@@ -178,8 +179,20 @@ table gives (7,700 kcal/kg). Outputs by id on `bodyOutputs`: `pool_<id>`, `defic
 `glycogen_factor`, `energy_unplaced_kcal`. `deficiencySignals(body)` lists the stages above 0. `World.conserve("nutrient:vit_c", ["body"])`
 holds each pool's mass. `FLAGS.md` lists what the library cannot support.
 
+### Atmosphere (`src/atmosphere.ts`)
+
+`altitudeAir(h)` gives the pressure and inspired PO2 (the altitude table's columns to under 1 mmHg); `roomAirProcess(room)` is the
+room box that `roomProcess` in `process.ts` now calls (ACH exchange, humidity, `co2ppm`/`o2frac`/`coppm`). `sourcesProcess(room, sources)`
+adds the `sources_sinks` rows (`lampFlows`, `fireFlows`, `rotFlows`, `sulphurFlows`; a body's gases are `bodyGasFlows`, VO2 by MET and
+mass with the respiratory quotient), every transfer traced as `mass:<gas>`. `breathingProcess(body, room)` takes a body's O2 and gives its
+CO2, then writes by id on `bodyOutputs(body)`: `o2_frac`, `co2_ppm`, `co_ppm`, `sao2`, `cohb`, `ventilation_l_min` (alveolar gas equation,
+Severinghaus, the COHb approach, the CO2 and hypoxic drives; `respiratoryProfile({...})` changes the species). `accumulateExposure` sums
+ppm-minutes and the peak per gas (physiology calls it). `Grid` is a host-supplied lattice with elevation, enclosure and levels: wind,
+diffusion, rise and settle shares per step (the host's numbers; the library has none), a ledger per species and `uniform()` to hand the
+cloud to the box. `FLAGS.md` lists what the docs ask for that the library cannot support.
+
 ## Next (the belt)
 
 Wire the equipment catalogue and further substance records (`body/data/*.json`) into the registry; expand reaction
-coverage and measured kinetics; the grid transport; the body as organ components on the graph; the dashboard's
+coverage and measured kinetics; the body as organ components on the graph; the dashboard's
 Simulation Laboratory driving this package; the pirate game importing it.

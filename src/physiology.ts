@@ -16,6 +16,7 @@ import { addHeat, type World } from "./world.ts";
 import type { Component } from "./registry.ts";
 import { KCAL_J, SWEAT_LATENT, heatFlow, metabolicHeat, restingMetabolicRate } from "./physics.ts";
 import { libraryTable, type LibraryRow } from "./library.ts";
+import { accumulateExposure } from "./atmosphere.ts";
 
 export type BodyOutputs = Record<string, number | string | null>;
 
@@ -290,8 +291,7 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "sweat-latent", amount: evapJ });
 
     // exposure
-    p.co2ppmMin = (p.co2ppmMin ?? 0) + (r.props.co2ppm ?? 400) * dt / 60;
-    p.coppmMin = (p.coppmMin ?? 0) + (r.props.coppm ?? 0) * dt / 60;
+    accumulateExposure(b, r, dt);
 
     // outputs by library id
     const out = bodyOutputs(b), debt = sleepDebtRow(p.sleep_debt ?? 0), circ = circadianRow(hour), core = coreRow(p.core_c);
