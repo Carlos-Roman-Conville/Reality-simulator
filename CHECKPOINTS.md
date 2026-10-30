@@ -178,14 +178,43 @@ The body mass assertion checks nutrition's existing fat-only proxy and that
 organ shells add no mass. Whole-body mass including shed blood is now a real test
 (the second former TODO): shed blood leaves body mass at the library blood density
 (`circulation.quantities.blood-density`, 1.06 kg/L), traced as `mass:blood`. The
-timed untreated-crisis case remains an explicit TODO test. Checkpoint 1's dehydration,
-continued activity, and other limitations above still apply. See FLAGS.md's
+timed untreated-crisis case remains an explicit TODO test. Checkpoint 1's continued-activity
+and other limitations above still apply. See FLAGS.md's
 checkpoint-2 section for missing inputs; no unsupported calibration is enabled.
 
-Validation: full gate passed on 2026-10-30: 216 tests passed in 18 files,
+Validation (2531): full gate passed on 2026-10-30: 216 tests passed in 18 files,
 2 explicit checkpoint-2 TODOs; `npx tsc --noEmit` passed; the shell example
 exited 0. Existing still and checkpoint-1 tests were unchanged and passed.
 The TODOs mean a green executable gate does not imply full checkpoint acceptance.
+
+### Re-run on the hydrated body (2551, 2026-10-30)
+
+Fix 10 of the 2026-10-30 b review. The first run (2531) rode on the week that lost its
+full 40 kg of water; the week is now hydrated (2540 sweat and water out, 2541 body mass
+water and glycogen, 2547 circulation time constants and cardiac output, 2546 wound
+bleed-rate slot, 2550 hygiene and treated death). `examples/human-wound.ts` was re-run
+unchanged: 3 variants x 7 days, exit 0, 187,430 transfers and 276,485 checks per variant,
+0 conservation failures. Filtered `test/checkpoint2.test.ts`: 4 passed, 1 todo (one
+fewer todo than the 2531 validation, because shed-blood body mass is now a real test).
+
+Rows that moved: the day ledgers now sit on the hydrated body, so no organ falls below
+one (`organsUnderOne` empty), no organ is unknown, nobody is sick and no crisis is
+recorded in any variant on any day; cardiac output eases from 4.9 L/min on day 1 to
+4.868 L/min and DO2 from 951.9 to 945.6 mL/min by day 7 (blood volume 4900 mL, Hb 15,
+unchanged in all three variants). Left-hand fatigue peaks at 0.110 on day 1 and is
+fully recovered by day 7. The wound reaches 6.0 days of progress, open=false, at day 7 in the
+bound variants and unbound in the third; none heals inside the week (clean healing is 14 to 30 days;
+the neutral-factor reference heals on day 14 for seed 1).
+
+Rows that did not move, and why: the three variants still match to the last digit in blood
+volume, DO2 and organs, because the thrust bleed rate and clotting remain **null**: no
+cited source gives a mL/min or clotting value (flags/checkpoint-2.md, the 2546 search).
+Thrust pain stays null for the same reason. So the example does **not** show bound-at-once
+versus never-bound blood trajectories.
+
+Todos that remain: the timed untreated-crisis acceptance case (one `it.todo`) needs a
+cited bleed rate and a volume-to-flow curve with cascade kinetics, none of which exist
+in the library. The row therefore stays "partial, acceptance blocked".
 
 ## Independence (2532, 2026-10-30): the engine alone, a horse in a stable
 
