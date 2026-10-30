@@ -41,9 +41,11 @@ estimates; the curve researched). The engine keeps `base` until Rex approves; th
 
 ## 2. econ 6: wage levels per trade (researched + estimate)
 
-Ownership agreed with the settlement keeper, pending its reply: Settlement writes the number once in its
-`rules.json` (Q10); this table is the research it draws on; the economy row then says only where the numbers live
-and whether a market quote may move them (that part is fiction, Rex's).
+Ownership agreed with the settlement keeper (2026-10-30): Settlement owns Q10 and writes each wage once in its
+`rules.json`, from its own benchmarks (Morris: England 1700 craftsman 2s, labourer 1s 2d a day, colonies about
+double; the Navy's rates; Lilly 10s a day by warrant 1692; Exquemelin's carpenter and surgeon shares; its proposed
+labourer 2s, journeyman 4s, master 6s a day) plus ECON-THO from this table. The economy's econ 6 row points at Q10
+for levels and keeps only "may a market quote move Post.wage" as fiction for Rex. This table is research only.
 
 | Trade | Rate | Place, date | Label | Source |
 |---|---|---|---|---|
