@@ -8,8 +8,8 @@ engine**; the pirate game's goods, ports and companies (`Games/RPG's/pirate-ship
 it through an adapter. Modelled on `../realism` and `../settlement`. Rex placed it here on 2026-10-28
 (ALIGNMENT §10); the engine family and its rules are in `../ENGINES.md`.
 
-**Status: no engine code yet, by rule.** ENGINES.md requires the Settlement ↔ Economy contract to be agreed before
-either side implements production or labour. `CONTRACTS.md` is this side's proposal.
+**Status: contract text confirmed with Settlement (2026-10-30); engine code starts when Settlement's §13 commit lands.** ENGINES.md requires the contract to be agreed before
+either side implements production or labour. `CONTRACTS.md` is the agreed text.
 
 ## Read in this order
 
