@@ -1,0 +1,51 @@
+/**
+ * Service 5: validation and observability. Every transfer is recorded (source, sink, quantity, the process that did it);
+ * every step checks conservation of each tracked quantity against the recorded flows, so an experiment can be read back
+ * to see why it failed.
+ */
+import type { Crisis } from "./crisis.ts";
+
+export interface Transfer { t: number; process: string; quantity: string; from: string; to: string; amount: number; note?: string; chemicalChange?: boolean }
+
+export interface Check { t: number; quantity: string; expected: number; actual: number; tolerance: number; ok: boolean }
+
+export class Trace {
+  transfers: Transfer[] = [];
+  checks: Check[] = [];
+  notes: { t: number; text: string }[] = [];
+  /** Every crisis record opened on any body (crisis.ts): the trace is where a death must find its crisis. */
+  crises: Crisis[] = [];
+  record(x: Transfer) { this.transfers.push(x); }
+  note(t: number, text: string) { this.notes.push({ t, text }); }
+  check(t: number, quantity: string, expected: number, actual: number, tolerance: number) {
+    const ok = Math.abs(expected - actual) <= tolerance;
+    this.checks.push({ t, quantity, expected, actual, tolerance, ok });
+    if (!ok) this.note(t, `CONSERVATION FAILED ${quantity}: expected ${expected} got ${actual} (tolerance ${tolerance})`);
+    return ok;
+  }
+  failed() { return this.checks.filter(c => !c.ok); }
+  /** Sum of a quantity moved into a component by all processes. */
+  into(component: string, quantity: string) { this.fold(); return this.inSums.get(`${component}\0${quantity}`) ?? 0; }
+  outOf(component: string, quantity: string) { this.fold(); return this.outSums.get(`${component}\0${quantity}`) ?? 0; }
+  // Running sums per (component, quantity), folded in order from the first transfer not yet seen: the same additions in the
+  // same order as summing the whole list, so the same numbers, without re-reading the list on every call (2569).
+  private inSums = new Map<string, number>();
+  private outSums = new Map<string, number>();
+  private folded = 0;
+  private fold() {
+    const ts = this.transfers;
+    if (this.folded > ts.length) { this.inSums.clear(); this.outSums.clear(); this.folded = 0; }
+    for (; this.folded < ts.length; this.folded++) {
+      const x = ts[this.folded];
+      const i = `${x.to}\0${x.quantity}`, o = `${x.from}\0${x.quantity}`;
+      this.inSums.set(i, (this.inSums.get(i) ?? 0) + x.amount);
+      this.outSums.set(o, (this.outSums.get(o) ?? 0) + x.amount);
+    }
+  }
+  summary(): string {
+    const byProcess = new Map<string, number>();
+    for (const x of this.transfers) byProcess.set(`${x.process}:${x.quantity}`, (byProcess.get(`${x.process}:${x.quantity}`) ?? 0) + x.amount);
+    const lines = [...byProcess].map(([k, v]) => `${k.padEnd(40)} ${v.toExponential(4)}`);
+    return `${this.transfers.length} transfers, ${this.checks.length} checks, ${this.failed().length} failed\n` + lines.join("\n");
+  }
+}

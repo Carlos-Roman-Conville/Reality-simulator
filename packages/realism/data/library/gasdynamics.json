@@ -1,0 +1,72 @@
+{
+  "_about": "Scientific data library, domain gasdynamics: the universal columns of the game's body/data/gasdynamics.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "units": {
+    "title": "Units and the concentration interface (every doc that touches a gas uses these)",
+    "kind": "model",
+    "conf": "high",
+    "source": "Consistent units so that CHEMISTRY's products, GAS_DYNAMICS's concentrations and the body's exposure agree: a species is identified by its CHEMISTRY id; a region holds a concentration per species; the body reads partial pressures and ppm at the mouth.",
+    "columns": ["id", "Quantity", "Unit", "Conversion", "Mark", "source"],
+    "rows": [
+      ["gasdynamics.units.concentration-of-a-gas", "Concentration of a gas", "volume fraction (ppm or %)", "partial pressure (mmHg) = fraction x total pressure", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.concentration-of-an-aerosol-or-particle", "Concentration of an aerosol or particle", "mg per m3", "-", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.volume-of-a-region", "Volume of a region", "m3", "-", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.ventilation", "Ventilation", "air changes per hour (ACH), or m3 per minute", "ACH = flow / volume x 60", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.source-strength", "Source strength", "litres per minute of a species, or mg per minute", "a fire: from CHEMISTRY's reaction rate; a person: 0.25 L/min O2 in, 0.2 L/min CO2 out at rest, x MET at work (PHYSIOLOGY)", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.exposure", "Exposure", "concentration x minutes (ppm-min), and the peak", "dose to the body = ventilation (L/min, PHYSIOLOGY) x concentration x minutes x uptake fraction", "rex (the interface, 2026-10-29)", "open"],
+      ["gasdynamics.units.mass-conservation", "Mass conservation", "moles of each species", "a region's total moles = pressure x volume / (R T); sources add, sinks and ventilation remove, reactions convert", "rex (the interface, 2026-10-29)", "open"]
+    ]
+  },
+  "box_model": {
+    "title": "The box model (implemented first): one well-mixed volume per active region",
+    "kind": "science",
+    "conf": "high",
+    "source": "Standard confined-space mass balance: V dC/dt = S - Q (C - C_out) - R, with Q the ventilation flow (ACH x V / 60), S the sources, R removal and reaction; steady state C = C_out + S / Q (NIOSH confined-space CO2 modelling; GAS-BOX). Worked example: two occupants in a 680 m3 space at 0.06 ACH settle near 1,500 ppm CO2.",
+    "columns": ["id", "Rule", "Formula", "Example", "Mark", "source"],
+    "rows": [
+      ["gasdynamics.box_model.mass-balance-per-species", "Mass balance per species", "V dC/dt = S - Q (C - C_out) - R, Q = ACH x V / 60 per minute", "the hold at 250 m3, hatch shut (0.2 ACH), 30 men at rest (CO2 6 L/min): CO2 climbs toward 6 / 0.83 = 7.2% (steady state), passing 3% in about 90 minutes: headache and panting; oxygen falls at 7.5 L/min toward 13%", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.oxygen-and-carbon-dioxide-move-together", "Oxygen and carbon dioxide move together", "O2 consumed = CO2 produced / 0.8 (the respiratory quotient) for breathing; combustion by CHEMISTRY's stoichiometry", "a fire in the hold: oxygen falls faster than CO2 rises", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.heavier-gases-pool", "Heavier gases pool", "CO2 (1.5 x air) and H2S (1.2 x air) sink: in a still box the lower half's concentration is x1.5 the mean, the upper half x0.5 (placeholder); mixing restores it", "the man who crouches to the bilge; the well", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.lighter-gases-rise", "Lighter gases rise", "CO (0.97 x air) mixes; hot smoke rises to the deckhead first (the crawl-low rule of a fire)", "a crawling man breathes better air for a while", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.ventilation-events", "Ventilation events", "ACH jumps when a hatch, port, door or window opens, or a wind-sail is rigged (period ventilators: wind-sails and Hales' ventilators from the 1740s, after the period)", "opening the hatch takes the hold from 0.2 to 2 ACH: the 7% falls to 1% in about 90 minutes", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.time-step", "Time step", "a minute for an occupied box; seconds for a fire or a release (the stability rule: step under volume / flow)", "the gun deck: per combat turn", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"],
+      ["gasdynamics.box_model.return-to-baseline", "Return to baseline", "a region goes inactive when every species is within 10% of the baseline and no source remains", "the hold aired out", "rex (the box model, 2026-10-29); proposed (rates, the example numbers)", "open"]
+    ]
+  },
+  "sources_sinks": {
+    "title": "Sources and sinks a region can have",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Each source is one of the other docs' outputs; the rates are placeholders.",
+    "columns": ["id", "Source or sink", "Species", "Rate (placeholder)", "From", "Mark", "source"],
+    "rows": [
+      ["gasdynamics.sources_sinks.a-person-at-rest", "A person at rest", "O2 -0.25 L/min; CO2 +0.2 L/min; water vapour", "x MET at work (a man at the pumps x7)", "PHYSIOLOGY 1", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.livestock-goats-pigs-hens", "Livestock (goats, pigs, hens)", "as a person x body-mass ratio", "a goat 0.1 L/min O2", "DUTIES livestock", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.a-lamp-or-candle", "A lamp or candle", "O2 -0.03 L/min each; CO2 +0.03; CO a little if it gutters", "-", "the ship's lights", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.a-galley-fire-a-brazier", "A galley fire, a brazier", "O2 -; CO2 +; CO + (charcoal: up to 10% of the carbon as CO when starved of air)", "a brazier: CO 0.5 L/min in a shut cabin", "CHEMISTRY combustion", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.a-fire-structure-cargo", "A fire (structure, cargo)", "by the fuel and the air available (CHEMISTRY): CO2, CO, water, soot, heat", "a cargo fire: 100 L/min CO2, 20 CO, smoke 1 g/min", "CHEMISTRY", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.black-powder-fired", "Black powder fired", "330 cm3 of gas per gram of powder: CO2, N2, CO, H2S trace, H2, CH4; particles", "a 6-pounder's 1 kg charge: 330 L of gas per shot", "CHEMISTRY black powder; COMBAT guns", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.a-stinkpot", "A stinkpot", "SO2 from burning sulphur, smoke", "100 g sulphur: about 70 L SO2 over a minute", "CHEMISTRY; COMBAT", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.rot-in-the-bilge-and-stores", "Rot in the bilge and stores", "H2S, CH4, CO2", "a foul bilge: H2S 0.01 L/min (enough for 500 ppm in a shut hold over a day)", "the cleanliness meter (PIRATE 5a)", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.a-reaction-in-the-laboratory", "A reaction in the laboratory", "whatever CHEMISTRY computes", "by the reaction", "CHEMISTRY", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.plants-in-a-closed-space", "Plants in a closed space", "O2 + by day, - by night; small", "negligible except a greenhouse (none)", "ECOLOGY", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.natural-vents", "Natural vents", "CO2, H2S, SO2", "by the place", "ENVIRONMENT terrain", "rex (the source, 2026-10-29); proposed (rates)", "open"],
+      ["gasdynamics.sources_sinks.sinks-surfaces-water-rain", "Sinks: surfaces, water, rain", "SO2 and H2S dissolve and react on wet surfaces; particles settle (half in an hour in still air); rain washes smoke", "placeholders", "GAS_DYNAMICS", "rex (the source, 2026-10-29); proposed (rates)", "open"]
+    ]
+  },
+  "grid": {
+    "title": "The grid model (deferred): transport on a grid",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Advection-diffusion-reaction: dC/dt = -div(u C) + div(D grad C) + S - R, with u the wind field, D an effective turbulent diffusion; implemented later as a coarse cellular model on a grid the host supplies for releases that cross cells in seconds; the stability constraint (a cell's air must not cross more than one cell per step) sets the step. Not built; the interface is the units table.",
+    "columns": ["id", "Element", "Statement", "Status", "Mark", "source"],
+    "rows": [
+      ["gasdynamics.grid.cells", "Cells", "the cells of a grid, each a small box with the units above; elevation and enclosure from the grid's own cell properties", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.advection", "Advection", "the wind (ENVIRONMENT) moves a cell's air downwind by u x step; indoors, the ventilation flow", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.diffusion-and-turbulent-mixing", "Diffusion and turbulent mixing", "each step a cell shares a fraction with its neighbours (D x step / cell size squared)", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.buoyancy", "Buoyancy", "hot and light gases move up a level before spreading; heavy ones pool in hollows and the low cells", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.deposition", "Deposition", "particles settle; SO2 and H2S lost to wet surfaces", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.step", "Step", "seconds during a release; a cell per step at most; the box model takes over once the cloud is uniform", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"],
+      ["gasdynamics.grid.exposure", "Exposure", "each character sums the concentration of the cell they stand in each step (ppm-min); crouching reads the lower half", "deferred", "rex (the deferred grid and its rules, 2026-10-29); deferred", "open"]
+    ]
+  }
+}

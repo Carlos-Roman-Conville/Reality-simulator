@@ -1,0 +1,142 @@
+{
+  "_about": "Scientific data library, domain medicine: the universal columns of the game's body/data/medicine.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "diseases": {
+    "title": "The disease list (period names in brackets)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Causes and courses are modern medicine (textbook; MED-* keys in SOURCES.md). Period presence and names from Trapham 1679, Sloane 1707, Woodall 1617, Moyle 1693, the Burnard mortality study, the Hektoen ship-fever article and the Cardiff sea-surgeons piece. Mortality figures are ranges, untreated, confidence as given per row.",
+    "columns": ["id", "Cause (modern)", "Incubation (days)", "Course (days)", "Untreated death risk", "Lasting harm", "What helped, really", "Conf", "Mark", "source"],
+    "rows": [
+      ["scurvy", "vitamin C depletion (NUTRITION.md)", "42 to 84 (from the last fresh food)", "progressive until C is eaten; recovery in 1 to 2 weeks on citrus", "high over months (the great killer of long voyages)", "old wounds reopen; teeth lost", "citrus, fresh greens, sauerkraut; lime juice boiled or stored in copper lost most of its C", "high", "rex", "open"],
+      ["yellow_fever", "flavivirus, Aedes aegypti mosquito", "3 to 6", "3 to 4 acute; 15% enter the toxic phase (jaundice, black vomit) after a brief remission", "20 to 50% of toxic-phase cases; 5 to 10% of all cases; far higher in unseasoned Europeans", "lifelong immunity", "survival alone; immunity after", "medium", "proposed", "open"],
+      ["malaria_vivax", "Plasmodium vivax, Anopheles mosquito", "10 to 20 (longer in temperate strains)", "fever every 2nd day for 2 to 4 weeks; relapses from the liver for years", "low (under 2%) but repeated attacks", "relapses; anaemia; enlarged spleen", "cinchona bark really worked (quinine)", "high", "proposed", "open"],
+      ["malaria_falciparum", "Plasmodium falciparum, Anopheles", "7 to 14", "irregular fever; cerebral malaria within days", "15 to 30% untreated in the unexposed; survivors gain partial immunity", "anaemia; after cerebral malaria, lasting weakness", "cinchona bark", "medium", "proposed", "open"],
+      ["dysentery", "Shigella (bacillary) or Entamoeba (amoebic); faecal contamination of water and food", "1 to 7", "7 to 14 bacillary; weeks amoebic", "5 to 15% bacillary without fluids; amoebic 1 to 5% (liver abscess)", "weakness for weeks; amoebic liver abscess", "clean water, fluids and salt; ipecacuanha for amoebic", "high", "proposed", "open"],
+      ["typhus", "Rickettsia prowazekii, the body louse", "7 to 14", "14 to 21", "10 to 40% (up to 60% in epidemics); mortality rises with age", "weakness for weeks; Brill-Zinsser recurrence years later", "delousing, washing, fresh clothes", "high", "proposed", "open"],
+      ["typhoid", "Salmonella Typhi, faecal contamination of water and food", "7 to 14", "21 to 28", "10 to 20%", "intestinal haemorrhage; relapse in 10%", "clean water, nursing", "high", "proposed", "open"],
+      ["smallpox", "Variola virus, person to person", "10 to 14", "21 to 28", "20 to 30% (variola major); near zero in the immune (survivors, and inoculated after 1721)", "pitted scars; blindness in some", "survivor immunity; inoculation", "high", "proposed", "open"],
+      ["influenza", "influenza virus, droplet", "1 to 3", "5 to 10", "1 to 2% (higher with chest infection after)", "none usually", "rest", "high", "proposed", "open"],
+      ["consumption", "Mycobacterium tuberculosis, droplet; chronic", "months to years", "years", "about 50% within 5 years when active", "progressive loss of weight and wind", "nothing then; rest and food slowed it", "high", "proposed", "open"],
+      ["beriberi", "thiamine (B1) deficiency (NUTRITION.md)", "21 to 42", "progressive; cardiac death possible in 3 weeks of total lack", "high if the diet is not changed", "nerve damage if long", "thiamine: pease, oatmeal, pork, whole grain", "medium", "proposed", "open"],
+      ["pellagra", "niacin deficiency (NUTRITION.md)", "60 to 180", "months", "moderate over years", "dermatitis scars; dementia if long", "meat, fish, pease, nixtamalised maize", "medium", "proposed", "open"],
+      ["dry_gripes", "lead from still worms and pewter; rum, cider", "30 to 90", "weeks; recurs while drinking", "low directly; palsy disables", "wrist drop (palsy), gut pain, lasting nerve damage", "stop the rum", "medium", "proposed", "open"],
+      ["yaws", "Treponema pallidum pertenue, skin contact; tropical", "9 to 90", "months to years in stages", "very low", "bone and skin deformity in late stage", "later, one shot of penicillin; then, nothing", "medium", "proposed", "open"],
+      ["syphilis", "Treponema pallidum; sexual contact (and mother to child)", "10 to 90 (typically 21)", "primary 3 to 6 weeks; secondary months; latent years; tertiary decades later", "about a third of the untreated progress to late disease over decades; rarely quick", "late syphilis: madness (general paresis), heart (aortitis), bone (gummas), blindness", "nothing effective; mercury partly suppressed signs at great cost", "high", "proposed", "open"],
+      ["gonorrhoea", "Neisseria gonorrhoeae; sexual contact", "2 to 7", "2 to 4 weeks acute; chronic if untreated", "very low", "sterility (both sexes), chronic pelvic pain, joint infection, stricture", "nothing effective", "high", "proposed", "open"],
+      ["hookworm", "Necator, Ancylostoma; larvae enter bare feet from contaminated soil", "40 to 60 to egg-laying", "chronic, years", "low; anaemia disables", "chronic anaemia, weakness", "shoes, latrines; iron", "medium", "proposed", "open"],
+      ["worms", "Ascaris, tapeworm; faecal contamination, undercooked pork", "14 to 60", "chronic", "very low", "loss of nutrients", "purges did pass them", "medium", "proposed", "open"],
+      ["tetanus", "Clostridium tetani in soil and manure, through a deep wound", "3 to 21", "14 to 28", "50 to 90% before antitoxin", "none if survived", "nothing then", "high", "proposed", "open"],
+      ["gangrene", "Clostridium perfringens and others in a crushed or dirty wound", "1 to 4", "days", "near certain untreated; amputation above it the only cure", "a limb lost", "early amputation", "high", "proposed", "open"],
+      ["heat_stroke", "core temperature over 40 C with brain signs (PHYSIOLOGY.md); not an infection: onset is PHYSIOLOGY's heat model, this row holds only the condition", "0", "1 to 3", "30 to 50% without cooling", "lasting weakness in some", "shade, water, cooling", "high", "proposed", "open"],
+      ["murine_typhus", "Rickettsia typhi, the rat flea", "6 to 14", "7 to 14", "under 2%", "none usually", "rat catching", "medium", "proposed", "open"]
+    ]
+  },
+  "wounds": {
+    "title": "Wound kinds, what each does, and how long it heals",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Healing phases: hemostasis at once, inflammation 1 to 4 days, proliferation 4 to 21 days, remodelling 21 days to a year (MED-HEAL). Period handling from Woodall and Moyle. Infection and mortality ranges are the keeper's reading of the sources, medium confidence.",
+    "columns": ["id", "Kind", "Typical cause", "Bleeding class (see bleeding table)", "Infection chance untreated", "Heals in (days, clean)", "Mark", "source"],
+    "rows": [
+      ["medicine.wounds.cut-incised", "Cut (incised)", "cutlass, knife, broken glass", "I to II", "10 to 20%", "7 to 14", "proposed", "open"],
+      ["medicine.wounds.thrust-penetrating", "Thrust (penetrating)", "sword, pike, bayonet", "II to IV", "25 to 50% (deep, dirty)", "14 to 30", "proposed", "open"],
+      ["medicine.wounds.gunshot-musket-ball-splinter", "Gunshot (musket ball, splinter)", "ball, grapeshot, wood splinters from a hit", "II to IV", "40 to 70% (cloth and bone carried in)", "30 to 60", "proposed", "open"],
+      ["medicine.wounds.blunt-bruise-fracture", "Blunt (bruise, fracture)", "a fall from the rigging, a loose gun, a belaying pin", "I (internal bleeding higher)", "5% (closed); 30% (open fracture)", "bruise 7; simple fracture 42; open 60 to 90", "proposed", "open"],
+      ["medicine.wounds.burn-and-scald", "Burn and scald", "the galley, powder flash, a gun bursting", "none, but fluid loss like class II per 15% of body burned", "30 to 60% (large burns)", "7 (superficial) to 60 (deep)", "proposed", "open"],
+      ["medicine.wounds.crush-a-gun-a-cask-a-falling-yard", "Crush (a gun, a cask, a falling yard)", "heavy gear in a seaway", "II to IV internal", "20% (open) ; crush syndrome in a trapped limb", "30 to 90", "proposed", "open"],
+      ["medicine.wounds.head-blow-concussion", "Head blow (concussion)", "a boom, a fall, a club", "I", "5% (open scalp 20%)", "3 to 14 (concussion), skull fracture 60", "proposed", "open"],
+      ["medicine.wounds.amputation-the-surgeons-wound", "Amputation (the surgeon's wound)", "the treatment for gangrene, a shattered limb", "III (with tourniquet II)", "20 to 50% sepsis", "30 to 60 (stump)", "proposed", "open"]
+    ]
+  },
+  "pain": {
+    "title": "Pain (0 to 10) and shock",
+    "kind": "model",
+    "conf": "low",
+    "source": "The 0 to 10 numeric rating scale is standard clinical practice; the mapping to game effects is the keeper's model. Period analgesia: laudanum (Sydenham's tincture of opium, 1660s), rum, biting a bullet.",
+    "columns": ["id", "Pain", "Cause examples", "Mark", "source"],
+    "rows": [
+      ["medicine.pain.0-to-2", "0 to 2", "bruise, small cut", "proposed", "open"],
+      ["medicine.pain.3-to-5", "3 to 5", "deep cut, sprain, toothache", "proposed", "open"],
+      ["medicine.pain.6-to-8", "6 to 8", "fracture, burn, gunshot", "proposed", "open"],
+      ["medicine.pain.9-to-10", "9 to 10", "amputation, crushed limb, gangrene", "proposed", "open"]
+    ]
+  },
+  "treatments": {
+    "title": "What a surgeon of 1650 to 1730 could do (and whether it worked)",
+    "kind": "history",
+    "conf": "medium",
+    "source": "Woodall, The Surgeon's Mate (1617); Moyle, Chirurgus Marinus (1693); the humoral tradition (bleeding, purging, emetics, sweating); Sydenham (laudanum, bark); Pare's ligature (1564); Petit's tourniquet (1718); inoculation 1721. MED-WOOD, MED-MOYLE, MED-HUM, MED-LIND",
+    "note": "No cited source gives a hygiene exposure multiplier (unswabbed days, lice, foul water, wet-season port) or a death risk with treatment; both stay unset (hygiene defaults to 1 in the engine). See flags/medicine.md.",
+    "columns": ["id", "Really worked?", "Mark", "source"],
+    "rows": [
+      ["medicine.treatments.bleeding-venesection-cupping-leeches", "no; it worsened blood loss and anaemia", "proposed", "open"],
+      ["medicine.treatments.purging-and-emetics-jalap-senna-antimony-ipecacuanha", "worms yes; amoebic flux partly (ipecacuanha); fevers no, and it dehydrated", "proposed", "open"],
+      ["medicine.treatments.sweating-blistering-cautery", "cautery stopped bleeding (at a cost); the rest no", "proposed", "open"],
+      ["medicine.treatments.mercury-unction-pills-salivation", "suppressed signs, poisoned the patient", "proposed", "open"],
+      ["medicine.treatments.peruvian-bark-cinchona", "yes: quinine", "proposed", "open"],
+      ["medicine.treatments.opium-laudanum", "yes for pain and diarrhoea", "proposed", "open"],
+      ["medicine.treatments.lemon-or-lime-juice-fresh-greens", "yes (Woodall 1617 already; proved by Lind 1747)", "rex", "open"],
+      ["medicine.treatments.washing-wounds-dry-lint-bandage-stitching", "yes, partly (cleanliness mattered though nobody knew why)", "proposed", "open"],
+      ["medicine.treatments.extracting-balls-and-splinters", "yes if done early", "proposed", "open"],
+      ["medicine.treatments.splints-and-reduction", "yes", "proposed", "open"],
+      ["medicine.treatments.tourniquet-and-ligature", "yes (Pare's ligature; Petit's screw tourniquet 1718)", "proposed", "open"],
+      ["medicine.treatments.amputation", "the only cure for gangrene; over half died of the operation in the 18th century (Bell)", "proposed", "open"],
+      ["medicine.treatments.trepanning", "sometimes", "proposed", "open"],
+      ["medicine.treatments.inoculation-variolation", "yes: about 2% died of the inoculation vs 20 to 30% of the disease", "proposed", "open"],
+      ["medicine.treatments.quarantine-and-airing-the-ship", "yes for lice-borne and person-to-person disease; useless against the mosquito", "proposed", "open"],
+      ["medicine.treatments.rum-and-drinking-the-fever-away", "no; it dehydrated", "proposed", "open"]
+    ]
+  },
+  "healing": {
+    "title": "Healing clock modifiers",
+    "kind": "model",
+    "conf": "medium",
+    "source": "Wound healing needs protein, vitamin C (collagen) and zinc; scurvy reopens old wounds (Lind, and modern collagen biology); age slows healing; infection resets the clock; rest speeds it. MED-HEAL",
+    "columns": ["id", "Factor", "Multiplier on healing time", "Reads", "Mark", "source"],
+    "rows": [
+      ["medicine.healing.vitamin-c-reserve-under-300-mg-scurvy", "Vitamin C reserve under 300 mg (scurvy)", "x3, and healed wounds reopen", "NUTRITION.md", "rex", "open"],
+      ["medicine.healing.protein-under-0-8-g-kg-day", "Protein under 0.8 g/kg/day", "x1.5", "NUTRITION.md", "proposed", "open"],
+      ["medicine.healing.energy-balance-under-500-kcal-day", "Energy balance under -500 kcal/day", "x1.3", "NUTRITION.md", "proposed", "open"],
+      ["medicine.healing.age-over-50", "Age over 50", "x1.3 (x1.6 over 65)", "PHYSIOLOGY.md ageing", "proposed", "open"],
+      ["medicine.healing.infected", "Infected", "clock paused; fever; sepsis roll daily", "this file", "proposed", "open"],
+      ["medicine.healing.rest-no-duty-using-the-part", "Rest (no duty using the part)", "x0.7", "DUTIES roster", "proposed", "open"],
+      ["medicine.healing.working-the-wounded-part", "Working the wounded part", "x1.5; reopen chance 10%/day", "DUTIES roster", "proposed", "open"],
+      ["medicine.healing.surgeon-skill-50-dressing-daily", "Surgeon skill 50+ dressing daily", "x0.8", "STATS.md Surgery", "proposed", "open"],
+      ["medicine.healing.sleep-debt-over-24-h", "Sleep debt over 24 h", "x1.2", "PHYSIOLOGY.md", "proposed", "open"]
+    ]
+  },
+  "immunity": {
+    "title": "Immunity and resistance",
+    "kind": "science",
+    "conf": "high",
+    "source": "Lifelong immunity after yellow fever and smallpox; partial after falciparum malaria; none after dysentery or influenza strains; Constitution as the hidden resistance stat is Rex's (STATS.md).",
+    "columns": ["id", "Disease", "After surviving", "Inoculation", "Mark", "source"],
+    "rows": [
+      ["medicine.immunity.yellow-fever", "Yellow fever", "lifelong immunity", "none in the period", "proposed", "open"],
+      ["medicine.immunity.smallpox", "Smallpox", "lifelong immunity", "variolation from 1721", "proposed", "open"],
+      ["medicine.immunity.malaria-falciparum", "Malaria (falciparum)", "partial, fades after a year away", "none", "proposed", "open"],
+      ["medicine.immunity.malaria-vivax", "Malaria (vivax)", "none; relapses", "none", "proposed", "open"],
+      ["medicine.immunity.typhus", "Typhus", "mostly immune; late recurrence (Brill-Zinsser)", "none", "proposed", "open"],
+      ["medicine.immunity.dysentery-typhoid-influenza", "Dysentery, typhoid, influenza", "short or none", "none", "proposed", "open"],
+      ["medicine.immunity.scurvy-beriberi-pellagra", "Scurvy, beriberi, pellagra", "none: they return when the nutrient does not", "-", "rex", "open"],
+      ["medicine.immunity.the-seasoning-a-state-not-a-disease", "The seasoning (a state, not a disease)", "a newcomer who has survived his first bouts of the local fevers is 'seasoned': an immunity record, held here, not a row in the disease list. Period estimates put newcomer deaths in Jamaica's first years as high as a third (Burnard; confidence low on the fraction)", "-", "proposed", "open"]
+    ]
+  },
+  "exposure": {
+    "title": "Conditions from the air (named here, caused by ATMOSPHERE, GAS_DYNAMICS and the body)",
+    "kind": "science",
+    "conf": "medium",
+    "source": "Standard emergency medicine for hypoxia, hypercapnia, carbon monoxide poisoning, smoke inhalation, irritant injury, hydrogen sulphide and altitude illness; the period could do nothing but carry the man into the air and bleed him. Each condition is a pattern of the body's states, never a timer (the brief's rule, kept).",
+    "columns": ["id", "The pattern that defines it", "Course", "Lasting harm", "What helps, really", "Mark", "source"],
+    "rows": [
+      ["medicine.exposure.hypoxia-and-asphyxia-suffocation-the-foul-air", "SaO2 under 0.90 from low inspired oxygen or lung failure", "minutes: confusion at 0.80, unconscious at 0.70, death under 0.60 within minutes", "brain damage if unconscious over 4 to 6 minutes (ANATOMY brain damage)", "air; the hatch opened", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.hypercapnia-the-close-air", "PaCO2 over 50 mmHg (air CO2 over 3%)", "headache and panting at 3%, confusion at 5%, narcosis 8 to 10%", "none if aired in time", "ventilation", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.carbon-monoxide-poisoning-the-charcoal-sickness-the-brazier", "COHb over 10%", "by the tier (CIRCULATION 1a); clears with a 5 h half-life in air; the heart and brain starve meanwhile", "heart damage (infarction-like in the old); delayed brain injury in some survivors (days later: memory, mood)", "air (pure oxygen halves the half-life, none in the period)", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.smoke-inhalation-injury", "smoke over 100 mg/m3 with heat and CO; soot in the airways", "hours to days: airway swelling can close the throat at 6 to 24 h; pneumonia follows", "lung damage (ANATOMY lungs damage +0.1 to 0.5)", "air, rest; later weeks", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.irritant-injury-the-brimstone", "SO2 over 20 ppm or H2S over 10 ppm, or any tagged irritant", "eyes and airways: at once; chemical pneumonitis at high dose in 6 to 24 h", "lung damage at high dose", "air", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.hydrogen-sulphide-poisoning-the-damp-the-sewer-gas", "H2S over 100 ppm (the smell gone), over 500 the knockdown", "collapse in a breath at 500+; death in 30 to 60 min; survivors recover or do not wake", "brain damage after a long knockdown", "air; never go down after him without airing the hold", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.altitude-illness-the-mountain-sickness", "SaO2 under 0.90 from low pressure over days", "headache, nausea, poor sleep from 2,500 m; rare in this game", "none", "descent", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"],
+      ["medicine.exposure.respiratory-failure-the-end-state", "SaO2 under 0.80 or PaCO2 over 70 from any cause with the drive failing (NEUROLOGY: opioids, deep drink)", "minutes to hours", "death", "the cause removed", "rex (the row's structure, 2026-10-29); proposed (numbers)", "open"]
+    ]
+  }
+}

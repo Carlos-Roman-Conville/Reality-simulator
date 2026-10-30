@@ -1,0 +1,47 @@
+{
+  "_about": "Scientific data library, domain atmosphere: the universal columns of the game's body/data/atmosphere.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "baseline": {
+    "title": "The baseline atmosphere (one world profile; every place inherits it)",
+    "kind": "science",
+    "conf": "high",
+    "source": "Standard dry-air composition; sea-level pressure 101,325 Pa (760 mmHg); water vapour tracked apart because it follows temperature and humidity (ENVIRONMENT). ATM-STD",
+    "columns": ["id", "Species", "Dry-air fraction", "Partial pressure at sea level (mmHg)", "Why", "Mark", "source"],
+    "rows": [
+      ["atmosphere.baseline.nitrogen-n2", "Nitrogen N2", "78.08%", 593, "fills the balance; matters only for diving (not in the game)", "rex (the species tracked, 2026-10-29); science (values)", "open"],
+      ["atmosphere.baseline.oxygen-o2", "Oxygen O2", "20.95%", 159, "the one that keeps a body alive; inspired partial pressure is what the lungs see", "rex (the species tracked, 2026-10-29); science (values)", "open"],
+      ["atmosphere.baseline.argon-and-the-traces", "Argon and the traces", "0.93% and less", 7, "nothing for play; folded into the remainder", "rex (the species tracked, 2026-10-29); science (values)", "open"],
+      ["atmosphere.baseline.carbon-dioxide-co2", "Carbon dioxide CO2", "0.04% (about 400 ppm; about 280 ppm in 1700)", 0.3, "accumulates in closed spaces; drives breathing", "rex (the species tracked, 2026-10-29); science (values)", "open"],
+      ["atmosphere.baseline.water-vapour-h2o", "Water vapour H2O", "0 to 4% by humidity and temperature", "up to 47 at body temperature (the airways saturate inspired air)", "takes room from oxygen in the alveoli; the 47 mmHg in the alveolar gas equation", "rex (the species tracked, 2026-10-29); science (values)", "open"]
+    ]
+  },
+  "altitude": {
+    "title": "Pressure with altitude (the standard atmosphere) and what the lungs see",
+    "kind": "science",
+    "conf": "high",
+    "source": "Barometric formula P(h) = 101325 x (1 - 0.0065 h / 288.15)^5.256 for the lower atmosphere under standard conditions; oxygen stays 20.95% while total pressure falls; inspired PO2 = 0.2095 x (P - 47 mmHg). Alveolar gas equation PAO2 = FiO2 (Patm - 47) - PaCO2 / 0.8 (standard respiratory physiology; ATM-ALV). Caribbean use is small (the Blue Mountains 2,256 m); the table exists for the reusable engine.",
+    "columns": ["id", "Altitude (m)", "Pressure (mmHg)", "Inspired PO2 (mmHg)", "Alveolar PO2 at PaCO2 40 (mmHg)", "Typical resting saturation", "Mark", "source"],
+    "rows": [
+      ["atmosphere.altitude.0", 0, 760, 149, 99, "0.97", "rex (the model, 2026-10-29); science (values)", "open"],
+      ["atmosphere.altitude.500", 500, 716, 140, 90, "0.96", "rex (the model, 2026-10-29); science (values)", "open"],
+      ["atmosphere.altitude.1000", 1000, 674, 131, 81, "0.95", "rex (the model, 2026-10-29); science (values)", "open"],
+      ["atmosphere.altitude.2256", 2256, 577, 111, 61, "0.90", "rex (the model, 2026-10-29); science (values)", "open"],
+      ["atmosphere.altitude.3000", 3000, 526, 100, 50, "0.88", "rex (the model, 2026-10-29); science (values)", "open"],
+      ["atmosphere.altitude.5000", 5000, 405, 75, 25, "0.75", "rex (the model, 2026-10-29); science (values)", "open"]
+    ]
+  },
+  "modifiers": {
+    "title": "Local modifiers a place applies to the baseline (ENVIRONMENT supplies the inputs)",
+    "kind": "model",
+    "conf": "medium",
+    "source": "ChatGPT's layer B (outside AI), kept; the ventilation numbers are placeholders from building-ventilation practice (air changes per hour).",
+    "columns": ["id", "Modifier", "From", "Changes", "Placeholder values", "Mark", "source"],
+    "rows": [
+      ["atmosphere.modifiers.altitude", "Altitude", "the map's elevation", "total pressure (the table above)", "-", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"],
+      ["atmosphere.modifiers.temperature-and-humidity", "Temperature and humidity", "ENVIRONMENT climate and weather", "water vapour partial pressure; gas density (buoyancy)", "humidity 60 to 85% in the Caribbean", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"],
+      ["atmosphere.modifiers.wind", "Wind", "ENVIRONMENT weather state", "ventilation of open and semi-open places; dispersal of a release (GAS_DYNAMICS)", "trades 13 to 17 knots", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"],
+      ["atmosphere.modifiers.enclosure-and-ventilation", "Enclosure and ventilation", "the place's kind (ANATOMY of a ship: hold, orlop, cabin, gun deck; a room, a cave, a mine)", "air changes per hour (ACH): how fast the volume is replaced by outside air", "open deck infinite; gun deck with ports open 20; cabin with a window 5; hold with the hatch open 2; hold battened down 0.2; a cave 0.05; a room with a fire and a chimney 3", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"],
+      ["atmosphere.modifiers.water-depth", "Water depth", "under water", "pressure +1 atm per 10 m; no air at all: the breathing medium changes (ANATOMY respiratory profile)", "drowning is the lungs' medium, not a gas", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"],
+      ["atmosphere.modifiers.stability-and-inversion", "Stability and inversion", "ENVIRONMENT (calm nights, fog)", "a release lingers near the ground; smoke hangs on the water", "dispersion x0.3 on a calm night", "rex (the modifier, 2026-10-29); proposed (placeholder values)", "open"]
+    ]
+  }
+}

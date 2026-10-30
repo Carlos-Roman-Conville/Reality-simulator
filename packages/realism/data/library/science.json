@@ -1,0 +1,75 @@
+{
+  "_about": "Scientific data library, domain science: the universal columns of the game's body/data/science.json tables, written by scripts/split_data.py. Same columns/rows schema as the game's tables. `id` is stable (see README); `source` holds source keys from sources.json ('; ' separated) or 'open'. Mark is the review state of these columns. A null in a column the engine's data/*.json holds by the same id means the engine file is the home of that value.",
+  "separations": {
+    "title": "The five separations (nothing is decided by the year)",
+    "kind": "model",
+    "conf": "high",
+    "source": "ChatGPT's list (outside AI), which Rex adopted in his own words: the chemistry is not limited by the period; the equipment is the limiter; a discovery out of its time is a time anomaly in the journal.",
+    "columns": ["id", "Question", "Layer", "Owner", "Mark", "source"],
+    "rows": [
+      ["science.separations.scientific-existence-does-the-substance-or-reaction-exist", "Scientific existence: does the substance or reaction exist under the simulated conditions?", "the universal engine", "CHEMISTRY.md, PHYSICS.md", "rex (2026-10-29)", "open"],
+      ["science.separations.historical-availability-could-someone-in-this-setting", "Historical availability: could someone in this setting obtain or make it ordinarily?", "the world", "TECHNOLOGY.md, GOODS.md, REGIONS.md", "rex", "open"],
+      ["science.separations.technological-accessibility-does-the-character-have-the", "Technological accessibility: does the character have the equipment, materials and knowledge?", "the world and the character", "SCIENTIFIC_EQUIPMENT.md, TECHNOLOGY.md, GOODS 3f knowledge", "rex", "open"],
+      ["science.separations.execution-difficulty-can-the-character-control-the-process", "Execution difficulty: can the character control the process?", "the character", "the skill minigames (Rex), STATS", "rex (skill affects execution)", "open"],
+      ["science.separations.provenance-what-is-it-in-the-worlds-history", "Provenance: what is it, in the world's history?", "the journal", "JOURNAL.md, COMBAT 4d tags", "rex", "open"]
+    ]
+  },
+  "states": {
+    "title": "Discovery states: from meeting a thing to understanding it",
+    "kind": "model",
+    "conf": "high",
+    "source": "ChatGPT's four states (outside AI), kept; the keeper adds what moves an entry between them and what the player sees at each. The microbe is the model case: Leeuwenhoek saw animalcules in 1676 and nobody understood them until the 1860s.",
+    "columns": ["id", "State", "Meaning", "Reached by", "What the journal shows", "What the engine lets you do", "Mark", "source"],
+    "rows": [
+      ["science.states.encountered", "Encountered", "it exists and you have met it", "seeing, catching, buying, making it", "a sketch and a provisional name ('an unknown liquid'; 'a red fish with a horn'); observed appearance", "use it blindly: eat it, burn it, throw it", "rex (the state, 2026-10-29); proposed (what moves it)", "open"],
+      ["science.states.observed", "Observed", "you have measured or tested properties", "the measure roles present (balance, thermometer, hydrometer, litmus, the taste and smell, a trial by fire); time with the thing", "the properties found (boils at the water bath's heat; sinks in water; turns litmus red; the fish bites at dusk)", "repeat what worked; predict a little", "rex (the state, 2026-10-29); proposed (what moves it)", "open"],
+      ["science.states.identified", "Identified", "you know what it is", "a match to a known entry: a book, a teacher, a measuring instrument that names it (spectroscope, mass spectrometer), or the period's test (a flame colour, a precipitate)", "its name, formula or species, its known uses, the historical entry (JOURNAL 7)", "name it in trade and dialogue; look it up; use it in a recipe that calls for it", "rex (the state, 2026-10-29); proposed (what moves it)", "open"],
+      ["science.states.understood", "Understood", "you know why it does what it does", "experiment and theory: the player's own, or a book of a later century (a time anomaly in itself)", "the mechanism, the reactions it takes part in, what it does to a body", "design new processes with it; teach it (GOODS 3f: knowledge that survives you if written)", "rex (the state, 2026-10-29); proposed (what moves it)", "open"]
+    ]
+  },
+  "classifications": {
+    "title": "Provenance classifications (Rex's time-anomaly labels, extended; not mutually exclusive)",
+    "kind": "fiction",
+    "conf": "high",
+    "source": "Rex (COMBAT 4d): a time-anomaly tag on things that do not belong to the period, shown on the item screen, never in battle; the world is ours in a space-time-anomaly version with real places and people not literally where or when they were. ChatGPT's set (outside AI) merged with the one already recorded in COMBAT 4d. Labels never change behaviour (Rex).",
+    "columns": ["id", "Label", "Meaning", "Stacks with", "Why the journal says so", "Mark", "source"],
+    "rows": [
+      ["science.classifications.historical", "Historical", "consistent with the setting's period and place", "any", "'known in this time'", "rex", "open"],
+      ["science.classifications.time-anomaly", "Time Anomaly", "real, but discovered, introduced or met outside its historical timeline (earlier or later)", "Historical (a real thing), Prehistoric", "'first recorded in <year> by <who>; you have it in <game year>'", "rex (the tag), proposed (the stacking)", "open"],
+      ["science.classifications.prehistoric", "Prehistoric", "from an earlier geological period, named", "Time Anomaly", "'extinct since the <period>'", "rex (COMBAT 4d: Triassic)", "open"],
+      ["science.classifications.mythological", "Mythological", "from a real tradition's myth or folklore", "-", "'from the <tradition>'", "rex (mythical)", "open"],
+      ["science.classifications.fantasy", "Fantasy", "fictional supernatural", "-", "'no record'", "rex (the label, 2026-10-29)", "open"],
+      ["science.classifications.science-fiction", "Science Fiction", "fictional technology or material on speculative science", "-", "'no record'", "rex (sci-fi), proposed (the label)", "open"],
+      ["science.classifications.original-fiction", "Original Fiction", "made for this universe", "-", "'this world's own'", "rex (the label, 2026-10-29)", "open"],
+      ["science.classifications.unknown", "Unknown", "the engine has no record of the reaction or thing: not impossible, not yet supported", "-", "'nothing known; try, and the world will answer what it can'", "rex (the label, 2026-10-29)", "open"]
+    ]
+  },
+  "entry": {
+    "title": "A journal entry's fields (one shape for a chemical, a plant, a fish, a creature, a disease, a tool, a place)",
+    "kind": "model",
+    "conf": "high",
+    "source": "ChatGPT's field list (outside AI) merged with Rex's: a blurb of what it does and what it is used for, when it was discovered and by whom. The entry separates what the player found from the historical reference that unlocks on identification; the five historical dates are kept apart because they differ and credit is often disputed.",
+    "columns": ["id", "Field", "Holds", "Shown when", "Mark", "source"],
+    "rows": [
+      ["science.entry.kind", "kind", "chemical | element | mineral | plant | fungus | animal | fish | creature | disease | equipment | material | object | place | phenomenon", "always", "rex (everything you can encounter)", "open"],
+      ["science.entry.state", "state", "encountered | observed | identified | understood", "always", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.classification", "classification", "one or more labels (classifications table) with the reason", "on identification (before that: 'unclassified')", "rex (labels)", "open"],
+      ["science.entry.name-formula-or-species-provisional-name-before", "name, formula or species; provisional name before identification", "-", "by state", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.observed-properties", "observed properties", "what the player's own tests found, dated and with the instrument used", "as found", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.reference-properties", "reference properties", "the engine's record (CHEMISTRY, ECOLOGY, MEDICINE rows)", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.natural-occurrence", "natural occurrence", "where it is found in the world", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.uses-and-effects", "uses and effects", "what it does and what it is used for: on a body (the body docs), in a recipe (GOODS), in a fight (COMBAT)", "on identification, growing with understanding", "rex (the blurb)", "open"],
+      ["science.entry.history-existence", "history: existence", "when it existed (a mineral: always; a species: its era; a compound: made by nature or first made by people)", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.history-first-observation", "history: first observation", "first documented noticing (Leeuwenhoek's animalcules 1676)", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.history-isolation", "history: isolation", "first obtained pure (oxygen 1774, Scheele and Priestley)", "on identification", "rex (when and by whom)", "open"],
+      ["science.entry.history-identification", "history: identification", "first recognised for what it is (oxygen as an element: Lavoisier 1777)", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.history-synthesis", "history: synthesis", "first made from other things (urea 1828, Wohler)", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.credited-to-and-the-dispute", "credited to, and the dispute", "names; where credit is contested, say so", "on identification", "rex (by whom)", "open"],
+      ["science.entry.historical-production", "historical production", "how it was made then", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.significance", "significance", "why it mattered", "on identification", "rex (the field, 2026-10-29)", "open"],
+      ["science.entry.your-discovery", "your discovery", "the in-game date, place, process and apparatus by which the player found or made it; the character who did it", "always", "rex", "open"],
+      ["science.entry.anomaly-note", "anomaly note", "if the game date is before the historical date: 'first recorded <year> by <who>; found here in <game year>: a Time Anomaly'", "on identification", "rex", "open"],
+      ["science.entry.personal-vs-reference", "personal vs reference", "two columns kept apart: what you found, what the books say", "always", "rex (the field, 2026-10-29)", "open"]
+    ]
+  }
+}
