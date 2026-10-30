@@ -23,6 +23,15 @@ describe("circulation library and transfers", () => {
       expect(Object.keys(circulationRules(table)).every(id => id.startsWith(`circulation.${table}.`))).toBe(true);
     expect(regulationLoops()["circulation.homeostasis.volume-and-salt-kidney"]).toMatchObject({ tauSeconds: null, timeConstant: "hours to days" });
   });
+  it("every regulation loop has failsWhen text and a null tau (the slot is unsourced)", () => {
+    const loops = Object.values(regulationLoops());
+    expect(loops.length).toBe(7);
+    for (const l of loops) {
+      expect(typeof l.failsWhen).toBe("string");
+      expect((l.failsWhen as string).trim().length).toBeGreaterThan(0);
+      expect(l.tauSeconds).toBeNull();
+    }
+  });
   it("1500 mL in a 70 kg man is III: table pressure/perfusion and DO2 fall", () => {
     const { w, out, b } = fixture();
     // Explicit fixed-resistance experiment, not an engine compensation law.

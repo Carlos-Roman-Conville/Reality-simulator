@@ -287,6 +287,8 @@ gases. It borrows the human-week weather and door from `examples/human-week.ts`.
 feed row, work MET, haemoglobin, respiratory profile, skin area or muscle layout, so the work hours run at rest, the horse breathes the
 human per-kg profile as a named stand-in, and muscle fatigue is `null`. See [`flags/independence.md`](flags/independence.md).
 
+Null slots: the code already reads these library slots, but they are `null` because no source is cited: the circulation homeostasis `tau (s)` column and the `maximal-cardiac-output` quantity (`flags/circulation.md`); the anatomy organ masses, the organs table's `Cascade kinetics (s)` column, the horse `haemoglobin-g-dl` and the horse `maximal-ventilation-l-min` (`flags/anatomy.md`). Each flags file records what was searched. Entering a cited number in a slot switches its code path on with no code change; until then volume recovery, `aerobic_today`, organ cascades and the horse's blood and breathing ledgers stay off.
+
 ## Next (the belt)
 
 Wire the equipment catalogue and further substance records (`body/data/*.json`) into the registry; expand reaction
