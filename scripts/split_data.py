@@ -105,7 +105,7 @@ HISTORY = {("equipment", "catalogue"): ["Date (usual)", "Credited to", "Predeces
 
 # Columns the engine's own data files already hold, by id: {(domain, table): (file, array key, columns)}.
 ENGINE_OWNED = {
-    ("chemistry", "substances"): ("substances.json", "substances", ["Formula", "Molar mass"]),
+    ("chemistry", "substances"): ("substances.json", "rows",["Formula", "Molar mass"]),
     ("chemistry", "reactions"): ("reactions.json", "reactions",
                                  ["Reactants", "Products", "Conditions", "Rate (placeholder)", "Heat"]),
 }

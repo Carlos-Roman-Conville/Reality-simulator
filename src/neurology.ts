@@ -477,7 +477,7 @@ const sub = (key: string) => `drug:${key}`;
 export function registerDrugs(w: World) {
   for (const s of neuroSubstances()) {
     if (w.registry.substances.has(sub(s.key))) continue;
-    w.registry.addSubstance({ id: sub(s.key), name: `${s.name} (on board)`, molarMass: 1, formula: "", cp: {}, source: "data/library/neurology.json", provenance: "Historical" });
+    w.registry.addSubstance({ id: sub(s.key), name: `${s.name} (on board)`, molarMass: 1, formula: "", cp: {}, source: "data/library/neurology.json", provenance: "Historical", checked: "unverified: a marker substance for the neurology library, no reference values" });
   }
 }
 

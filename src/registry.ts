@@ -20,6 +20,7 @@ export interface Substance {
   boilingPointC?: number | null;
   source: string;             // URL of the reference the row's numbers come from
   provenance: "Historical" | "Anachronistic" | "Prehistoric" | "Mythological" | "Fantasy" | "Science Fiction" | "Original Fiction";
+  checked: string;            // what was checked against the source, what matched, and what is unverified
 }
 
 export interface Material {
@@ -31,6 +32,7 @@ export interface Material {
   formula?: string | null;    // null for mixtures and composites
   source: string;             // URL
   provenance: Substance["provenance"];
+  checked: string;            // as Substance.checked
 }
 
 export type PortKind = "fluid" | "gas" | "heat" | "power" | "mechanical" | "material";
@@ -96,7 +98,7 @@ export class Registry {
  */
 export function defaultRegistry(): Registry {
   const r = new Registry();
-  for (const s of substanceData.substances) r.addSubstance(s as Substance);
-  for (const m of materialData.materials) r.addMaterial(m as Material);
+  for (const s of substanceData.rows) r.addSubstance(s as Substance);
+  for (const m of materialData.rows) r.addMaterial(m as Material);
   return r;
 }

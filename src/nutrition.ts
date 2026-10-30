@@ -200,7 +200,7 @@ function registerPools(w: World) {
     if (w.registry.substances.has(substanceOf(s.id))) continue;
     // a ledger substance: it carries mass only, no atoms (empty formula), so the element ledger counts nothing for it
     w.registry.addSubstance({ id: substanceOf(s.id), name: `${s.name} (body pool)`, molarMass: 1, formula: "", cp: {},
-      source: "data/library/nutrition.json", provenance: "Historical" });
+      source: "data/library/nutrition.json", provenance: "Historical", checked: "unverified: a marker substance for the nutrition library, no reference values" });
   }
 }
 
