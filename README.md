@@ -31,6 +31,7 @@ vessel, and water and charcoal conserved every step with the trace saying where 
     src/process.ts     combustion, losses, boiling, condensation, the room box, the body, the thermometer, wear, control
     src/library.ts     the typed loader for data/library: libraryTable(file, table) rows keyed by column, cached
     src/physiology.ts  the human body process: energy (RMR, MET, PAL), heat (WBGT, core drift), sleep, water, acclimatisation
+    src/nutrition.ts   nutrient pools, absorption, deficiency stages, glycogen and fat, from the nutrition tables
     src/reactions.ts   data-driven vessel reactions, limiting reagents, reaction heat and gas release
     src/elements.ts    chemical formula parser and atomic masses for the element ledger
     data/reactions.json four sourced reaction records with stoichiometry, conditions and rate models
@@ -163,6 +164,19 @@ close at `dayStartH` with the recovery table's debt, fatigue and core rules; ale
 row. Outputs are by id on `body.props.outputs` (`bodyOutputs(body)`): `alertness`, `sleep_debt`, `core_c`,
 `water_deficit_pct`, `energy_balance_kcal`, `pal`, ... `ingest(world, body, {kcal, waterKg})` brings food energy and water
 in, traced (`energy:chemical`, `mass:water`). `FLAGS.md` lists what the docs ask for that the library cannot support.
+
+### Nutrition (`src/nutrition.ts`)
+
+`stockPools(world, body)` fills a body's pools (every nutrient the depletion table gives a reserve and a daily use for: vitamins
+C, A, B1, B3, B9, B12, iron, magnesium, sodium) as contents `nutrient:<id>`; `eat(world, body, foodId, kg, {cooked, ...})` and
+`eatMeal` take a food row per kilogram, bring its energy and water in through physiology's `ingest`, absorb its nutrients by the
+`absorption` table's multipliers, cap each pool at full (the excess goes to `excreta`) and trace every transfer
+(`mass:nutrient:<id>`). `nutritionProcess(body)` runs after physiology and closes each day: the table's daily use is debited, the
+stage is set (1 under the table's "signs below" level; 2 and 3 where the caller gives their levels), and the energy balance
+(intake minus physiology's expenditure) changes glycogen and fat by the `body_composition` rules, with the energy density the
+table gives (7,700 kcal/kg). Outputs by id on `bodyOutputs`: `pool_<id>`, `deficiency_<id>`, `fat_kg`, `glycogen_g`,
+`glycogen_factor`, `energy_unplaced_kcal`. `deficiencySignals(body)` lists the stages above 0. `World.conserve("nutrient:vit_c", ["body"])`
+holds each pool's mass. `FLAGS.md` lists what the library cannot support.
 
 ## Next (the belt)
 

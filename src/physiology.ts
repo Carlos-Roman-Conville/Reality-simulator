@@ -282,6 +282,7 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     const evapJ = sweatKg * SWEAT_LATENT * Math.max(0, 1 - (r.props.rh ?? 0.6));
     addHeat(w, b, -evapJ);
     p.waterDeficitKg = (p.waterDeficitKg ?? 0) + sweatKg;
+    p.sweat_kg = (p.sweat_kg ?? 0) + sweatKg;
     p.waterDeficitPct = p.waterDeficitKg / mass * 100;
     if (held) reg.addContent(b, "water", "liquid", -sweatKg);
     reg.addContent(r, "water", "gas", sweatKg);
