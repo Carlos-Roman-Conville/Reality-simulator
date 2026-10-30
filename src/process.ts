@@ -3,8 +3,7 @@
  * (physics.ts) and records every transfer in the trace. Lumped, explicit, per-step: the first build's simplification.
  */
 import type { Process } from "./scheduler.ts";
-import { addHeat, type World } from "./world.ts";
-import type { Component } from "./registry.ts";
+import { addHeat } from "./world.ts";
 import { physiologyProcess } from "./physiology.ts";
 import { roomAirProcess, roomGasFraction } from "./atmosphere.ts";
 import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, carbonCombustion, heatFlow, waterBoilingPoint, waterLatentHeat } from "./physics.ts";

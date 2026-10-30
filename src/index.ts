@@ -11,6 +11,7 @@ export * from "./library.ts";
 export * from "./physiology.ts";
 export * from "./nutrition.ts";
 export * from "./atmosphere.ts";
+export * from "./environment.ts";
 export * from "./neurology.ts";
 export * from "./circulation.ts";
 export * from "./anatomy.ts";
