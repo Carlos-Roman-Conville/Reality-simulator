@@ -13,8 +13,8 @@ step waits where it says. Every number in a test is a fixture, not a game rule.
 | 6 | **Labour market** (done 2026-10-30; the rule a config key, default no pressure): wage quotes from posts and pools read through `SettlementReader` | 1, 2 | E12 quote rises when posts outnumber workers |
 | 7 | **Accounting** (done 2026-10-30): the derived view over ledger rows and inventory value | 5 | E13 revenue minus costs equals profit and reconciles with the ledger |
 | 8 | **Three ports, three goods, two companies** (done 2026-10-30, `npm run ports`) (pirate PLAN unit 37's first sim) as an example with no pirate data | 5 | E14 the sim prints prices and shortages over days and is deterministic |
-| 9 | **Settlement integration**: the pirate adapter implements Settlement's providers from this engine and the reader from Settlement's state | 2, settlement keeper | I1 Settlement's hamlet produces into an Economy inventory |
-| 10 | **Thirty-day autonomous settlement benchmark**: one settlement, Settlement + Economy + stub population, thirty ticks, every invariant held every day | 9 | I2 thirty days: money and mass conserved, no negative stock, prices finite |
+| 9 | **Settlement integration** (done 2026-10-30, pirate commit 962702a, `web/src/economy/`): the pirate adapter implements Settlement's providers from this engine and the reader from Settlement's state | 2, settlement keeper | I1 Settlement's hamlet produces into an Economy inventory |
+| 10 | **Thirty-day autonomous settlement benchmark** (done 2026-10-30, test I2 in `web/src/economy/economy.test.ts`): one settlement, Settlement + Economy + stub population, thirty ticks, every invariant held every day | 9 | I2 thirty days: money and mass conserved, no negative stock, prices finite |
 | 11 | **Realism hook**: a population / nutrition provider from `realism` for consumption | 10, body-and-world keeper | I3 |
 
 Open for Rex items are collected in `CONTRACTS.md` §12 and never block a step: the step runs with the value marked

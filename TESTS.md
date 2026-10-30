@@ -38,8 +38,11 @@ not a game rule.
 | E12 | the wage quote rises when posts outnumber workers | the default rule (`posted-median`) quotes the role's posted median with no pressure (the open state) and nothing for a role with no posts; under the `ratio` rule the quote rises with more posts than workers, falls with more workers, stays within its floor and ceiling, and falls back to the median when the host's supply is unknown |
 | E14 | the three-port sim is deterministic | thirty days run twice give the same state, log and printed table; every price finite, no negative stock; the companies' purses and the ports' takings sum to what the companies started with; at least one shipment and one sale happened |
 
-## Integration (PLAN.md steps 9–11)
+## Integration (`Games/RPG's/pirate-ship/web/src/economy/economy.test.ts`, steps 9–10; pirate commit 962702a)
 
-I1 Settlement's hamlet produces into an Economy inventory through the material provider · I2 thirty days of one
-settlement: money and mass conserved, no negative stock, prices finite · I3 consumption from a realism population
-provider.
+| Id | Rule under test | Must hold |
+|---|---|---|
+| I1 | the port's butcher produces into an economy inventory through the material provider | one settlement day: Settlement's Q (four units of meat from one butcher, no labour left for the fish line) is the stock move the economy records, with by-products; every provider call Settlement made is a logged economy command and the day replays; the reader sees the settlement's businesses, posts, production for that day only, and fixtures; the price provider answers for goods and refuses property (open); the ledger provider is Settlement's ledger |
+| I2 | thirty autonomous days of the port with both engines | every day: the two days aligned, no negative stock, Settlement's total money unchanged, every price finite, the economy's observed production equals Settlement's Q per line; inputs run out part way and the shop goes back to staffed; cattle is conserved into meat sold, eaten or on the shelf; the shop's balance equals the accounting view's profit; the economy's whole run replays byte for byte |
+
+Planned: I3 consumption from a realism population provider (step 11, waits on the body-and-world keeper).

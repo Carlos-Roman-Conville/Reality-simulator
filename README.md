@@ -8,7 +8,7 @@ engine**; the pirate game's goods, ports and companies (`Games/RPG's/pirate-ship
 it through an adapter. Modelled on `../realism` and `../settlement`. Rex placed it here on 2026-10-28
 (ALIGNMENT §10); the engine family and its rules are in `../ENGINES.md`.
 
-**Status: contract AGREED with Settlement 2026-10-30 (Settlement commit 2c4223c holds its §13 code); PLAN steps 2–8 built; step 9 next.** ENGINES.md requires the contract to be agreed before
+**Status: contract AGREED with Settlement 2026-10-30 (Settlement commit 2c4223c holds its §13 code); PLAN steps 2–10 built; step 11 waits on realism.** ENGINES.md requires the contract to be agreed before
 either side implements production or labour. `CONTRACTS.md` is the agreed text.
 
 ## Read in this order
@@ -43,8 +43,13 @@ shipments over the host's travel days with in-transit spoilage, freight through 
 `examples/three-ports.ts` (three abstract ports, three goods, two companies with a written example policy;
 `npm run ports` prints price@shortage per port and good over thirty days). 25 tests, E1–E14.
 
-Not built: PLAN steps 9–11 (the pirate adapter over Settlement, the thirty-day settlement benchmark, the realism
-population hook). Step 9 is unblocked since Settlement 2c4223c.
+Steps 9–10 (the same day, in the pirate repo, commit 962702a): the adapter `web/src/economy/` (loader over the
+pirate goods and recipes with host-supplied quantities, Settlement's material and price providers from this engine,
+this engine's ledger provider from Settlement's ledger, the settlement reader, `runDay`) and the thirty-day
+autonomous port benchmark, tests I1 and I2 beside the game's 385 others.
+
+Not built: step 11, consumption from a realism population provider (waits on the body-and-world keeper); recipe
+quantities as data (the balance lane's); the game's own use of the adapter.
 
 ## Marks
 
