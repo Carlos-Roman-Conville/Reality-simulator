@@ -26,6 +26,14 @@ describe("the data-driven registry", () => {
     }
   });
 
+  it("the water, hydrogen and lime rows carry real molecular weights, not rounded ones", () => {
+    for (const id of ["water", "h2", "limestone", "quicklime", "slaked_lime"]) {
+      const s = reg.substance(id);
+      expect(Math.abs(s.molarMass - formulaMass(s.formula)) / formulaMass(s.formula), id).toBeLessThan(1e-4);
+    }
+    expect(reg.substance("water").molarMass).toBe(0.018015);
+  });
+
   it("every substance and material row cites a source URL", () => {
     for (const s of reg.substances.values()) expect(s.source, s.id).toMatch(/^https:\/\//);
     for (const m of reg.materials.values()) expect(m.source, m.id).toMatch(/^https:\/\//);

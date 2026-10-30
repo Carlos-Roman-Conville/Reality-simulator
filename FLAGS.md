@@ -15,3 +15,4 @@ One file per module under `flags/`; every flag line lives there.
 - [checkpoint 2 (2531)](flags/checkpoint-2.md)
 - [ecology and population (2530)](flags/ecology-and-population.md)
 - [independence (2532)](flags/independence.md)
+- [chemistry (2573)](flags/chemistry.md)

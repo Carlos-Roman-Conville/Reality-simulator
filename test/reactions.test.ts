@@ -103,12 +103,13 @@ describe("reaction records and solver", () => {
     for (const [id, fuel, phase] of [["comb_c_full", "charcoal", "solid"], ["water_formation", "h2", "gas"]] as const) {
       const r = reaction(id), o2 = r.reactants[1].coefficient;
       const w = setup(600, [{ substance: fuel, phase, mass: kg(fuel, 2) }, { substance: "o2", phase: "gas", mass: kg("o2", o2) }]);
-      const beforeMass = w.registry.component("vessel").contents.reduce((s, x) => s + x.mass, 0);
+      const beforeMoles = Object.fromEntries(["C", "H", "O"].map(el => [el, w.elementMolesOf(el, ["vessel", "room"])]));
       const before = sensible(w);
       run(w, [r]);
       expect(w.registry.contentMass(w.registry.component("vessel"), fuel)).toBeCloseTo(kg(fuel), 12);
       expect(sensible(w) - before).toBeCloseTo(-r.heat, 6);
-      expect([...w.registry.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0)).toBeCloseTo(beforeMass, 12);
+      // Atoms are conserved exactly; mass follows from them and need not be additive across rows with NIST weights.
+      for (const el of ["C", "H", "O"]) expect(w.elementMolesOf(el, ["vessel", "room"])).toBeCloseTo(beforeMoles[el], 12);
     }
   });
   it("rejects unbalanced records before changing inventories", () => {
@@ -152,6 +153,16 @@ describe("element ledger", () => {
     const w = setup(1100, [{ substance: "limestone", phase: "solid", mass: kg("limestone") }]);
     w.conserveElements(["vessel"]);
     run(w, [reaction("calcination")]);
+  });
+  it("conserves atom moles through water formation with real molar masses", () => {
+    const w = setup(600, [{ substance: "h2", phase: "gas", mass: kg("h2", 2) }, { substance: "o2", phase: "gas", mass: kg("o2") }]);
+    const atoms = () => ["H", "O"].map(el => w.elementMolesOf(el, ["vessel", "room"]));
+    expect(atoms()[0]).toBeCloseTo(4, 12);
+    run(w, [reaction("water_formation")]);
+    expect(atoms()[0]).toBeCloseTo(4, 12);
+    expect(atoms()[1]).toBeCloseTo(2, 12);
+    expect(w.registry.contentMass(w.registry.component("vessel"), "water") + w.registry.contentMass(w.registry.component("room"), "water"))
+      .toBeCloseTo(2 * 0.018015, 12);
   });
   it("detects untraced element creation instead of accepting reaction pseudo-transfers", () => {
     const w = setup(25, []);

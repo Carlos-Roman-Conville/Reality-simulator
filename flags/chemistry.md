@@ -1,0 +1,5 @@
+## chemistry (2573)
+
+- NOTE: atomic weights. `src/elements.ts` holds the IUPAC CIAAW standard atomic weights (https://ciaaw.org/atomic-weights.htm) as rounded representative values, not isotope masses. Where CIAAW gives an interval (H, C, N, O, S) the table uses the single conventional value; real samples vary inside that interval and the library does not model the variation.
+- NOTE: element conservation is checked on atom moles (`World.elementMolesOf`: mass / molarMass x atoms per formula), so it holds for any molar mass a row carries; mass follows from the counts. A reaction moves `extent x coefficient` moles of each substance, the reaction's own integers. Substance rows keep the NIST WebBook molecular weight; the o2, n2, co2, co, charcoal and ethanol rows are still the rounded values (0.032, 0.028, 0.044, 0.028, 0.012, 0.046) and may move to NIST weights without touching the check.
+- NOTE: rows whose molar mass moved (water, h2, limestone, quicklime, slaked lime) keep their per-mole cp; the per-kg cp was rescaled to the new mass.

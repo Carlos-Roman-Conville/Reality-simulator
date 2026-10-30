@@ -25,24 +25,25 @@ export class World {
   conserve(substance: string, components: string[], tolerance = 1e-6) {
     this.conserved.push({ quantity: `mass:${substance}`, substance, components, initial: this.massOf(substance, components), tolerance, entered: 0, left: 0 });
   }
-  /** kg of an element from n(substance) * atoms/formula * atomic mass.
-   * This preserves atom accounting even for the registry's rounded molecular weights.
+  /** Moles of an element's atoms: sum of n(substance) * atoms per formula, with n = mass / molarMass.
+   * Conservation is checked on atom counts, so it holds for any molar mass the data carries (a reaction's
+   * stoichiometric coefficients move whole moles of each substance); mass follows from the counts.
    * Component shells are inert; this ledger covers their reactive contents only.
    */
-  elementMassOf(element: string, components: string[]): number {
+  elementMolesOf(element: string, components: string[]): number {
     return components.reduce((sum, id) => sum + this.registry.component(id).contents.reduce(
       (m, x) => m + x.mass * this.elementPerKg(x.substance, element), 0), 0);
   }
   private elementPerKg(substance: string, element: string): number {
     const s = this.registry.substance(substance);
-    return (s.formula === "" ? 0 : (formulaAtoms(s.formula)[element] ?? 0)) * atomicMass[element] / s.molarMass;
+    return (s.formula === "" ? 0 : (formulaAtoms(s.formula)[element] ?? 0)) / s.molarMass;
   }
   /** Enrol all registered elements before running processes; checked by every afterStep(). */
   conserveElements(components = [...this.registry.components.keys()], tolerance = 1e-9) {
     const elements = new Set([...this.registry.substances.values()].flatMap(s => s.formula === "" ? [] : Object.keys(formulaAtoms(s.formula))));
     for (const element of elements) {
       if (!atomicMass[element]) throw new Error(`no atomic mass for ${element}`);
-      this.elements.push({ element, components: [...components], initial: this.elementMassOf(element, components),
+      this.elements.push({ element, components: [...components], initial: this.elementMolesOf(element, components),
         tolerance, net: 0, cursor: this.trace.transfers.length });
     }
   }
@@ -66,7 +67,7 @@ export class World {
         const from = c.components.includes(x.from), to = c.components.includes(x.to);
         if (from !== to) c.net += (to ? 1 : -1) * x.amount * this.elementPerKg(x.quantity.slice(5), c.element);
       }
-      this.trace.check(this.t, `element:${c.element}`, c.initial + c.net, this.elementMassOf(c.element, c.components), c.tolerance);
+      this.trace.check(this.t, `element:${c.element}`, c.initial + c.net, this.elementMolesOf(c.element, c.components), c.tolerance);
     }
   }
 }
