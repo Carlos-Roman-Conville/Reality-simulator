@@ -79,6 +79,7 @@
     "kind": "history",
     "conf": "medium",
     "source": "Woodall, The Surgeon's Mate (1617); Moyle, Chirurgus Marinus (1693); the humoral tradition (bleeding, purging, emetics, sweating); Sydenham (laudanum, bark); Pare's ligature (1564); Petit's tourniquet (1718); inoculation 1721. MED-WOOD, MED-MOYLE, MED-HUM, MED-LIND",
+    "note": "No cited source gives a hygiene exposure multiplier (unswabbed days, lice, foul water, wet-season port) or a death risk with treatment; both stay unset (hygiene defaults to 1 in the engine). See flags/medicine.md.",
     "columns": ["id", "Really worked?", "Mark", "source"],
     "rows": [
       ["medicine.treatments.bleeding-venesection-cupping-leeches", "no; it worsened blood loss and anaemia", "proposed", "open"],
