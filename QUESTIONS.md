@@ -1,0 +1,21 @@
+# Questions only Rex can answer (settlement keeper, 2026-10-29)
+
+Each blocks a named migration step or a named test. Nothing is assumed meanwhile; the step waits or runs with
+the value marked proposed and listed here. Answers go to the Rulings Docket as usual and back into these files.
+
+| # | Question | Blocks | What happens meanwhile |
+|---|---|---|---|
+| Q1 | **Footprint classes for the 16 places** (which are small, medium, large, field, open), the household size to assume, and the undeveloped reserve share. These are the inputs the map script derives everything else from. | MIGRATION step 3; T2 | the worked example's classes (MIGRATION s"Step 3, worked"), marked proposed |
+| Q2 | **Does recruiting a resident still freeze or ghost their business** (today's rule), or does it hand the business to a manager or a successor while they are aboard? (FACILITIES s6 "three arrangements" was proposed, not yours.) | step 6; T7; A1's last clause | the engine keeps the employment assignment; the alignment engine freezes the slot exactly as today; nothing new happens to the business |
+| Q3 | **Is "developed" (the alignment input) the building's condition, the business's activity, both, or neither?** (FACILITIES s8 item 4.) If either, which settlement event may issue `develop`? | step 10; T14 | `develop` stays a story command; the two readings are queries only |
+| Q4 | **Does a change of business operator ever re-bind the institution's shaper** (`slot.owner`)? Your rule says an owner or manager change never moves alignment; the operator is the third role. | step 6 | never: `slot.owner` is only ever the slug in `institutions.json` |
+| Q5 | **Which places start with which fixtures** from the 25 facility ids, and does an idle fixture count as "the settlement has it" (`activeOnly`)? | step 5; T6 | a proposed table in `rules.json`; `activeOnly: false` |
+| Q6 | **Who holds each starting title** (private named holder, `town`, `none`), which places start with an operating business, and may the player buy any of them? FACILITIES s7 proposed: private except the church, clinic, docks, fort and town hall public. | step 4, 6; T3, T5, A1 | that proposal, every row marked proposed |
+| Q7 | **Is `port.cash` the settlement treasury?** If yes, wages for public works, rents on town-held titles and permit fees move it; if no, the treasury is its own account and `port.cash` stays a story key. | step 4 | its own account |
+| Q8 | **May the player set a layout freely in a building they own** (Stardew furnishing), or only through a renovation project with materials and labour? | step 8; U8, T11 | projects only; `config.freeLayout` off |
+| Q9 | **Inheritance**: the farm to the daughter and the butcher shop to the son are your precedents. Are they a general custom (eldest child, spouse, the town) the adapter should apply when a holder dies, or story-issued one by one? | step 4; T4 | story-issued `inherit` commands only; no custom |
+| Q10 | **Post counts and production lines per starting business**, and the wage and rent levels. The proposal said staffing scales with the facility; the first numbers still have to come from somewhere. | step 6, 7; T9 | sourced period figures where the research session finds them, else proposed placeholders in `rules.json` |
+| Q11 | **How the mayor's office is won**: the `sec.townhall` contest's prize, an election, an appointment by the Crown's agent, or something you have not said. And what the office may do (permits, public titles, taxes, seizure). | step 9; T13 | the office exists with `powers: [permit, public-title]`, no holder; the story appoints |
+| Q12 | **Which engine events, if any, should the story hear** (a title changing hands, a business going dormant, a public work completing) as town events or choice words in `UPGRADES.md`. | step 10 | none |
+| Q13 | **Placement**: this folder sits in `Toolchain/settlement/` beside realism and the decided `economy`, as its own git repository like realism. Confirm, or move it under `files/pirate-ship/settlement/`. | step 1 | stays here, design only |
+| Q14 | **A second consumer** to prove reuse (`examples/`): a High Roller casino floor, the pirate ship's own deck as a "settlement" of rooms, or a plain hamlet? | step 11 | a plain hamlet |
