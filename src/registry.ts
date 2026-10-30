@@ -2,7 +2,8 @@
  * Service 1: the registry. Stable ids for substances (properties only, never behaviour), materials (what a component is
  * made of), components (equipment, organs, structures: a thermal mass with contents and ports) and assemblies.
  */
-import { BRICK_WALL, CP } from "./physics.ts";
+import substanceData from "../data/substances.json" with { type: "json" };
+import materialData from "../data/materials.json" with { type: "json" };
 
 export type Phase = "solid" | "liquid" | "gas";
 
@@ -10,8 +11,13 @@ export interface Substance {
   id: string;
   name: string;
   molarMass: number;          // kg/mol
-  cp: Partial<Record<Phase, number>>; // J/(kg K) by phase
-  hhv?: number;               // J/kg if a fuel
+  formula: string;            // chemical formula, e.g. "C2H5OH"
+  cp: Partial<Record<Phase, number | null>>; // J/(kg K) by phase
+  hhv?: number | null;        // J/kg if a fuel
+  density?: Partial<Record<Phase, number | null>>; // kg/m3 by phase, at the condition in the data row's note
+  meltingPointC?: number | null;  // at 1 atm; null where none is standard
+  boilingPointC?: number | null;
+  source: string;             // URL of the reference the row's numbers come from
   provenance: "Historical" | "Anachronistic" | "Prehistoric" | "Mythological" | "Fantasy" | "Science Fiction" | "Original Fiction";
 }
 
@@ -21,6 +27,9 @@ export interface Material {
   cp: number;                 // J/(kg K)
   maxTemperatureC: number;    // beyond it the component fails
   corrodedBy: string[];       // substance ids it must not hold
+  formula?: string | null;    // null for mixtures and composites
+  source: string;             // URL
+  provenance: Substance["provenance"];
 }
 
 export type PortKind = "fluid" | "gas" | "heat" | "power" | "mechanical" | "material";
@@ -80,23 +89,13 @@ export class Registry {
   }
 }
 
-/** The default substances and materials, real constants (physics.ts). A game's own data extends these. */
+/**
+ * The default substances and materials, loaded from data/substances.json and data/materials.json (each row cites its
+ * source). A game's own data extends these.
+ */
 export function defaultRegistry(): Registry {
   const r = new Registry();
-  r.addSubstance({ id: "water", name: "Water", molarMass: 0.018, cp: { liquid: CP.water, gas: CP.waterVapour, solid: 2090 }, provenance: "Historical" });
-  r.addSubstance({ id: "o2", name: "Oxygen", molarMass: 0.032, cp: { gas: 918 }, provenance: "Historical" });
-  r.addSubstance({ id: "n2", name: "Nitrogen", molarMass: 0.028, cp: { gas: 1040 }, provenance: "Historical" });
-  r.addSubstance({ id: "co2", name: "Carbon dioxide", molarMass: 0.044, cp: { gas: 844 }, provenance: "Historical" });
-  r.addSubstance({ id: "co", name: "Carbon monoxide", molarMass: 0.028, cp: { gas: 1040 }, provenance: "Historical" });
-  r.addSubstance({ id: "charcoal", name: "Charcoal (as carbon)", molarMass: 0.012, cp: { solid: CP.charcoal }, hhv: 30.0e6, provenance: "Historical" });
-  r.addSubstance({ id: "ethanol", name: "Ethanol", molarMass: 0.046, cp: { liquid: 2440, gas: 1420 }, hhv: 26.8e6, provenance: "Historical" });
-  r.addMaterial({ id: "copper", name: "Copper", cp: CP.copper, maxTemperatureC: 1085, corrodedBy: [] });
-  r.addMaterial({ id: "glass", name: "Glass", cp: CP.glass, maxTemperatureC: 500, corrodedBy: [] });
-  r.addMaterial({ id: "iron", name: "Iron", cp: CP.iron, maxTemperatureC: 1200, corrodedBy: ["aqua_fortis"] });
-  r.addMaterial({ id: "wood", name: "Wood", cp: 1700, maxTemperatureC: 250, corrodedBy: [] });
-  r.addMaterial({ id: "wall_brick", name: "Wall brick (LBNL)", cp: BRICK_WALL.cp, maxTemperatureC: 1400, corrodedBy: [] });
-  r.addMaterial({ id: "brick", name: "Brick", cp: 840, maxTemperatureC: 1400, corrodedBy: [] });
-  r.addMaterial({ id: "flesh", name: "Flesh", cp: 3500, maxTemperatureC: 45, corrodedBy: [] });
-  r.addMaterial({ id: "air_mass", name: "Air (a room's)", cp: CP.air, maxTemperatureC: 1e9, corrodedBy: [] });
+  for (const s of substanceData.substances) r.addSubstance(s as Substance);
+  for (const m of materialData.materials) r.addMaterial(m as Material);
   return r;
 }

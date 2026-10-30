@@ -76,6 +76,13 @@ The original formulas retain their ENG-* source keys from the pirate engine desi
 - [F-Chart water-cylinder example](https://fchart.com/ees/heat_transfer_library/free_convection/hs3040.htm): 90 mm diameter and gravitational acceleration.
 - [University of Washington water properties](https://staff.washington.edu/calebktw/water_properties.html): liquid transport properties used at 40 C.
 - [Spirits Unlimited Euro 30 instructions](https://www.spiritsunlimited.co.nz/upload/euro30_instructions.pdf): 0.5-1 L/min cooling-water operating range; here recirculated from the tub.
+- [NIST Chemistry WebBook](https://webbook.nist.gov/chemistry/): molar mass, c_p, melting and boiling points per substance row in `data/substances.json` (each row links its own entry).
+- [Engineering ToolBox specific heat](https://www.engineeringtoolbox.com/specific-heat-metals-d_152.html) (also [solids](https://www.engineeringtoolbox.com/specific-heat-solids-d_154.html), [air](https://www.engineeringtoolbox.com/air-specific-heat-capacity-d_705.html)) and the [IT'IS tissue database](https://itis.swiss/virtual-population/tissue-properties/database/heat-capacity/): material c_p in `data/materials.json`.
+- [IUPAC CIAAW atomic weights](https://ciaaw.org/atomic-weights.htm): the formula check in `test/registry.test.ts`.
+
+Substances and materials live in `data/substances.json` and `data/materials.json` (loaded by `defaultRegistry()`); a null
+field means no standard value was found. The pirate table's `smoke` row (soot and tars, not one substance) and its
+tagged-substance template are not carried over.
 
 ## Next (the belt)
 

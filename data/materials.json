@@ -1,0 +1,13 @@
+{
+  "_about": "Materials a component is made of. cp J/(kg K), maxTemperatureC where the component fails, corrodedBy substance ids. formula is null for mixtures and composites. Rows carry the values the engine already used; maxTemperatureC is an engine failure limit (the melting point where a standard value exists), noted per row.",
+  "materials": [
+    {"id":"copper","name":"Copper","formula":"Cu","cp":385,"maxTemperatureC":1085,"corrodedBy":[],"source":"https://www.engineeringtoolbox.com/specific-heat-metals-d_152.html","provenance":"Historical","note":"max is copper's melting point"},
+    {"id":"glass","name":"Glass","formula":null,"cp":840,"maxTemperatureC":500,"corrodedBy":[],"source":"https://www.engineeringtoolbox.com/specific-heat-solids-d_154.html","provenance":"Historical","note":"max is an engine failure limit for thermal shock and softening, not a standard constant"},
+    {"id":"iron","name":"Iron","formula":"Fe","cp":450,"maxTemperatureC":1200,"corrodedBy":["aqua_fortis"],"source":"https://www.engineeringtoolbox.com/specific-heat-metals-d_152.html","provenance":"Historical","note":"max is an engine failure limit below iron's melting point (1538 C)"},
+    {"id":"wood","name":"Wood","formula":null,"cp":1700,"maxTemperatureC":250,"corrodedBy":[],"source":"https://www.engineeringtoolbox.com/specific-heat-solids-d_154.html","provenance":"Historical","note":"max is an engine failure limit near the onset of pyrolysis"},
+    {"id":"wall_brick","name":"Wall brick (LBNL)","formula":null,"cp":790,"maxTemperatureC":1400,"corrodedBy":[],"source":"https://simulationresearch.lbl.gov/modelica/releases/v1.1_build0_rc2/help/Buildings_HeatTransfer_Data_Solids.html","provenance":"Historical","note":"brick density 1920 kg/m3 and cp 790 from the LBNL library; max is an engine failure limit"},
+    {"id":"brick","name":"Brick","formula":null,"cp":840,"maxTemperatureC":1400,"corrodedBy":[],"source":"https://www.engineeringtoolbox.com/specific-heat-solids-d_154.html","provenance":"Historical","note":"max is an engine failure limit"},
+    {"id":"flesh","name":"Flesh","formula":null,"cp":3500,"maxTemperatureC":45,"corrodedBy":[],"source":"https://itis.swiss/virtual-population/tissue-properties/database/heat-capacity/","provenance":"Historical","note":"lumped body tissue: the IT'IS database lists soft tissues near 3400-3700; max is an engine failure limit (hyperthermia)"},
+    {"id":"air_mass","name":"Air (a room's)","formula":null,"cp":1005,"maxTemperatureC":1e9,"corrodedBy":[],"source":"https://www.engineeringtoolbox.com/air-specific-heat-capacity-d_705.html","provenance":"Historical","note":"cp of dry air near 300 K; max is a sentinel meaning air does not fail"}
+  ]
+}
