@@ -25,8 +25,10 @@
       ],
       "conditions": {
         "minimumTemperatureC": 400,
-        "note": "[model] 400 C ignition threshold from the pirate reaction table; charcoal ignition depends on surface and preparation. Complete oxidation only."
+        "minO2": 0.15,
+        "note": "[model] 400 C ignition threshold from the pirate reaction table; charcoal ignition depends on surface and preparation. Complete oxidation only. Does not run below 15% oxygen by volume in the vessel's gas **(Rex, 2026-10-29)**; no opened source for the 15%, so minO2Source is null. The rate by fuel surface and draught is the game's rule, not the engine's."
       },
+      "minO2Source": null,
       "heat": -393510,
       "where": "heated vessel",
       "mark": "[model] Charcoal treated as standard-state carbon; no oxygen-starved branch.",

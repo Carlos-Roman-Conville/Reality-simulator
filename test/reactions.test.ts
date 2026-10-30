@@ -3,7 +3,7 @@ import { defaultRegistry } from "../src/registry.ts";
 import type { Contents } from "../src/registry.ts";
 import { World } from "../src/world.ts";
 import { Scheduler } from "../src/scheduler.ts";
-import { defaultReactions, reactionProcess } from "../src/reactions.ts";
+import { defaultReactions, heatPerKg, reactionProcess } from "../src/reactions.ts";
 import type { Reaction } from "../src/reactions.ts";
 import { formulaAtoms } from "../src/elements.ts";
 import { R_GAS, C_TO_K } from "../src/physics.ts";
@@ -111,6 +111,36 @@ describe("reaction records and solver", () => {
       // Atoms are conserved exactly; mass follows from them and need not be additive across rows with NIST weights.
       for (const el of ["C", "H", "O"]) expect(w.elementMolesOf(el, ["vessel", "room"])).toBeCloseTo(beforeMoles[el], 12);
     }
+  });
+  it("charcoal burns only at 15% oxygen by volume or more, the per-kg heat follows from the row", () => {
+    const r = reaction("comb_c_full");
+    expect(r.conditions.minO2).toBe(0.15);
+    expect(r.minO2Source).toBeNull();
+    expect(r.conditions.note).toContain("**(Rex, 2026-10-29)**");
+    const air = (n2Mol: number) => setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal", 2) },
+      { substance: "o2", phase: "gas", mass: kg("o2") }, { substance: "n2", phase: "gas", mass: kg("n2", n2Mol) }]);
+    const thin = air(9); // 10% oxygen
+    run(thin, [r]);
+    expect(thin.trace.transfers).toHaveLength(0);
+    const rich = air(3); // 25% oxygen
+    run(rich, [r]);
+    expect(rich.registry.contentMass(rich.registry.component("vessel"), "charcoal")).toBeCloseTo(kg("charcoal"), 12);
+    const edge = air(5.6), reg = edge.registry; // 1 / 6.6 = 15.15%
+    run(edge, [r], 1);
+    expect(reg.contentMass(reg.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
+    expect(heatPerKg(reg, r)).toBeCloseTo(-393510 / reg.substance("charcoal").molarMass, 6);
+    expect(-heatPerKg(reg, r) / 1e6).toBeCloseTo(32.8, 1);
+  });
+  it("rejects an oxygen condition with neither a source nor a [model] mark, or out of range", () => {
+    const w = setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal") }, { substance: "o2", phase: "gas", mass: kg("o2") }]);
+    const unmarked = reaction("comb_c_full"); unmarked.conditions.note = "ignition";
+    expect(() => reactionProcess("vessel", [unmarked]).step(w, 1)).toThrow("oxygen condition");
+    for (const bad of [0, 1.5, -0.1]) {
+      const r = reaction("comb_c_full"); r.conditions.minO2 = bad;
+      expect(() => reactionProcess("vessel", [r]).step(w, 1)).toThrow("oxygen condition");
+    }
+    const cited = reaction("comb_c_full"); cited.minO2Source = "https://example.org/oxygen";
+    expect(() => reactionProcess("vessel", [cited]).step(w, 1)).not.toThrow();
   });
   it("rejects unbalanced records before changing inventories", () => {
     const w = setup(1100, [{ substance: "limestone", phase: "solid", mass: kg("limestone") }]);

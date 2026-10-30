@@ -10,7 +10,10 @@ export interface Reaction {
   name: string;
   reactants: Reagent[];
   products: Reagent[];
-  conditions: { minimumTemperatureC: number; catalyst?: string; note: string };
+  /** minO2: oxygen volume fraction of the vessel's gas below which the reaction does not run. */
+  conditions: { minimumTemperatureC: number; minO2?: number; catalyst?: string; note: string };
+  /** Citation for conditions.minO2: an opened source's URL, or null when the value is a [model] (the note says so). */
+  minO2Source?: string | null;
   rate: { kind: "complete"; note: string } | { kind: "arrhenius"; k0PerS: number; activationEnergyJPerMol: number; source: string; note: string };
   heat: number; // J per mole of reaction as written; positive absorbs heat
   where: string;
@@ -19,6 +22,12 @@ export interface Reaction {
 }
 
 export const defaultReactions = data.reactions as Reaction[];
+
+/** Heat per kg of the first reactant (the fuel), J/kg, same sign as `heat`; derived from the row, never stored. */
+export function heatPerKg(reg: Registry, reaction: Reaction): number {
+  const fuel = reaction.reactants[0];
+  return reaction.heat / (fuel.coefficient * reg.substance(fuel.substance).molarMass);
+}
 
 function validate(reg: Registry, reaction: Reaction) {
   if (!reaction.reactants.length || !reaction.products.length || !Number.isFinite(reaction.heat)
@@ -38,10 +47,27 @@ function validate(reg: Registry, reaction: Reaction) {
   }
   if (Object.values(balance).some(n => Math.abs(n) > 1e-10)) throw new Error(`unbalanced reaction ${reaction.id}`);
   if (reaction.conditions.catalyst) reg.substance(reaction.conditions.catalyst);
+  const minO2 = reaction.conditions.minO2;
+  if (minO2 !== undefined) {
+    const sourced = typeof reaction.minO2Source === "string" && reaction.minO2Source.startsWith("https://");
+    if (!(minO2 > 0 && minO2 <= 1) || (!sourced && (reaction.minO2Source !== null || !reaction.conditions.note.includes("[model]"))))
+      throw new Error(`invalid oxygen condition ${reaction.id}`);
+  }
   const rate = reaction.rate;
   if (rate.kind === "arrhenius" && (!(rate.k0PerS >= 0) || !Number.isFinite(rate.k0PerS)
     || !(rate.activationEnergyJPerMol >= 0) || !Number.isFinite(rate.activationEnergyJPerMol) || !rate.source)) throw new Error(`invalid kinetics ${reaction.id}`);
   if (rate.kind !== "arrhenius" && (rate.kind !== "complete" || !rate.note.includes("[model]"))) throw new Error(`missing rate model ${reaction.id}`);
+}
+
+/** Oxygen volume fraction of a vessel's gas: o2 moles over all gas moles (ideal gas, so mole and volume fractions agree). */
+function oxygenFraction(reg: Registry, v: { contents: { substance: string; phase: Phase; mass: number }[] }): number {
+  let o2 = 0, total = 0;
+  for (const x of v.contents) if (x.phase === "gas") {
+    const n = x.mass / reg.substance(x.substance).molarMass;
+    total += n;
+    if (x.substance === "o2") o2 += n;
+  }
+  return total > 0 ? o2 / total : 0;
 }
 
 /** Vessel reactions, in record order. Reactants/catalysts must be inside the vessel.
@@ -51,6 +77,7 @@ function validate(reg: Registry, reaction: Reaction) {
  * Hess's law and constant-cp sensible enthalpy, relative to 298.15 K (25 C):
  * https://srd.nist.gov/JPCRD/jpcrdS2Vol11.pdf and each record's formation enthalpies.
  * Endothermic extent is also limited by sensible heat above the minimum temperature.
+ * conditions.minO2 is the oxygen volume fraction of the vessel's gas under which the reaction does not run.
  * Named simplifications: constant heat capacities, irreversible reactions, threshold ignition,
  * perfect mixing, no pressure/equilibrium kinetics, instantaneous gas transport along the first
  * outgoing gas edge (no edge means retained gas). Gas carries sensible enthalpy to its receiver.
@@ -68,6 +95,7 @@ export function reactionProcess(vessel: string, reactions: readonly Reaction[] =
       const min = reaction.conditions.minimumTemperatureC;
       if (v.temperatureC < min) continue;
       if (reaction.conditions.catalyst && reg.contentMass(v, reaction.conditions.catalyst) <= 0) continue;
+      if (reaction.conditions.minO2 !== undefined && oxygenFraction(reg, v) < reaction.conditions.minO2) continue;
       let extent = Math.min(...reaction.reactants.map(x => reg.contentMass(v, x.substance, x.phase) / (reg.substance(x.substance).molarMass * x.coefficient)));
       if (extent <= 0) continue;
       if (reaction.rate.kind === "arrhenius") {
