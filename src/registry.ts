@@ -85,10 +85,17 @@ export class Registry {
   contentMass(c: Component, substance: string, phase?: Phase): number {
     return c.contents.filter(x => x.substance === substance && (!phase || x.phase === phase)).reduce((a, x) => a + x.mass, 0);
   }
+  /** Kahan carry per content entry: the low-order bits each `mass +=` rounded away, so thousands of equal small steps onto a
+   * large mass (a horse's water, minute after minute for a month) do not drift one way past the ledger's 1e-9. */
+  private carry = new WeakMap<Contents, number>();
   addContent(c: Component, substance: string, phase: Phase, kg: number) {
     const x = c.contents.find(y => y.substance === substance && y.phase === phase);
-    if (x) x.mass += kg; else c.contents.push({ substance, phase, mass: kg });
-    if (x && x.mass < 1e-12) x.mass = 0;
+    if (x) {
+      const y = kg - (this.carry.get(x) ?? 0), t = x.mass + y;
+      this.carry.set(x, (t - x.mass) - y);
+      x.mass = t;
+    } else c.contents.push({ substance, phase, mass: kg });
+    if (x && x.mass < 1e-12) { x.mass = 0; this.carry.delete(x); }
   }
 }
 

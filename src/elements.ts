@@ -6,7 +6,8 @@ export const atomicMass: Record<string, number> = {
   K: .039098, Ca: .040078, Hg: .20059, Pb: .2072, Fe: .055845, Cu: .063546,
 };
 
-/** Molar mass of a formula, kg/mol: the one weight set every substance row carries, so reactions conserve total mass. */
+/** Molar mass of a formula, kg/mol, rounded to 1e-9 so float summing noise never separates it from a row's literal:
+ * the one weight set every substance row carries, so reactions conserve total mass. */
 export function formulaMolarMass(formula: string): number {
   let kg = 0;
   for (const [el, n] of Object.entries(formulaAtoms(formula))) {
@@ -14,7 +15,7 @@ export function formulaMolarMass(formula: string): number {
     if (w === undefined) throw new Error(`no atomic weight for ${el} in ${formula}`);
     kg += w * n;
   }
-  return kg;
+  return Math.round(kg * 1e9) / 1e9;
 }
 
 /** Parse neutral formulas, including repeated atoms and nested parenthesized groups.
