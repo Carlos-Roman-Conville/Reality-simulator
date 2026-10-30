@@ -76,12 +76,14 @@ export interface CirculationOptions {
 }
 
 /** Initial blood is a volume ledger, not fictitious kg or an added body mass. */
-export function initialiseCirculation(w: World, body: string) {
+export function initialiseCirculation(w: World, body: string, profile?: { bloodVolumeMl: number; haemoglobinGDL: number }) {
   const b = w.registry.component(body), p = b.props;
   if (p.circulation_initial_ml !== undefined) return;
-  if (p.male !== 0 && p.male !== 1) throw new Error("circulation: supply male=0 or 1 for normal volume");
-  const volume = normalBloodVolume(b.mass, p.male === 1);
-  const hb = p.male === 1 ? normal("haemoglobin") : numberIn(row("quantities", "haemoglobin")["Normal (70 kg man)"], /men\) ([\d.]+)/);
+  if (!profile && p.male !== 0 && p.male !== 1) throw new Error("circulation: supply male=0 or 1 for normal volume");
+  const volume = profile?.bloodVolumeMl ?? normalBloodVolume(b.mass, p.male === 1);
+  const hb = profile?.haemoglobinGDL ?? (p.male === 1 ? normal("haemoglobin") : numberIn(row("quantities", "haemoglobin")["Normal (70 kg man)"], /men\) ([\d.]+)/));
+  finite(volume, "profile blood volume"); finite(hb, "profile haemoglobin");
+  if (!volume) throw new Error("circulation: zero baseline");
   p.circulation_initial_ml = p.blood_volume_ml = volume;
   p.circulation_initial_hb_g = p.blood_hb_g = hb * volume / 100;
   p.blood_lost_ml = p.blood_received_ml = p.blood_hb_lost_g = 0;

@@ -271,6 +271,8 @@ function absorb(): Absorption {
 
 /** The state of the eater and the meal that the absorption rules read. */
 export interface MealOptions {
+  /** anatomy.organs intestines: absorption x function; omitted means intact gut. */
+  gutFunction?: number;
   cooked?: boolean;        // boiled or cooked: vitamin C and folate fall by the table's factor
   rawFish?: boolean;       // a raw fish or shellfish meal: thiaminase
   nixtamalised?: boolean;  // maize treated with lime water: niacin is fully available
@@ -285,6 +287,8 @@ const FAT_SOLUBLE = new Set(["vit_a", "vit_d", "vit_e", "vit_k"]);
 
 /** The fraction of a nutrient that the body keeps from this food in this meal (absorption table; 1 where the table has no rule). */
 export function absorbedFraction(nutrient: string, food: Food, m: Meal): number {
+  const gut = m.gutFunction ?? 1;
+  if (!Number.isFinite(gut) || gut < 0 || gut > 1) throw new Error("nutrition: invalid gut function");
   const a = absorb();
   let f: number;
   switch (nutrient) {
@@ -299,9 +303,9 @@ export function absorbedFraction(nutrient: string, food: Food, m: Meal): number 
     case "magnesium": f = a.magnesium; break;
     default: f = 1;
   }
-  if (FAT_SOLUBLE.has(nutrient)) return m.flux ? a.fatFluxX : f * (m.fatG >= a.fatG ? 1 : a.noFatX);
+  if (FAT_SOLUBLE.has(nutrient)) return gut * (m.flux ? a.fatFluxX : f * (m.fatG >= a.fatG ? 1 : a.noFatX));
   if (m.flux && nutrient !== "sodium" && nutrient !== "potassium" && nutrient !== "water") f *= a.flux;
-  return f;
+  return f * gut;
 }
 
 export interface MealItem { food: string; kg: number }
@@ -323,7 +327,11 @@ export function eatMeal(w: World, bodyId: string, items: MealItem[], opts: MealO
       const eaten = c.value * kg * 10, kept = eaten * absorbedFraction(n, food, meal);
       p[`nut_in_${n}`] = (p[`nut_in_${n}`] ?? 0) + kept;
       if (n === "carb") p.nut_carb_eaten_g = (p.nut_carb_eaten_g ?? 0) + eaten;
-      if (n === "water") { waterKg += eaten * UNIT_KG[c.unit]; continue; } // water enters through physiology's ingest
+      if (n === "water") {
+        waterKg += kept * UNIT_KG[c.unit]; // retained water enters through physiology's ingest
+        if (eaten > kept) w.trace.record({ t: w.t, process, quantity: "mass:water", from: "food", to: "unabsorbed", amount: (eaten - kept) * UNIT_KG[c.unit] });
+        continue;
+      }
       const pool = pools().get(n);
       if (!pool) continue;
       const sub = substanceOf(n), unit = UNIT_KG[c.unit], q = `mass:${sub}`;
