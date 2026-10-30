@@ -122,7 +122,7 @@ describe("reaction records and solver", () => {
       expect(mass(r.products), r.id).toBeCloseTo(mass(r.reactants), 12);
     }
   });
-  it("charcoal burns only at 15% oxygen by volume or more, the per-kg heat follows from the row", () => {
+  it("charcoal burns only at 15% oxygen by volume or more (a vented vessel goes past it), the per-kg heat follows from the row", () => {
     const r = reaction("comb_c_full");
     expect(r.conditions.minO2).toBe(0.15);
     expect(r.minO2Source).toBeNull();
