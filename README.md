@@ -8,7 +8,7 @@ engine**; the pirate game's goods, ports and companies (`Games/RPG's/pirate-ship
 it through an adapter. Modelled on `../realism` and `../settlement`. Rex placed it here on 2026-10-28
 (ALIGNMENT §10); the engine family and its rules are in `../ENGINES.md`.
 
-**Status: contract text confirmed with Settlement (2026-10-30); PLAN step 2 in progress; nothing is written against §13's new Settlement calls until its commit lands.** ENGINES.md requires the contract to be agreed before
+**Status: contract text confirmed with Settlement (2026-10-30); PLAN steps 2–8 built; nothing is written against §13's new Settlement calls until its commit lands.** ENGINES.md requires the contract to be agreed before
 either side implements production or labour. `CONTRACTS.md` is the agreed text.
 
 ## Read in this order
@@ -22,6 +22,7 @@ either side implements production or labour. `CONTRACTS.md` is the agreed text.
     npm install --offline      # vitest and typescript from the cache (the settlement lock file)
     npm test
     npm run typecheck
+    npm run ports              # the three-port example, thirty days
 
 ## Built so far (step 2, 2026-10-30)
 
@@ -33,7 +34,17 @@ handlers (`commands.ts`: defineGood, defineRecipe, openInventory, openMarket, se
 moveStock, produce, take, tick), the material side and Settlement's `MaterialProvider` shape over a `Runner`
 (`material.ts`), the reducer and `Runner` with replay (`reduce.ts`), the tick (`tick/`: production roll-up,
 advance), queries (`queries.ts`: stock, shortage, price by rule, inventory value). `test/engine.test.ts`: one
-describe per TESTS.md E-row, 10 tests. No example yet (PLAN step 8).
+describe per TESTS.md E-row.
+
+Steps 3–8 (the same day): spoilage, consumption (host numbers or headcount × per-capita), shortage events, daily
+prices by `priceRule`, abstract-market production, organisations, `sell` / `buy` against a market at its price,
+shipments over the host's travel days with in-transit spoilage, freight through the ledger, the accounting view
+(`accounts`), the labour market (`labour.ts`: `wageQuote` by `wageRule`, default `posted-median`: no pressure), and
+`examples/three-ports.ts` (three abstract ports, three goods, two companies with a written example policy;
+`npm run ports` prints price@shortage per port and good over thirty days). 25 tests, E1–E14.
+
+Not built: PLAN steps 9–11 (the pirate adapter over Settlement, the thirty-day settlement benchmark, the realism
+population hook). Step 9 waits on Settlement's CONTRACTS §13 commit.
 
 ## Marks
 
