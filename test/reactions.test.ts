@@ -138,6 +138,11 @@ describe("reaction records and solver", () => {
     run(rich, [r]);
     expect(rich.registry.contentMass(richVessel, "charcoal")).toBeCloseTo(kg("charcoal", 2 - floorExtent), 12);
     expect(richMoles("o2") / (richMoles("o2") + richMoles("n2") + richMoles("co2"))).toBeCloseTo(0.15, 12);
+    const vented = air(3), ventedReg = vented.registry; // same 25% start gas; the vent replaces what leaves
+    const massOf = () => [...ventedReg.components.values()].flatMap(x => x.contents).reduce((s, x) => s + x.mass, 0), massBefore = massOf();
+    run(vented, [r]);
+    expect(ventedReg.contentMass(ventedReg.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2 - floorExtent));
+    expect(massOf()).toBeCloseTo(massBefore, 12);
     const edge = air(5.6), reg = edge.registry; // 1 / 6.6 = 15.15%
     run(edge, [r], 1);
     expect(reg.contentMass(reg.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
