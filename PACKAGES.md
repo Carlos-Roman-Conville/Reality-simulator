@@ -196,3 +196,19 @@ slugs; the scene asks the adapter `placeAt(tile)` and `tilesOf('port.bakery')`.
 - No pathfinding or rendering: the engine gives tile masks; the scene draws them.
 - No prices or recipes: providers.
 - No fixed district or parcel count: the map is derived (`MIGRATION.md` step 3) and grows by command.
+
+## 8. Scope added 2026-10-30 (Rex, via the town keeper): recorded, not designed, not built
+
+Rex added three facets to the settlement engine's scope. Each is a record or layer the engine will own; none is
+designed here yet, and nothing is built until its design is approved and its questions are answered.
+
+| Facet | What the engine will hold (sketch, proposed) | Who supplies the rules |
+|---|---|---|
+| **Cemeteries** | a parcel kind `cemetery` with a **grave capacity** (plots, derived from its footprint and a plot size the host gives) and **burial infrastructure** as fixtures (a wall, a chapel, an ossuary, a lime pit) and projects that add them; a burial is a host command that takes a plot and records who lies there; the engine never decides who dies or what custom applies (the town's `CULTURE.md`; the pirate game's `port.cemetery`) | the host (town keeper) for customs; Reality for decomposition |
+| **Sanitation infrastructure** | public works as businesses or fixtures on parcels (wells, cisterns, privies, drains, a night-soil service) with a capacity the host's population and disease models read; condition decays like any building | Reality (disease, water) for effects; the host for what a port of the period had |
+| **Land use** | a `use` on every parcel (housing, work, public, farmland, pasture, forest, waste, burial, water) read by the map derivation and by the economy's land-bound recipes; zoning stays `zone`, use is what is actually there | the host's requirements file (step 3); the economy for which recipes need which use |
+
+Open before any of it is built (to QUESTIONS.md when a step reaches them): plot size and burial depth customs
+(Q16), what sanitation a c. 1700 Caribbean port actually had (Q17, historical first), whether land use is a
+parcel field or a layer (Q18).
+

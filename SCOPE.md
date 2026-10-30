@@ -47,3 +47,7 @@ Inherited from [HQ/PRINCIPLES.md](../../HQ/PRINCIPLES.md) and [Toolchain/SCOPE.m
   the provider, `TransactionKind` to string, a `pay` command, `setWage`); the economy keeper confirmed all nine
   amendments the same day and the code landed (26 tests green; the pirate adapter re-run green). Next concrete
   task: none until Rex answers Q1, Q5, Q6, Q7, Q10 or the economy keeper's engine reaches the adapter.
+- 2026-10-30, later: Rex added cemeteries (parcels with grave capacity and burial infrastructure), sanitation
+  infrastructure and land use to this engine's scope: recorded in `PACKAGES.md` s8, not designed, not built. The
+  starting-town rows (Q1, Q5, Q6, Q7, Q9, Q10, Q11, Q15) are being researched historically for
+  `files/pirate-ship/STARTING_TOWN.md` (Rex: historical data fills answers first).
