@@ -67,7 +67,7 @@ are not exercised. No unsupported calibration has been enabled for this checkpoi
 | Physiology: hydration threshold shift, core cooling, shade bonus, heat-day definition, cold drift | Urine, breath, skin diffusion and metabolic water now move water (2540). Cooling and cold paths remain absent. The daily sheltered core reset is the library rule; a constant final core does not prove thermal safety. No shade bonus is added; heat acclimatisation keeps its any-hot-step definition. |
 | Physiology: sleep quality and debt cap | Continuous six/four-hour nights use no unsupported quality weights or debt cap. No split-night or sleep-quality calibration is claimed. |
 | Nutrition: starting fat, lean catabolism, starvation clock, glycogen water/body mass | Initial fat and water are declared host inputs. Mass is fat + glycogen with bound water (3 g/g, unsourced: flags/nutrition.md) + the water ledger's change (checked as `mass:body`); it excludes food oxidation and lean tissue. No survival/death or starvation-stage inference is made. |
-| Nutrition: deficiency stages, pools without reserves, recovery clocks | Only numeric pooled reserves and stage 1 are exercised. Sodium is depleted on day 1; magnesium later. Unpooled nutrients have no invented reserve; stages 2/3 stay disabled. A seven-day run cannot validate long deficiency/recovery times. |
+| Nutrition: deficiency stages, pools without reserves, recovery clocks | Only numeric pooled reserves and stage 1 are exercised. Sodium and magnesium stay full all week on the supper's salt beef and dried pease (2554); the old day-1 sodium depletion was the pool cap taken at eating time, before the day's use, plus an unsalted diet. The table's daily use is drawn from the absorbed amount, so magnesium needs about 1 g eaten a day. Unpooled nutrients have no invented reserve; stages 2/3 stay disabled. A seven-day run cannot validate long deficiency/recovery times. |
 | Nutrition: absorption, food classes, missing vitamins, protein quality | Existing meal absorption and named fish classification are used; missing vitamin D/iodine, protein quality and unpooled chemistry remain unsupported. No flux, raw-fish, alcohol, cooking or grain modifiers are added. |
 | Nutrition: fullness/hunger/appetite | Meals are prescribed. No automatic hunger or appetite signal is fabricated for neurology. |
 | Atmosphere: breath water, gas source units, outside water/N2, gas layers | Breath water is absent. Sources remain litres at room conditions; outside humidity and argon folded into nitrogen retain existing assumptions. This is a well-mixed box, not stratification or a measured bedroom ventilation rate. |
@@ -129,8 +129,7 @@ water in the first hour as follows:
 Both the sweat and the net loss are inside the hydration source's 0.5 to 2.5 L/h.
 
 Water closes for the body and for body plus room every minute. Water leaving to the
-`urine` and `drip` sinks and arriving from `oxidation` is traced. The sodium pool still
-reaches its depletion level on day 1, so `deficiency_sodium` stays 1.
+`urine` and `drip` sinks and arriving from `oxidation` is traced. Sodium (2554): the pool is capped after the day's use, not at eating, and the fixture supper adds salt beef and dried pease; the sodium and magnesium pools stay full and the sodium ledger closes (food in = use + excreta + pool change).
 
 ## Checkpoint 2 — human wound (2531, 2026-10-30): partial, acceptance blocked
 

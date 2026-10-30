@@ -137,6 +137,7 @@ describe("eating", () => {
   it("sends what the full pool cannot hold to excreta", () => {
     const x = build();
     eat(x.w, "body", "lime-juice-fresh", 5);
+    days(x, 1); // the cap comes at the day's close, after the day's use
     expect(poolLevel(x.w, "body", "vit_c")).toBeCloseTo(1500, 9);
     const over = x.w.trace.transfers.find(f => f.to === "excreta" && f.quantity === "mass:nutrient:vit_c")!;
     expect(over.amount).toBeGreaterThan(0);

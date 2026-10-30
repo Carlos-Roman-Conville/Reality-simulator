@@ -5,7 +5,8 @@
  * Work 08–12 and 13–17 cycles through library MET 3, 3.3, 4.5, 6.
  * Door shut 23–05; ACH 0.2/2 from gasdynamics.box_model.ventilation-events.
  * Weather fixture: 18 C at 05, 24 C at 15, legacy outside water mixing ratio, calm, dry, 12 h daylight.
- * Meals and drinks are prescribed supplies, not appetite or water-need models.
+ * Meals and drinks are prescribed supplies, not appetite or water-need models. The supper carries the ship's salt beef
+ * and dried pease so the sodium and magnesium pools have a ration to be fed from; an unsalted diet cannot cover the table's use.
  */
 import { World } from '../src/world.ts';
 import { Scheduler } from '../src/scheduler.ts';
@@ -25,7 +26,8 @@ export const FIXTURE = { date: '2026-10-29', days: 7, stepS: 60, massKg: 70, wat
 export const MEALS: Record<number, MealItem[]> = {
   7: [{ food: 'nutrition.foods.oatmeal-dry', kg: 0.15 }, { food: 'nutrition.foods.milk-goat', kg: 0.25 }],
   12: [{ food: 'nutrition.foods.bread-fresh', kg: 0.3 }, { food: 'nutrition.foods.cheese-suffolk-or-cheddar', kg: 0.1 }, { food: 'nutrition.foods.oranges', kg: 0.2 }],
-  18: [{ food: 'nutrition.foods.rice-husked', kg: 0.2 }, { food: 'nutrition.foods.fresh-fish-60-dolphin-fish-bonito-snapper', kg: 0.2 }, { food: 'nutrition.foods.onions', kg: 0.1 }],
+  18: [{ food: 'nutrition.foods.rice-husked', kg: 0.2 }, { food: 'nutrition.foods.fresh-fish-60-dolphin-fish-bonito-snapper', kg: 0.2 }, { food: 'nutrition.foods.onions', kg: 0.1 },
+    { food: 'nutrition.foods.salt-beef-as-issued', kg: 0.1 }, { food: 'nutrition.foods.pease-dried', kg: 0.25 }],
 };
 const ventilation = String(libraryRow('gasdynamics', 'box_model', 'gasdynamics.box_model.ventilation-events').Example);
 const ach = /from ([\d.]+) to ([\d.]+) ACH/.exec(ventilation)!;

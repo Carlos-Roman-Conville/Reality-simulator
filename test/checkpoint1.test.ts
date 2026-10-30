@@ -7,7 +7,7 @@ import { defaultRegistry, type Component } from '../src/registry.ts';
 import { airContents, breathingProcess, roomAirProcess, roomGasFraction, litresToMoles } from '../src/atmosphere.ts';
 import { metOf } from '../src/physiology.ts';
 import { P_SEA_LEVEL } from '../src/physics.ts';
-import { GLYCOGEN_BOUND_WATER, nutritionProcess } from '../src/nutrition.ts';
+import { GLYCOGEN_BOUND_WATER, nutritionProcess, poolSpec, poolLevel } from '../src/nutrition.ts';
 
 const row = (file: string, table: string, slug: string) => libraryRow(file, table, `${file}.${table}.${slug}`);
 const numberIn = (text: unknown, rx: RegExp, index = 1) => Number(rx.exec(String(text))![index]!.replaceAll(',', ''));
@@ -55,11 +55,30 @@ describe('checkpoint 1: an integrated human week', () => {
       expect(d.outputs.sleep_debt_row).toBe(band.id);
       expect(d.outputs.alertness).toBeCloseTo(Number(band['Alertness multiplier']) * circadian, 12);
       expect(d.circuits['neurology.circuits.attention']).toBeTypeOf('number');
-      expect(d.outputs.deficiency_sodium).toBe(1); // this fixture exposes the sweat/sodium model's limit
       for (const v of Object.values(d.outputs)) if (typeof v === 'number') expect(Number.isFinite(v)).toBe(true);
     }
     expect(run.body.mass).toBeLessThan(FIXTURE.massKg);
     expect(run.w.trace.transfers.every(t => Number.isFinite(t.amount))).toBe(true);
+  }, 20_000);
+
+  it('keeps the sodium and magnesium pools above their stage-1 threshold all week, and the sodium ledger closes', () => {
+    const run = runHumanWeek();
+    for (const id of ['sodium', 'magnesium']) {
+      const spec = poolSpec(id), unitKg = spec.fullMan / (Number(run.days[0]!.outputs[`pool_${id}`]) / Number(run.days[0]!.outputs[`pool_frac_${id}`]));
+      expect(spec.thresholdKg).not.toBeNull();
+      for (const d of run.days) {
+        expect(Number(d.outputs[`pool_${id}`]) * unitKg).toBeGreaterThanOrEqual(spec.thresholdKg!);
+        expect(d.outputs[`deficiency_${id}`]).toBe(0);
+      }
+    }
+    // sodium: food in = daily use (1.5 g + 1 g per litre of sweat, metabolism) + excreta over the full pool + the pool's change
+    const spec = poolSpec('sodium'), q = 'mass:nutrient:sodium', t = run.w.trace.transfers.filter(x => x.quantity === q);
+    const sum = (f: (x: (typeof t)[number]) => boolean) => t.filter(f).reduce((a, x) => a + x.amount, 0);
+    const fed = sum(x => x.from === 'food' && x.to === 'body'), spent = sum(x => x.to === 'metabolism'), excreted = sum(x => x.to === 'excreta');
+    const finalKg = poolLevel(run.w, 'body', 'sodium') * (spec.fullMan / (Number(run.days[6]!.outputs.pool_sodium) / Number(run.days[6]!.outputs.pool_frac_sodium)));
+    expect(fed).toBeGreaterThan(0);
+    expect(fed).toBeCloseTo(spent + excreted + (finalKg - spec.fullMan), 12);
+    expect(spent).toBeCloseTo(7 * spec.useFixed + spec.sweatPerL * Number(run.body.props.sweat_kg), 12);
   }, 20_000);
 
   it('a fast shows the early glycogen and bound water drop of the library rows', () => {

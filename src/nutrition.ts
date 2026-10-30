@@ -5,7 +5,7 @@
  * ask for and the library cannot support is listed in FLAGS.md and left disabled here.
  *
  * Each nutrient with a reserve in the depletion table is a pool: a content of the body (substance `nutrient:<id>`, kg), filled
- * by `eat` (intake times the absorption fraction, capped at the full pool, the rest traced to "excreta") and drained once a day
+ * by `eat` (intake times the absorption fraction, added to the pool) and drained once a day, after which the pool is capped at its full level and the rest traced to "excreta"
  * by the table's daily use. `stockPools` fills the pools; call it before `World.conserve("nutrient:vit_c", ["body"])`.
  *
  * Inputs on `body.props` (all optional): male (1 default, 0 for the woman's columns), fat_kg (the fat store; without it the
@@ -317,7 +317,6 @@ export function eatMeal(w: World, bodyId: string, items: MealItem[], opts: MealO
   const sum = (n: string) => list.reduce((a, i) => a + foodContent(i.food, n, i.kg), 0);
   const meal: Meal = { ...opts, tea: opts.tea || list.some(i => /^tea-brewed/.test(i.food.slug)), vitCMg: sum("vit_c"), fatG: sum("fat"),
     flux: p.flux === 1 || p.chronic_flux === 1, chronicFlux: p.chronic_flux === 1, rum: p.rum_heavy === 1 };
-  const male = p.male !== 0;
   let kcal = 0, waterKg = 0;
   for (const { food, kg } of list) {
     const eatenKcal = food.kcalPerKg * kg, keptKcal = eatenKcal * absorbedFraction("energy", food, meal);
@@ -338,11 +337,6 @@ export function eatMeal(w: World, bodyId: string, items: MealItem[], opts: MealO
       w.trace.record({ t: w.t, process, quantity: q, from: "food", to: bodyId, amount: kept * unit, note: food.slug });
       if (eaten > kept) w.trace.record({ t: w.t, process, quantity: q, from: "food", to: "unabsorbed", amount: (eaten - kept) * unit, note: food.slug });
       w.registry.addContent(b, sub, "solid", kept * unit);
-      const over = w.registry.contentMass(b, sub) - (male ? pool.fullMan : pool.fullWoman);
-      if (over > 0) {
-        w.registry.addContent(b, sub, "solid", -over);
-        w.trace.record({ t: w.t, process, quantity: q, from: bodyId, to: "excreta", amount: over, note: "over the full pool" });
-      }
     }
   }
   ingest(w, bodyId, { kcal, waterKg }, process);
@@ -418,6 +412,12 @@ function closeDay(w: World, bodyId: string, o: NutritionOptions, sweatKg: number
     const spent = Math.min(use, pool);
     reg.addContent(b, sub, "solid", -spent);
     w.trace.record({ t: w.t, process: "nutrition", quantity: `mass:${sub}`, from: bodyId, to: "metabolism", amount: spent, note: "daily use" });
+    // the cap comes after the day's use: a pool that starts the day full still keeps what the day's food adds over what the day spends
+    const over = reg.contentMass(b, sub) - (male ? s.fullMan : s.fullWoman);
+    if (over > 0) {
+      reg.addContent(b, sub, "solid", -over);
+      w.trace.record({ t: w.t, process: "nutrition", quantity: `mass:${sub}`, from: bodyId, to: "excreta", amount: over, note: "over the full pool" });
+    }
     const level = reg.contentMass(b, sub) / UNIT_KG[s.unit], st = o.stages?.[s.id];
     const raw = s.thresholdKg === null ? 0
       : st?.stage3 !== undefined && level < st.stage3 ? 3
