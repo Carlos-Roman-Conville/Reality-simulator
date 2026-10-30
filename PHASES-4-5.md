@@ -100,3 +100,6 @@ ledger's `crises` equal every record the engine opened. Open for Rex: `work_capa
 The engine simulates a horse in a stable (2532) with no import from any game. Then: the body as organ
 components on the graph in the still's room (so the distiller's lungs breathe the room's CO), the dashboard's
 Simulation Laboratory on a browser bundle, and the package's own reference docs (MIGRATION Phase 3's tail).
+
+The scope Rex added on 2026-10-30 (mechanics, optics, fluids, materials, the full lifecycle, genes and ageing)
+is planned as phases 6 to 12 in `PHASES-6-PLUS.md`; nothing there is built until Rex picks the order.
