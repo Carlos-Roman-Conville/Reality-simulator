@@ -225,7 +225,17 @@ fewer todo than the 2531 validation, because shed-blood body mass is now a real 
 (2565 refresh) Figures in this subsection re-run after 2552, 2554, 2557, 2560, 2561 and 2564. The direction of
 cardiac output and DO2 flipped from the 2551 text: they now rise day by day (4.877977, 4.881352, 4.884099,
 4.886783, 4.889515, 4.892183, 4.895214 L/min; DO2 947.613, 948.278, 948.614, 949.330, 949.664, 950.377, 950.965 mL/min)
-instead of easing; the run output does not say which task caused the flip (2552's heavier body and 2557's circulation columns are the candidates). The old 0.110 fatigue
+instead of easing; each figure was traced by running `examples/human-wound.ts` at the commits in between (2565 cause).
+Day-1 and day-7 cardiac output (L/min), day-1 DO2 (mL/min) and the left-hand fatigue peak: `100b0f1` (before 2552)
+4.9 and 4.867535, DO2 951.892, peak 0.1096; `ba246eb` (2552 body mass) 4.823890 and 4.732858, DO2 937.106, peak 0.1096;
+`62976fb` (2552 nutrition pool cap) 4.877977 and 4.895214, DO2 947.613, peak 0.1096. So the direction flip, from easing to
+rising, came with `62976fb` (2565 cause). `e60e19c` (2557) and `e723c87` print the same figures as `62976fb` to the last digit
+(2557 moved nothing), as does `e9cfdd4` (2561) against `37bfccf`. The fatigue peak jump from 0.1096 to 0.4250 (day 3 peak
+4.1e-22) came with `37bfccf`, the 2560 sourced grip F and R rates (2565 cause). Only the transfer count moved there, 187,475 to
+194,285; checks stayed 276,492. Whether a daily cardiac output rise while wounded and untreated matches the circulation rows:
+it does not. The rows (`data/library/circulation.json`, `flags/circulation.md`, PHASES-4-5.md) lower output with volume loss
+and give no row that raises it, and the thrust bleed rate is null, so the wound removes no blood in this week. The rise
+comes from the nutrition and body-water ledger and is not a response to the wound: for Rex. The old 0.110 fatigue
 peak and 6.0 progress days were the 2551 figures and are replaced. Verdicts did not flip: `organsUnderOne` is empty,
 no organ is unknown, nobody is sick and no crisis is recorded in any variant on any day (2561's crisis paths stay closed
 because the thrust bleed rate is still null). The run still reports 194,285 transfers and 276,492 checks per variant, 0 failures.

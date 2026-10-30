@@ -81,7 +81,8 @@ Both phases landed overnight on the belt, 26 engine tasks and 8 game tasks, abou
 - **Honest gaps, all in `flags/` or `FIXTURES.md`:** the library's unsourced slots are null (plasma refill, maximal
   cardiac output, bleed rate and clotting, organ masses, cascade kinetics, three-compartment fatigue rates, EC50 and
   tolerance rate, vector exposure); sourcing tasks 2552 to 2562 fill them from opened pages or record the search.
-  The engine opens no crisis for a fatal wound or water exhaustion yet (2561). Weather in the settlement run repeats
+  2561 built `src/crisis.ts`: a class IV bleed opens a crisis, the hydration bands "6 to 10" and "over 10" open one at
+  their lower bound, and `declareDeath` throws without a crisis. Weather in the settlement run repeats
   one daily mean (the diurnal curve is not applied by the places adapter). Production rates are F-WK fixtures.
 - **Belt lessons (ISSUES I-1029 to I-1032):** gate paths are relative to the gate's `cd`; a source package carries
   its consumers' strictest type flags; sourcing tasks need `Tools: WebSearch, WebFetch`; `Already done if` tests the
