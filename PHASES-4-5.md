@@ -66,6 +66,27 @@ mass, alertness and fatigue trajectories stay inside the library's ranges; the r
 ledger prints per day: stock, output, calories issued, sleep, sick list, crises. `FIXTURES.md` lists every
 stand-in with Rex's decision next to it.
 
+## Status (2026-10-30, 02:30)
+
+Both phases landed overnight on the belt, 26 engine tasks and 8 game tasks, about 46 dollars.
+
+- **Engine (Phase 4):** ten modules exported from `src/index.ts`; 225 tests. Checkpoint 1 (`examples/human-week.ts`)
+  runs in 1.7 s with 0 failed checks; after 2540 the water ledger closes at a 0.5% deficit instead of draining the body.
+  Checkpoint 2 (`human-wound.ts`) runs three binding variants with 0 failed checks. Independence (`horse-stable.ts`):
+  a 500 kg horse for thirty days, energy in equals energy out, no game word in `src/` (the gate greps for it).
+- **Game (Phase 5):** adapters for characters, food and inventory, places, stats and faces, work and production,
+  medicine and combat; `web/src/world/settlement.run.ts` prints thirty days of stock, production, consumption,
+  spoilage, calories, sleep, hazards, shortages and crises for twelve settlers. A yellow fever case on day 14 opens a
+  crisis record with its row and risk; nobody dies silently; stores sized for the month run out on day 30.
+- **Honest gaps, all in `flags/` or `FIXTURES.md`:** the library's unsourced slots are null (plasma refill, maximal
+  cardiac output, bleed rate and clotting, organ masses, cascade kinetics, three-compartment fatigue rates, EC50 and
+  tolerance rate, vector exposure); sourcing tasks 2552 to 2562 fill them from opened pages or record the search.
+  The engine opens no crisis for a fatal wound or water exhaustion yet (2561). Weather in the settlement run repeats
+  one daily mean (the diurnal curve is not applied by the places adapter). Production rates are F-WK fixtures.
+- **Belt lessons (ISSUES I-1029 to I-1032):** gate paths are relative to the gate's `cd`; a source package carries
+  its consumers' strictest type flags; sourcing tasks need `Tools: WebSearch, WebFetch`; `Already done if` tests the
+  new artifact or is `false`.
+
 ## After these phases
 
 The engine simulates a horse in a stable (2532) with no import from any game. Then: the body as organ
