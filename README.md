@@ -214,6 +214,79 @@ circuit (arousal, attention, pain-gating, mood-regulation, sleep, ...), `tone_<s
 `withdrawal_<system>`. Parameters the library lacks (every EC50, most rebound peaks, the inverted-U shapes) switch their path off;
 they are listed in [`flags/neurology.md`](flags/neurology.md).
 
+### Circulation (`src/circulation.ts`)
+
+The blood as a volume ledger inside the body's mass, read from the `circulation` tables. `initialiseCirculation(w, body, profile?)`
+sets blood volume (`normalBloodVolume`, mL/kg by sex) and haemoglobin; `loseBlood` and `bleed(w, body, rateMlMin, seconds, clotting)`
+take blood out at the library's density, traced. `oxygenDelivery(CO, Hb, SaO2, COHb)` is bound oxygen only (CIR-DO2);
+`bleedingClass`/`bleedingEffects` give the class by fraction of baseline volume with its pressure, perfusion per organ and the table's
+placeholder death rate per hour; `regulationLoops()` and `hazard(event, state)` read the homeostasis and event rows. `circulationProcess(body, options)`
+runs after `breathingProcess` and writes by id on `bodyOutputs`: the `circulation.quantities.*` rows (blood volume, haemoglobin,
+cardiac output, DO2, mean arterial pressure, perfusion per organ), the `circulation.blood_gas.*` rows, one flag per bleeding class and
+`aerobic_today`. The host supplies resistance, wounds, supplies and crises; a kinetic figure the library lacks stays `null`. See
+[`flags/circulation.md`](flags/circulation.md) for what is flagged or UNSUPPORTED.
+
+### Anatomy (`src/anatomy.ts`)
+
+Organ assemblies on the same registry and graph: `assembleBody(w, body, profile)` adds a zero-mass shell component per organ and tissue
+(views into the body's mass, not extra thermal tissue) from the `anatomy` tables (`organs`, `tissues`, `damage_function`, `timescales`,
+`species`). `speciesProfile("Human default" | "A horse (example)")` and `speciesRmr` read the species columns (blood volume, cardiac
+output, set point, resting rate). `connectOrganInput` wires an organ to another component's output; graph signals are adequacies, not
+transfers of invented blood or nutrient mass, which stay with circulation, atmosphere and nutrition. `anatomyProcess(assembly)` steps
+organ function and damage from the host's insult and resistance and records a `Crisis` (organ, remaining capacity, source) when function
+falls; the engine does not kill. `assemblyCirculation`, `assemblyBreathing` and `feedAssembly` run those modules on the assembly.
+Unknown organ masses and cascade timescales stay `null`. See [`flags/anatomy.md`](flags/anatomy.md).
+
+### Muscular (`src/muscular.ts`)
+
+Library-driven muscle indices from the `muscular` tables (MUSCULAR.md sections 4 and 5a); no tissue mass or energy is created, since
+physiology owns metabolic work and nutrition owns mass. `muscularRates(group)` and `muscularActivation(actionId)` read the group and
+activation rows; `stepMuscleFatigue` moves a group's resting, active and fatigued compartments for an effort and a duration, and
+`muscularEnduranceReference` is the table's reference curve. `createMuscularState`, `muscularStimuli`, `adaptMuscleDay` and
+`muscularBanisterDay` keep per-side contractile and recruitment indices and a daily fitness-fatigue pair. `muscularOutputs(state)` gives
+fatigue per group and side and pattern skill per side; limb strength, oxidative, tendon and neural adaptation and muscle mass are
+`null` until the library carries them. See [`flags/muscular.md`](flags/muscular.md).
+
+### Medicine (`src/medicine.ts`)
+
+Diseases as courses (`diseaseCourse`), immunity (`immunityRule`), wounds and their healing clock, pain, treatments and the air
+conditions of the `exposure` table, in days, with every random draw seeded. `createMedicine(body)` holds the state; `expose(state,
+disease, dose, options)` infects or reports why not (no dose, immune, quarantined, already sick); `inflictWound`, `treat` (only
+treatments the "Really worked?" column credits take effect, the rest return `unquantified`), `healingMultiplier`, `advanceDays`,
+`painLevel` and `airConditions` advance it. A death risk that comes due is a `MedicineCrisis` with its cause; `resolveCrisis` records the
+host's decision, and the engine never kills. A wound bleeds through circulation's `bleed`, so the volume ledger stays traced.
+`medicineProcess(state, factors)` runs after circulation and `medicineOutputs` writes `medicine.diseases.*`, `medicine.immunity.*`,
+`medicine.lasting_harm.*`, wound counts, pain bands, `medicine.pain`, `medicine.sick_count` and `medicine.crises`. See
+[`flags/medicine.md`](flags/medicine.md).
+
+### Ecology (`src/ecology.ts`)
+
+A logistic stock with the `depletion_rules` and a soil fertility index (`soil`), in days. The host supplies each stock and field (r, K, q
+and demand are its own). `createStock(id, B, K, r)`, `stepStock(stock, catch, trace)` (growth enters from `environment`, the catch leaves
+to `catch`, both traced, and the step checks stock = before + growth - catch), `dailyCatch`, `msyPerYear`, `isFishedOut` (below the
+table's fraction of K), `recoveryYears`, `collapseYears` and `takeNestingFemales` cover stocks. `createField`, `clearForest`, `harvest`,
+`manure`, `fallow`, `erode` and `dryYearFactor` cover soil, and `cropDemand()` reads the crop rows. `stockOutputs` and `soilOutputs` give
+the fished-out flag, fill fraction, yield and fertility by id. Figures the tables do not give (rain and labour factors, any ground's r
+and K) are not invented. See [`flags/ecology-and-population.md`](flags/ecology-and-population.md).
+
+### Population (`src/population.ts`)
+
+The cohort record (`children`, `adultsM`, `adultsF`, `elders`, plus a transient count, seasoned share, health and food days) and its
+daily `tick(population, rates, options)`: births, background deaths (elders at the row's multiple), ageing between cohorts, famine
+(`famineRule`), migration (`settlersPerDay`) and an epidemic run through medicine's `diseaseCourse` and `immunityRule`
+(`startEpidemic`). The host supplies the rates. Counts are expected people, real numbers; every tick checks the total against
+births, arrivals, deaths by cause and departures, traced. `populationOutputs` writes the `population.cohorts.*` rows (cohort counts,
+health, food days, the epidemic and `labour`). See [`flags/ecology-and-population.md`](flags/ecology-and-population.md).
+
+### Independence checkpoint (`examples/horse-stable.ts`)
+
+A horse in a 60 m3 stable for thirty days, run from the library alone with no host-game code: `runHorseStable()` builds the body, room and
+`assembleBody` assembly with the `anatomy.species` column "A horse (example)" (blood volume, cardiac output, set point, Kleiber resting
+rate), feeds kcal and water hourly through `ingest`, and runs room air, physiology and breathing, with a ledger of mass, energy and
+gases. It borrows the human-week weather and door from `examples/human-week.ts`. Where the library has no horse figure it says so: no
+feed row, work MET, haemoglobin, respiratory profile, skin area or muscle layout, so the work hours run at rest, the horse breathes the
+human per-kg profile as a named stand-in, and muscle fatigue is `null`. See [`flags/independence.md`](flags/independence.md).
+
 ## Next (the belt)
 
 Wire the equipment catalogue and further substance records (`body/data/*.json`) into the registry; expand reaction
