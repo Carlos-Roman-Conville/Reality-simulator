@@ -113,9 +113,11 @@ rates; the combat tile grid as the host of the engine's gas grid; the fiction ro
 column); every "(Rex, date)" decision about what the game does with a number. The engine supplies the
 number; the game decides what it means.
 
-## 7. Open for Rex
+## 7. Decisions and open items
 
-- Whether Phase 2 runs now (the data is small: about 1,250 rows) or after Phase 1's three belt tasks land
-  (recommended: after, so the split script sees the final schema).
-- Whether place tables (climate, currents, stocks) go to the library at once as `data/places/jamaica.json`
-  or stay in the game until a second game needs a place.
+- **Phase 2 runs after Phase 1's three belt tasks land (Rex, 2026-10-29)**, so the split script sees the
+  final schema. Queued as belt tasks 2510 (the library side, in this repo) and 2511 (the game side), with
+  `Needs:` on 2507 to 2509.
+- **(open)** Whether place tables (climate, currents, stocks) go to the library at once as
+  `data/places/jamaica.json` or stay in the game until a second game needs a place. Until Rex decides they
+  stay in the game, as §3 says.
