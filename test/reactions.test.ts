@@ -127,14 +127,17 @@ describe("reaction records and solver", () => {
     expect(r.conditions.minO2).toBe(0.15);
     expect(r.minO2Source).toBeNull();
     expect(r.conditions.note).toContain("**(Rex, 2026-10-29)**");
-    const air = (n2Mol: number) => setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal", 2) },
-      { substance: "o2", phase: "gas", mass: kg("o2") }, { substance: "n2", phase: "gas", mass: kg("n2", n2Mol) }]);
+    const air = (n2Mol: number, vent = true) => setup(600, [{ substance: "charcoal", phase: "solid", mass: kg("charcoal", 2) },
+      { substance: "o2", phase: "gas", mass: kg("o2") }, { substance: "n2", phase: "gas", mass: kg("n2", n2Mol) }], vent);
     const thin = air(9); // 10% oxygen
     run(thin, [r]);
     expect(thin.trace.transfers).toHaveLength(0);
-    const rich = air(3); // 25% oxygen
+    const rich = air(3, false); // 25% oxygen, sealed so the floor is the end state
+    const richVessel = rich.registry.component("vessel"), richMoles = (id: string) => rich.registry.contentMass(richVessel, id) / rich.registry.substance(id).molarMass;
+    const gasMoles = richMoles("o2") + richMoles("n2"), floorExtent = richMoles("o2") - 0.15 * gasMoles; // C + O2 -> CO2 leaves the gas moles unchanged
     run(rich, [r]);
-    expect(rich.registry.contentMass(rich.registry.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
+    expect(rich.registry.contentMass(richVessel, "charcoal")).toBeCloseTo(kg("charcoal", 2 - floorExtent), 12);
+    expect(richMoles("o2") / (richMoles("o2") + richMoles("n2") + richMoles("co2"))).toBeCloseTo(0.15, 12);
     const edge = air(5.6), reg = edge.registry; // 1 / 6.6 = 15.15%
     run(edge, [r], 1);
     expect(reg.contentMass(reg.component("vessel"), "charcoal")).toBeLessThan(kg("charcoal", 2));
