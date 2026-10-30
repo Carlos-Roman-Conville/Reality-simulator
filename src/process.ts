@@ -1,0 +1,238 @@
+/**
+ * Service 3: the conservation and process engine. Each process moves a quantity along the graph by a real formula
+ * (physics.ts) and records every transfer in the trace. Lumped, explicit, per-step: the first build's simplification.
+ */
+import type { Process } from "./scheduler.ts";
+import type { World } from "./world.ts";
+import type { Component } from "./registry.ts";
+import { C_TO_K, M, airDensity, carbonCombustion, heatFlow, metabolicHeat, molesInVolume, SWEAT_LATENT, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
+
+/** A seeded random for reproducible control noise and measurement noise (mulberry32). */
+export function rng(seed: number) {
+  let a = seed >>> 0;
+  return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+function addHeat(w: World, c: Component, J: number) { c.temperatureC += J / w.registry.heatCapacity(c); }
+
+/** The room's air as a component: its contents are the gases (kg), its temperature the air's; props volume_m3, ach, pressurePa. */
+export function roomGasFraction(w: World, room: Component, gas: string): number {
+  const total = room.contents.filter(x => x.phase === "gas").reduce((a, x) => a + x.mass / w.registry.substance(x.substance).molarMass, 0);
+  const n = w.registry.contentMass(room, gas, "gas") / w.registry.substance(gas).molarMass;
+  return total > 0 ? n / total : 0;
+}
+
+/**
+ * Operator control: the fuel feed oscillates around the target with an amplitude set by skill (0 to 100). Skill never
+ * changes the physics; it changes how close the feed stays to the target (Rex's principle).
+ */
+export function controlProcess(heater: string, targetKgPerS: number, skill: number, rand: () => number): Process {
+  return { name: "control", every: 10, step(w, dt) {
+    const h = w.registry.component(heater);
+    const amp = 0.6 * (1 - skill / 100);           // a master +/-0%, a novice +/-60% (placeholder scale; the shape is the rule)
+    const noise = (rand() * 2 - 1) * amp;
+    h.props.feedKgPerS = Math.max(0, targetKgPerS * (1 + noise) * h.condition.control);
+    void dt;
+  } };
+}
+
+/** Combustion at the heater: burns the fed charcoal with the room's oxygen, heat to the vessel (heat edge) and the rest to the room. */
+export function combustionProcess(heater: string, room: string): Process {
+  return { name: "combustion", every: 1, step(w, dt) {
+    const h = w.registry.component(heater), r = w.registry.component(room), reg = w.registry;
+    const feed = (h.props.feedKgPerS ?? 0) * dt;
+    const fuelAvailable = reg.contentMass(h, "charcoal", "solid");
+    let kg = Math.min(feed, fuelAvailable);
+    const o2Frac = roomGasFraction(w, r, "o2");
+    if (o2Frac < 0.05) kg = 0;                       // a fire cannot burn under about 5% oxygen (a simplification)
+    if (kg <= 0) { h.props.heatW = 0; return; }
+    const c = carbonCombustion(kg, o2Frac);
+    const o2Available = reg.contentMass(r, "o2", "gas");
+    if (c.kgO2 > o2Available) { const s = o2Available / c.kgO2; kg *= s; }
+    const cc = carbonCombustion(kg, o2Frac);
+    reg.addContent(h, "charcoal", "solid", -kg);
+    reg.addContent(r, "o2", "gas", -cc.kgO2);
+    reg.addContent(r, "co2", "gas", cc.kgCO2);
+    reg.addContent(r, "co", "gas", cc.kgCO);
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:charcoal", from: heater, to: "burned", amount: kg });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:o2", from: room, to: "burned", amount: cc.kgO2 });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co2", from: "burned", to: room, amount: cc.kgCO2 });
+    if (cc.kgCO > 0) w.trace.record({ t: w.t, process: "combustion", quantity: "mass:co", from: "burned", to: room, amount: cc.kgCO });
+    // heat: the heater's efficiency (an open charcoal fire to a pot: about 0.3; a well-set furnace 0.5) goes to the vessel edge, the rest to the room
+    const eff = (h.props.efficiency ?? 0.3) * h.condition.capability;
+    const toVessel = cc.heatJ * eff, toRoom = cc.heatJ - toVessel;
+    h.props.heatW = cc.heatJ / dt;
+    for (const e of w.graph.from(heater, "heat")) { addHeat(w, reg.component(e.to), toVessel); w.trace.record({ t: w.t, process: "combustion", quantity: "energy", from: heater, to: e.to, amount: toVessel }); }
+    addHeat(w, r, toRoom); w.trace.record({ t: w.t, process: "combustion", quantity: "energy", from: heater, to: room, amount: toRoom });
+    w.trace.record({ t: w.t, process: "combustion", quantity: "energy", from: "fuel", to: heater, amount: cc.heatJ });
+  } };
+}
+
+/** Convective losses from every component with props.area_m2 and props.h to the room's air. */
+export function lossesProcess(room: string, components: string[]): Process {
+  return { name: "losses", every: 1, step(w, dt) {
+    const r = w.registry.component(room);
+    for (const id of components) {
+      const c = w.registry.component(id);
+      const q = heatFlow(c.props.h ?? 10, c.props.area_m2 ?? 0, c.temperatureC - r.temperatureC) * dt;
+      if (q === 0) continue;
+      addHeat(w, c, -q); addHeat(w, r, q);
+      w.trace.record({ t: w.t, process: "losses", quantity: "energy", from: id, to: room, amount: q });
+    }
+  } };
+}
+
+/**
+ * Boiling in a vessel: when the water's vapour pressure reaches the pressure over it, the temperature holds at the boiling
+ * point and the surplus heat vaporises water at the latent heat; the vapour goes down the gas edge to the condenser.
+ * Below the boiling point a covered still evaporates little; the first build ignores that (named simplification).
+ */
+export function boilingProcess(vessel: string, room: string): Process {
+  return { name: "boiling", every: 1, step(w, dt) {
+    const v = w.registry.component(vessel), r = w.registry.component(room), reg = w.registry;
+    const tb = waterBoilingPoint(r.props.pressurePa);
+    v.props.boilingPointC = tb;
+    const liquid = reg.contentMass(v, "water", "liquid");
+    if (liquid <= 0 || v.temperatureC < tb) return;
+    const cap = reg.heatCapacity(v);
+    const surplus = (v.temperatureC - tb) * cap;         // J above the boiling point this step
+    if (surplus <= 0) return;
+    const L = waterLatentHeat(tb);
+    const kg = Math.min(liquid, surplus / L);
+    reg.addContent(v, "water", "liquid", -kg);
+    v.temperatureC = tb + (surplus - kg * L) / reg.heatCapacity(v);
+    w.trace.record({ t: w.t, process: "boiling", quantity: "energy", from: vessel, to: "latent", amount: kg * L });
+    const edges = w.graph.from(vessel, "gas");
+    if (edges.length === 0) { reg.addContent(r, "water", "gas", kg); w.trace.record({ t: w.t, process: "boiling", quantity: "mass:water", from: vessel, to: room, amount: kg }); return; }
+    const e = edges[0];
+    const target = reg.component(e.to);
+    reg.addContent(target, "water", "gas", kg);
+    target.props.vapourInKgPerS = kg / dt; target.props.vapourTempC = tb;
+    w.trace.record({ t: w.t, process: "boiling", quantity: "mass:water", from: vessel, to: e.to, amount: kg, note: `at ${tb.toFixed(2)} C` });
+    void dt;
+  } };
+}
+
+/**
+ * Condensation in a worm cooled by a tub: the condenser can remove heat at U A (T_vapour - T_tub) per second; what it
+ * condenses goes to the collector as liquid at the tub's temperature and the latent heat warms the tub; what it cannot
+ * condense escapes to the room as vapour.
+ */
+export function condensationProcess(condenser: string, tub: string, collector: string, room: string): Process {
+  return { name: "condensation", every: 1, step(w, dt) {
+    const c = w.registry.component(condenser), tb = w.registry.component(tub), col = w.registry.component(collector), r = w.registry.component(room), reg = w.registry;
+    const vap = reg.contentMass(c, "water", "gas");
+    if (vap <= 0) return;
+    const tv = c.props.vapourTempC ?? 100;
+    const L = waterLatentHeat(tv);
+    const qMax = heatFlow(c.props.U ?? 500, c.props.area_m2 ?? 0.3, Math.max(0, tv - tb.temperatureC)) * dt * c.condition.capability;
+    const kgCond = Math.min(vap, qMax / L);
+    const kgLost = vap - kgCond;
+    reg.addContent(c, "water", "gas", -vap);
+    if (kgCond > 0) {
+      reg.addContent(col, "water", "liquid", kgCond);
+      col.temperatureC = tb.temperatureC;
+      addHeat(w, tb, kgCond * L);
+      w.trace.record({ t: w.t, process: "condensation", quantity: "mass:water", from: condenser, to: collector, amount: kgCond });
+      w.trace.record({ t: w.t, process: "condensation", quantity: "energy", from: "latent", to: tub, amount: kgCond * L });
+    }
+    if (kgLost > 0) {
+      reg.addContent(r, "water", "gas", kgLost);
+      w.trace.record({ t: w.t, process: "condensation", quantity: "mass:water", from: condenser, to: room, amount: kgLost, note: "uncondensed, to the room" });
+    }
+  } };
+}
+
+/** The room's box model: ventilation exchanges its gases and heat with the outside at ACH; humidity from its vapour. */
+export function roomProcess(room: string): Process {
+  return { name: "room", every: 1, step(w, dt) {
+    const r = w.registry.component(room), reg = w.registry;
+    const V = r.props.volume_m3, ach = r.props.ach ?? 0, Q = ach * V / 3600 * dt; // m3 exchanged this step
+    const frac = Math.min(1, Q / V);
+    const tK = r.temperatureC + C_TO_K, outsideC = w.env.outsideC ?? r.temperatureC;
+    const rho = airDensity(r.props.pressurePa, tK);
+    const outside: Record<string, number> = { o2: 0.2095 * M.O2 / M.air, n2: 0.7905 * M.N2 / M.air, co2: 0.0004 * M.CO2 / M.air, co: 0, water: (w.env.outsideWaterKgPerKgAir ?? 0.012) };
+    for (const gas of ["o2", "n2", "co2", "co", "water"]) {
+      const have = reg.contentMass(r, gas, "gas");
+      const want = outside[gas] * rho * V;             // kg of this gas in a room-volume of outside air
+      const d = (want - have) * frac;
+      if (Math.abs(d) < 1e-15) continue;
+      reg.addContent(r, gas, "gas", d);
+      w.trace.record({ t: w.t, process: "ventilation", quantity: `mass:${gas}`, from: d > 0 ? "outside" : room, to: d > 0 ? room : "outside", amount: Math.abs(d) });
+    }
+    // heat exchange with outside by the same air change
+    const cap = reg.heatCapacity(r);
+    const q = (outsideC - r.temperatureC) * cap * frac;
+    addHeat(w, r, q);
+    w.trace.record({ t: w.t, process: "ventilation", quantity: "energy", from: q > 0 ? "outside" : room, to: q > 0 ? room : "outside", amount: Math.abs(q) });
+    // humidity
+    const nWater = reg.contentMass(r, "water", "gas") / M.H2O;
+    const pWater = nWater * 8.314 * tK / V;
+    r.props.rh = Math.min(1.5, pWater / waterVapourPressure(Math.min(100, r.temperatureC)));
+    r.props.co2ppm = roomGasFraction(w, r, "co2") * 1e6;
+    r.props.o2frac = roomGasFraction(w, r, "o2");
+    r.props.coppm = roomGasFraction(w, r, "co") * 1e6;
+    void molesInVolume;
+  } };
+}
+
+/**
+ * A body in the room (first build): metabolic heat by MET, heat exchange with the air, sweat by PHYSIOLOGY.md section 4's
+ * rate (0.3 + 0.25 MET + 0.1 x degrees over the WBGT ceiling, L/h), water deficit as % of body mass, CO2 and CO exposure
+ * integrated (ppm-min). Core temperature is the lumped body temperature here.
+ */
+export function bodyProcess(body: string, room: string, met: number): Process {
+  return { name: "body", every: 10, step(w, dt) {
+    const b = w.registry.component(body), r = w.registry.component(room), reg = w.registry;
+    const mass = b.mass;
+    const mWatt = metabolicHeat(met, mass);
+    addHeat(w, b, mWatt * dt);
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: "metabolism", to: body, amount: mWatt * dt });
+    // exchange with the air: h A dT, skin area 1.9 m2, h 10 in still air
+    const q = heatFlow(b.props.h ?? 10, b.props.area_m2 ?? 1.9, b.temperatureC - r.temperatureC) * dt;
+    addHeat(w, b, -q); addHeat(w, r, q);
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: room, amount: q });
+    // sweat: PHYSIOLOGY 4 (WBGT approximated by the room's dry temperature here, named simplification)
+    const ceiling = met > 6 ? 25 : met > 3 ? 28 : 30;
+    const over = Math.max(0, r.temperatureC - ceiling);
+    const sweatLph = Math.min(2.5, Math.max(0.3, 0.3 + 0.25 * met + 0.1 * over)) * (b.temperatureC > 37.0 ? 1 : 0.2);
+    const sweatKg = sweatLph / 3600 * dt;
+    const evapJ = sweatKg * SWEAT_LATENT * Math.max(0, 1 - (r.props.rh ?? 0.6)); // evaporation falls with humidity
+    addHeat(w, b, -evapJ);
+    b.props.waterDeficitKg = (b.props.waterDeficitKg ?? 0) + sweatKg;
+    b.props.waterDeficitPct = b.props.waterDeficitKg / mass * 100;
+    reg.addContent(r, "water", "gas", sweatKg);
+    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: sweatKg, note: "sweat" });
+    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "sweat-latent", amount: evapJ });
+    // exposure
+    b.props.co2ppmMin = (b.props.co2ppmMin ?? 0) + (r.props.co2ppm ?? 400) * dt / 60;
+    b.props.coppmMin = (b.props.coppmMin ?? 0) + (r.props.coppm ?? 0) * dt / 60;
+  } };
+}
+
+/** A thermometer on a component: reading = true + offset(drift x days) + noise(sigma); accuracy condition widens sigma. */
+export function thermometerProcess(thermometer: string, target: string, daysSinceCalibration: number, rand: () => number): Process {
+  return { name: "thermometer", every: 10, step(w) {
+    const th = w.registry.component(thermometer), tg = w.registry.component(target);
+    const offset = (th.props.driftKPerDay ?? 0.05) * daysSinceCalibration;
+    const sigma = (th.props.sigmaK ?? 0.5) / Math.max(0.1, th.condition.accuracy);
+    const n = (rand() + rand() + rand() - 1.5) * 2 * sigma; // roughly normal
+    th.props.reading = tg.temperatureC + offset + n;
+    th.props.trueValue = tg.temperatureC;
+  } };
+}
+
+/** Wear: a vessel at heat loses control and capability slowly; a condenser scales; placeholders by material (SCIENTIFIC_EQUIPMENT 4). */
+export function wearProcess(components: string[]): Process {
+  return { name: "wear", every: 60, step(w, dt) {
+    for (const id of components) {
+      const c = w.registry.component(id);
+      const mat = w.registry.material(c.material);
+      const hot = c.temperatureC / mat.maxTemperatureC;
+      const rate = (c.props.wearPerHourAtMax ?? 0.01) * Math.max(0, hot - 0.5) / 0.5 / 3600; // per second
+      c.condition.control = Math.max(0, c.condition.control - rate * dt);
+      c.condition.capability = Math.max(0, c.condition.capability - rate * dt * 0.5);
+      if (c.temperatureC > mat.maxTemperatureC) { c.condition.capability = 0; w.trace.note(w.t, `${id} failed: ${c.temperatureC.toFixed(0)} C over ${mat.name}'s ${mat.maxTemperatureC}`); }
+    }
+  } };
+}
