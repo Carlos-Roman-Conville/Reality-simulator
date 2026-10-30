@@ -164,7 +164,7 @@ rate; sweat and its evaporative cooling are the old `bodyProcess`, which now del
 close at `dayStartH` with the recovery table's debt, fatigue and core rules; alertness is the debt row times the circadian
 row. Outputs are by id on `body.props.outputs` (`bodyOutputs(body)`): `alertness`, `sleep_debt`, `core_c`,
 `water_deficit_pct`, `energy_balance_kcal`, `pal`, ... `ingest(world, body, {kcal, waterKg})` brings food energy and water
-in, traced (`energy:chemical`, `mass:water`). `FLAGS.md` lists what the docs ask for that the library cannot support.
+in, traced (`energy:chemical`, `mass:water`). [`flags/physiology.md`](flags/physiology.md) lists what the docs ask for that the library cannot support.
 
 ### Nutrition (`src/nutrition.ts`)
 
@@ -177,7 +177,7 @@ stage is set (1 under the table's "signs below" level; 2 and 3 where the caller 
 (intake minus physiology's expenditure) changes glycogen and fat by the `body_composition` rules, with the energy density the
 table gives (7,700 kcal/kg). Outputs by id on `bodyOutputs`: `pool_<id>`, `deficiency_<id>`, `fat_kg`, `glycogen_g`,
 `glycogen_factor`, `energy_unplaced_kcal`. `deficiencySignals(body)` lists the stages above 0. `World.conserve("nutrient:vit_c", ["body"])`
-holds each pool's mass. `FLAGS.md` lists what the library cannot support.
+holds each pool's mass. [`flags/nutrition.md`](flags/nutrition.md) lists what the library cannot support.
 
 ### Atmosphere (`src/atmosphere.ts`)
 
@@ -189,7 +189,30 @@ CO2, then writes by id on `bodyOutputs(body)`: `o2_frac`, `co2_ppm`, `co_ppm`, `
 Severinghaus, the COHb approach, the CO2 and hypoxic drives; `respiratoryProfile({...})` changes the species). `accumulateExposure` sums
 ppm-minutes and the peak per gas (physiology calls it). `Grid` is a host-supplied lattice with elevation, enclosure and levels: wind,
 diffusion, rise and settle shares per step (the host's numbers; the library has none), a ledger per species and `uniform()` to hand the
-cloud to the box. `FLAGS.md` lists what the docs ask for that the library cannot support.
+cloud to the box. [`flags/atmosphere.md`](flags/atmosphere.md) lists what the docs ask for that the library cannot support.
+
+### Environment (`src/environment.ts`)
+
+The outdoors as one module: conditions a host supplies per place and hour (air temperature, humidity, wind, sun) become what
+bodies and rooms read. `wbgtBom(airC, rh)` is the Bureau of Meteorology's simplified WBGT (the ACSM 1987 form, from the vapour
+pressure `vapourPressureHpa`); `exposure(terrain)` and `placeOutputs(terrain, conditions)` read the library's `environment.exposure`
+rows (the "WBGT vs open deck" column, shade, wind); `windChillC` is the North American index; `diurnalC` interpolates the day's
+extremes on a half-cosine; `isDay`/`sunHours` and `coldWater(waterC)` (the `physiology.cold_water` band) complete it.
+`environmentProcess(place, terrain, conditions)` writes outputs by id (`wbgt_c`, `felt_c`, `is_day`, `sunburn_min`, ...) and
+`props.wbgt_c` on the place, which physiology reads. It moves no mass or energy, so there is nothing to trace.
+Unreachable figures (the WBGT form's stated error, the diurnal form's citation) stay `null` or flagged in
+[`flags/environment.md`](flags/environment.md).
+
+### Neurology (`src/neurology.ts`)
+
+Signalling systems, baseline drivers, one-compartment kinetics, four receptor clocks, eleven circuits and interaction rules on a
+`body` component, all read from `data/library/neurology.json` through `libraryTable`. A system's tone is 1 at rest;
+`dose(w, body, key, amount)` puts a substance in the gut (traced `drug:<key>`), `neurologyProcess` absorbs, eliminates (half-life,
+or zero order for alcohol, scaled by `liver_function`) and reads the systems; `pkStep`, `toleranceStep`, `recoveryStep`,
+`dependence` and `rebound` are the clocks. A circuit reads the tones (`circuitRead`). Outputs by id on `bodyOutputs`: one per
+circuit (arousal, attention, pain-gating, mood-regulation, sleep, ...), `tone_<system>`, `conc_<key>`, `occupancy_<key>`,
+`withdrawal_<system>`. Parameters the library lacks (every EC50, most rebound peaks, the inverted-U shapes) switch their path off;
+they are listed in [`flags/neurology.md`](flags/neurology.md).
 
 ## Next (the belt)
 

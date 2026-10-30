@@ -1,0 +1,5 @@
+## checkpoint 1 (2525)
+
+- NOTE: `examples/human-week.ts` declares synthetic host circumstances (date, weather extrema and hours, daylight, meal/drink quantities, initial mass/water/fat and schedule). These are experimental inputs, not inferred biological constants or a climate dataset. All scientific rules reuse existing modules/library rows.
+- UNSUPPORTED: checkpoint human survival and activity shutdown after dehydration, PHASES-4-5.md checkpoint 1. No library rule supplies the activity/death transition, so it stays disabled. Since 2540 the week no longer dehydrates: the deficit ends each day at about 0.5% and peaks at 1.59% (day 1, 17:58). The transition is untested, not exercised.
+- NOTE: physiology and nutrition daily closure now occurs after the interval ending at the day boundary. Callers no longer need an extra step to close a full day's ledger. Body elemental conservation remains unsupported; the checkpoint enrolls room elements and each body nutrient/water separately. Empty formulas on mass-only nutrient/drug substances contribute zero elements.
