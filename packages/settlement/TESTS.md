@@ -1,0 +1,109 @@
+# Integration-test specs (settlement keeper, 2026-10-29; proposed)
+
+Specs, not code. Each names where it lives, what it sets up, what it does and what must hold. Package tests
+(U) run with none of pirate-ship on disk; adapter tests (T, A) run in the pirate repo's `web/` under vitest
+beside `src/alignment/`. Every number in a setup is a test fixture, not a game rule.
+
+## The guard
+
+**T0, alignment invariance** (adapter; written first, run at every migration step).
+Setup: the alignment sim's existing scenarios (`web/src/alignment/sim/scenario.ts`), the settlement engine
+loaded from `port.json` with stub providers. Action: fold each scenario's command log through the alignment
+`reduce` as today, and in parallel drive the settlement engine through a scripted day between each alignment
+command (a `sell`, a `lease`, a `hire`, a `startProject` + `advanceProject`, a `tick`). Must hold: after every
+alignment command the `AlignmentState` JSON is byte-identical to a run without the settlement engine;
+`townPosition`, `isPerfect` and `ending` are identical; the settlement engine never produced an alignment command
+(the bridge's outgoing log is empty).
+
+## Package tests (`Toolchain/settlement/test/`)
+
+| Id | Rule under test | Must hold |
+|---|---|---|
+| U1 | ids are stable and never reused | split a parcel twice, demolish a building, replay the log: the same ids come out; the retired parent id is still queryable and marked retired |
+| U2 | one holder per title, many tenants | a `lease` on a leased title adds a second lease; a second `sell` of the same title is refused unless the first buyer is the seller |
+| U3 | ownership is not control | after `sell(title of the shop building)`, `operator(biz)` and `manager(biz)` are unchanged; after `setOperator`, the title holder is unchanged |
+| U4 | assignments are non-exclusive | one person holds residence (bldg A), employment (post in biz B), management (biz C) and membership (crew X) at once; `assignmentsOf` returns four; `unassign` one leaves three |
+| U5 | the ledger is complete and money conserved | after a day with a sale, two wages and a rent, the sum of all account balances is unchanged and every balance change has exactly one `txn` row |
+| U6 | `Q = min(equipment, labour, materials, utilities)` | four stub providers each capping one factor: output equals the smallest cap in each case; zero fixtures, zero filled posts, zero materials or zero utility each give zero |
+| U7 | status is derived | no filled required post: `dormant`; posts filled, nothing produced: `staffed`; `Q > 0`: `producing`; physical condition does not change status |
+| U8 | layouts persist and projects write them | `renovate` with a layout delta completes after its labour days: `layout.version` increments, fixtures match the plan, the previous version is retrievable; a cancelled project leaves the layout untouched; a reloaded JSON state has the same layout |
+| U9 | construction mints and demolition retires | `construct` on a vacant parcel mints a `bldg.*` and sets `vacant: false`; `demolish` sets `demolishedOn`, keeps the title history, frees the parcel |
+| U10 | authority is data | an office with `powers: [permit]` can `grantPermission`; one without is refused; a project whose `needs.permit` is true cannot start without one; appointment and vacancy are ledger rows |
+| U11 | tick order | the seven tick steps run in the declared order (a trace lists them); a project completed in step 2 is staffable in step 3 of the same day, which is the stated behaviour, not an accident |
+| U12 | the engine names nobody | every person id in a state came from a command; `LabourProvider.draw` returns pool ids, never a person the host did not register |
+
+## Adapter tests (`Games/RPG's/pirate-ship/web/src/settlement/*.test.ts`)
+
+| Id | Rule under test | Setup | Must hold |
+|---|---|---|---|
+| T1 | bindings cover the institutions | `institutions.json`, `bindings.json` | every slot with a non-null `port.*` id has at least one parcel and one building; every id in a binding exists in `port.json`; no engine id appears in `institutions.json`, `UPGRADES.md` or `TOWN_SHEETS.md` |
+| T2 | the map is derived, not typed | `requirements.json`, `derive_map.py` output | every place's binding has at least its footprint class's tiles; every parcel touches a road or the harbour; undeveloped share within the requirement; changing the housing requirement changes the dimensions (the script is not a constant) |
+| T3 | buying leaves the story alone | the player buys `port.bakery`'s building | `sell` succeeds, a `txn` row exists, `holderOf` is `player`; `AlignmentState` identical; `slot.owner` of `port.bakery` still `esfp-f`; the art key `port.bakery` resolves to the same tiles |
+| T4 | transfer and inheritance are host-named | `inherit(title, 'farm-daughter')` for `port.farm` | the holder changes; no succession rule in the engine was consulted (the command carried the heir); `AlignmentState` identical |
+| T5 | one owner, many tenants | the player owns the warehouse building; `bigwig`'s business leases rooms; a second business leases others | both leases coexist; rents reach the player's account; `operatorChanged` never fires |
+| T6 | the facility boolean is derived | starting fixtures per building | `hasFacility('stl.port', id)` equals the hand list the economy data would have had, for all 25 ids, in the starting state; removing the only `forge` fixture flips `forge` to false |
+| T7 | arrangements do not move the alignment engine (Q2 answered) | `intp-m` holds the farm's title and operates its business with a manager post filled by `farm-daughter` and two pool posts; then the alignment `recruit(intp-m)` | `CharacterState.location` goes to `aboard` exactly as today; every assignment of `intp-m` still exists; `LabourProvider.available('intp-m')` is false so his own post is unfilled that day; the business stays `staffed` and `producing` through the manager and the pool; `develop(port.farm)` behaves as today |
+| T8 | unnamed workers come from the pool | a post with holder `pool.dist.housing` | `LabourProvider.draw` is called with the district's role counts from the POPULATION record; the wage row's `to` is the pool id; no character slug is minted |
+| T9 | production is constrained | the butcher shop with 1 `salting-house`, 2 filled posts, 10 units of inputs, utility 1 | `Q` equals the smallest of the four; after a `tick` the inventory moved by `Q`; the business is `producing` |
+| T10 | the brewery is optional and constructible | no brewery in `port.json` | `hasFacility('brewhouse')` is false at the start; after `construct` with `brewhouse` fixtures, Brewing posts and inputs, a Brewing recipe produces; nothing in `institutions.json` or `UPGRADES.md` was needed |
+| T11 | renovation persists | renovate the butcher shop's interior (a new room, a fixture moved) | the layout version increments and survives save and reload; `port.bakery`'s binding unchanged; `AlignmentState` identical |
+| T12 | parcels subdivide | split a farmland parcel; sell one child | the parent is retired, the children are new ids, the sale's title is the child's; `bindings.json` for `port.farm` still resolves (it lists the children or the retained child, per the adapter's split handler) |
+| T13 | the mayor is an office in the town hall | `appoint(office.mayor, 'estj-f')` | the office's seat is `port.townhall`'s building; `sec.townhall` in `institutions.json` unchanged; a permit granted by the office appears in the ledger; `AlignmentState` identical |
+| T14 | two readings beside the flag | a physically fine, economically dormant brewery; a ruined, producing butcher shop | `physical` and `economic` disagree as expected; `slot.developed` of every slot is what the alignment command log made it and nothing else |
+
+## Acceptance (A1, adapter, the last test of the migration)
+
+**Setup.** `port.json` starting state, `bindings.json`, stub providers (JSON inventory, POPULATION pool, utility
+1, a flat price table), the alignment engine at `initialState` with the existing starts, thresholds, gates and
+conditions. Record `S0 = AlignmentState`, `P0 = townPosition`, `E0 = ending`.
+
+**Script**, each line a command, each followed by a `tick`:
+
+1. `sell` the butcher shop's building title to `player` at the price table's value.
+2. `transfer` that title to `farm-son` (kind: gift).
+3. `lease` the building's rooms to a new business `biz.<n>` of kind `butcher` operated by `esfp-f`, managed by
+   `farm-son`.
+4. `addPost` x 2 (a `butcher` role, a `labourer` role); `hire` one to `esfp-f` by employment assignment, the other
+   to `pool.dist.housing`.
+5. `startProject` renovate: add a `smokehouse` fixture in a new back room; `advanceProject` until complete.
+6. Supply inputs through the inventory stub; `tick`: the business produces salted meat and smoked meat by the
+   `min` rule.
+7. Alignment side, as today: `supply(port.bakery, bodies)`, `recruit(esfp-f)`, `develop(port.bakery)`, `sleep`.
+
+**Must hold.**
+
+- After lines 1 to 6: `AlignmentState` is byte-identical to `S0`; `townPosition = P0`; `ending = E0`;
+  `slot.owner` of `port.bakery` is `esfp-f`; `slot.developed` is false; the bridge issued no alignment command.
+- The ledger holds exactly: one sale, one transfer, one lease, wage rows per tick per filled post, rent rows per
+  tick, the project's material and labour draws; account balances sum to the starting total plus nothing.
+- `holderOf(title)` is `farm-son`; `operator(biz)` is `esfp-f`; `manager(biz)` is `farm-son`;
+  `assignmentsOf('esfp-f')` holds residence and employment; `assignmentsOf('farm-son')` holds residence and
+  management.
+- `layout.version` of the building is 2 and the `smokehouse` fixture is placed in the new room; reload from JSON
+  gives the same.
+- Production on line 6 equals `min` of the four caps, with the `smokehouse` raising `Q_equipment` for the smoked
+  recipe only.
+- After line 7: `slot.developed` of `port.bakery` is true, `slot.pending` true then cleared by `sleep`,
+  `slot.pos` equals `esfp-f`'s position, `townPosition` moved accordingly, **exactly as a run without the
+  settlement engine**. The settlement state is unchanged by line 7 (recruiting touches no title, lease, post or
+  assignment, unless Rex's answer to Q2 says employment ends; then the test asserts that one change and nothing
+  else).
+- `physical('port.bakery')` reads the building's condition band; `economic('port.bakery')` is `producing`.
+
+## Acceptance (A2, adapter): property transfers reach the story without touching alignment
+
+**(Rex via paste, 2026-10-29.)** Buying the butcher shop may change the butcher's relationship with the player while
+the shop's institutional alignment stays unchanged until its own story conditions are met.
+
+Setup as A1. Action: `sell` the butcher shop's building to `player`; `tick`. Must hold: the engine returned a
+`titleChanged` event; the adapter's bridge forwarded it to the story's listener as a **relationship** hook
+(`{kind: 'titleChanged', place: 'port.bakery', from, to}`; what the hook does to hearts or dialogue is the story
+keeper's data, not asserted here beyond "it was called once with these fields"); the bridge issued **no** alignment
+command; `AlignmentState` is byte-identical; `slot.owner`, `slot.developed`, `slot.pos` of `port.bakery` unchanged.
+Then run A1's line 7 (`supply`, `recruit`, `develop`, `sleep`): the slot develops and transforms exactly as a run
+without the sale. Also: a `sell` of a title whose terms forbid transfer to `player` is refused with no event and no
+ledger row (Q6).
+
+A second run of the same script with the settlement engine **absent** (the adapter's bridge disabled) produces
+the same alignment trace; a run of the package's `examples/` hamlet with the same command kinds and no pirate
+data passes U1 to U12. That is the reuse proof.
