@@ -23,7 +23,17 @@ either side implements production or labour. `CONTRACTS.md` is the agreed text.
     npm test
     npm run typecheck
 
-(Nothing to run until PLAN step 2.)
+## Built so far (step 2, 2026-10-30)
+
+`src/`: the records (`state.ts`: goods, recipes with quantities and rates, inventories, markets with Rex's five
+numbers per good), ids (`ids.ts`: inv, mkt, ship, ord, org), tunables (`config.ts`: `priceRule` defaults to `base`,
+the open state; `inputsAnyChoice`; the tick order), the provider interfaces this engine asks of the host with
+in-memory stubs (`providers.ts`: ledger, population, transport, the settlement reader), the command union and
+handlers (`commands.ts`: defineGood, defineRecipe, openInventory, openMarket, setMarketGood, addStock, removeStock,
+moveStock, produce, take, tick), the material side and Settlement's `MaterialProvider` shape over a `Runner`
+(`material.ts`), the reducer and `Runner` with replay (`reduce.ts`), the tick (`tick/`: production roll-up,
+advance), queries (`queries.ts`: stock, shortage, price by rule, inventory value). `test/engine.test.ts`: one
+describe per TESTS.md E-row, 10 tests. No example yet (PLAN step 8).
 
 ## Marks
 
