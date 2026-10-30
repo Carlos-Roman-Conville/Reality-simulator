@@ -66,9 +66,15 @@ mass, alertness and fatigue trajectories stay inside the library's ranges; the r
 ledger prints per day: stock, output, calories issued, sleep, sick list, crises. `FIXTURES.md` lists every
 stand-in with Rex's decision next to it.
 
-## Status (2026-10-30, 02:30)
+## Status (2026-10-30, 03:30)
 
-Both phases landed overnight on the belt, 26 engine tasks and 8 game tasks, about 46 dollars.
+Both phases landed overnight on the belt (26 engine tasks and 8 game tasks, about 46 dollars), then the fix rounds
+2550 to 2567 on the engine and 2563 on the game. Engine: 231 tests. Game: 384 tests; the settlement re-run on the
+crisis engine opens settler-4's class IV bleeding crisis on day 12, settler-2's yellow fever on day 14 and two
+hydration records for each of the four bakery cooks on day 21 (the seeded dry spell), the bakery stops, and the
+ledger's `crises` equal every record the engine opened. Open for Rex: `work_capacity_hydration` = 0 in the "over
+10" band, which the row calls only "death risk per hour"; the wounded soldier's cardiac output rising 4.878 to
+4.895 L/min with no circulation row behind it; game fixtures F-CH-9, F-SE-12, F-MD-8, F-MD-9.
 
 - **Engine (Phase 4):** ten modules exported from `src/index.ts`; 225 tests. Checkpoint 1 (`examples/human-week.ts`)
   runs in 1.7 s with 0 failed checks; after 2540 the water ledger closes at a 0.5% deficit instead of draining the body.
