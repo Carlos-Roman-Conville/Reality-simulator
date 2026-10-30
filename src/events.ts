@@ -12,4 +12,9 @@ export type EconomyEvent =
   | { type: 'consumed'; market: string; good: string; units: number; unmet: number }
   | { type: 'shortage'; market: string; good: string; stock: number; targetReserve: number; shortage: number }
   | { type: 'priceSet'; market: string; good: string; price: number; was: number | null }
+  | { type: 'organisationOpened'; organisation: string; name: string }
+  | { type: 'sold'; inventory: string; market: string; good: string; units: number; price: number; amount: number; txn: string }
+  | { type: 'bought'; inventory: string; market: string; good: string; units: number; price: number; amount: number; txn: string }
+  | { type: 'shipped'; shipment: string; from: string; to: string; good: string; units: number; arrives: number; freightTxn: string | null }
+  | { type: 'arrived'; shipment: string; to: string; good: string; units: number }
   | { type: 'dayEnded'; day: number }

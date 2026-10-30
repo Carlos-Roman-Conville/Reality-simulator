@@ -1,6 +1,7 @@
 // Pure reads over state. Prices follow config.priceRule (CONTRACTS.md §7: a config key until Rex chooses).
 
 import type { EconomyConfig } from './config.ts'
+import type { LedgerProvider } from './providers.ts'
 import type { EconomyState } from './state.ts'
 
 export function stock(state: EconomyState, inventory: string, good: string): number {
@@ -52,4 +53,56 @@ export function inventoryValue(state: EconomyState, config: EconomyConfig, inven
 /** Yesterday's observed production of a good into a market (through `produce`). */
 export function producedLast(state: EconomyState, market: string, good: string): number {
   return state.markets[market]?.goods[good]?.producedLast ?? 0
+}
+
+/** Units of a good still on the way, summed over shipments in transit. */
+export function inTransit(state: EconomyState, good: string): number {
+  return Object.values(state.shipments).filter((s) => s.status === 'transit' && s.good === good).reduce((sum, s) => sum + s.units, 0)
+}
+
+/** Every unit of a good anywhere: inventories plus transit. Conserved by moves, sales and shipping (E10, E11). */
+export function totalUnits(state: EconomyState, good: string): number {
+  const held = Object.values(state.inventories).reduce((sum, inv) => sum + (inv.stock[good] ?? 0), 0)
+  return held + inTransit(state, good)
+}
+
+export interface Accounts {
+  holder: string
+  fromDay: number
+  toDay: number
+  revenue: number          // rows paid to the holder with kind `sale`
+  purchases: number        // rows paid by the holder with kind `purchase`
+  wages: number            // rows paid by the holder with kind `wage` (Settlement's)
+  rent: number             // `rent`, paid by the holder
+  freight: number          // `freight`, paid by the holder
+  otherIn: number          // every other row to the holder
+  otherOut: number         // every other row from the holder
+  profit: number           // (revenue + otherIn) - (purchases + wages + rent + freight + otherOut)
+  inventoryValue: number   // the holder's inventories at today's market prices
+  unpriced: string[]       // goods held with no price
+}
+
+/** The accounting view (CONTRACTS.md §8): a pure read over the ledger provider's rows and the holder's inventories.
+ *  Never state: the ledger stays the record. A row the holder both pays and receives counts on neither side. */
+export function accounts(state: EconomyState, config: EconomyConfig, ledger: LedgerProvider, holder: string, fromDay: number, toDay: number): Accounts {
+  const out: Accounts = { holder, fromDay, toDay, revenue: 0, purchases: 0, wages: 0, rent: 0, freight: 0, otherIn: 0, otherOut: 0, profit: 0, inventoryValue: 0, unpriced: [] }
+  for (const row of ledger.rows(holder, fromDay, toDay)) {
+    if (row.from === holder && row.to === holder) continue
+    if (row.to === holder) { if (row.kind === 'sale') out.revenue += row.amount; else out.otherIn += row.amount }
+    else if (row.from === holder) {
+      if (row.kind === 'purchase') out.purchases += row.amount
+      else if (row.kind === 'wage') out.wages += row.amount
+      else if (row.kind === 'rent') out.rent += row.amount
+      else if (row.kind === 'freight') out.freight += row.amount
+      else out.otherOut += row.amount
+    }
+  }
+  out.profit = out.revenue + out.otherIn - (out.purchases + out.wages + out.rent + out.freight + out.otherOut)
+  for (const inv of Object.values(state.inventories)) {
+    if (inv.holder !== holder) continue
+    const v = inventoryValue(state, config, inv.id)
+    out.inventoryValue += v.value
+    for (const g of v.unpriced) if (!out.unpriced.includes(g)) out.unpriced.push(g)
+  }
+  return out
 }

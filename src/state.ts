@@ -65,6 +65,26 @@ export interface Market {
   goods: Record<string, MarketGood>
 }
 
+/** Goods on the way between two inventories: in no market while in transit (E10). Travel days come from the host's map. */
+export interface Shipment {
+  id: string
+  from: string                 // inventory id
+  to: string                   // inventory id
+  good: string
+  units: number
+  departed: number             // day
+  arrives: number              // day; the tick lands it when state.day >= arrives
+  status: 'transit' | 'arrived'
+}
+
+/** A company, guild or fleet: a holder that owns inventories (and later ships). The engine stores it, the host decides. */
+export interface Organisation {
+  id: string
+  name: string
+  kind: string | null          // opaque: company, guild, navy ...
+  inventories: string[]
+}
+
 export interface EconomyState {
   version: 1
   day: number
@@ -73,9 +93,11 @@ export interface EconomyState {
   recipes: Record<string, Recipe>
   inventories: Record<string, Inventory>
   markets: Record<string, Market>
+  shipments: Record<string, Shipment>
+  organisations: Record<string, Organisation>
   tickTrace: string[]          // the tick steps of the last day, in order
 }
 
 export function initialState(): EconomyState {
-  return { version: 1, day: 0, counters: {}, goods: {}, recipes: {}, inventories: {}, markets: {}, tickTrace: [] }
+  return { version: 1, day: 0, counters: {}, goods: {}, recipes: {}, inventories: {}, markets: {}, shipments: {}, organisations: {}, tickTrace: [] }
 }

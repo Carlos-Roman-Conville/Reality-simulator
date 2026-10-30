@@ -23,11 +23,17 @@ not a game rule.
 | E8 | price moves with shortage by the configured curve | under `shortage-linear` the price rises as stock falls and returns to base when the reserve is met; a `priceSet` event per change |
 | E9 | base price is data, never derived | no base price, no price under any rule; the default rule returns the base price unchanged; a negative base price is refused |
 
-## Planned (PLAN.md steps 5–8)
+## Package tests (`test/trade.test.ts`), steps 5 and 7
 
-E10 goods in transit are in no market · E11 money conserved across a sale · E12 wage quote rises when posts outnumber
-workers · E13 revenue minus costs equals profit and reconciles with the ledger · E14 the three-port sim is
-deterministic.
+| Id | Rule under test | Must hold |
+|---|---|---|
+| E10 | goods in transit are in no market | a shipment leaves its inventory at once, is in no inventory on the way, lands after the host map's days; total units are conserved; a pair with no route is refused; a perishable good spoils on the way |
+| E11 | money is conserved across a sale | buying and selling move goods one way and money the other at the market's price (or the host's), through the ledger provider only; the sum of balances never changes; a trade with no price anywhere is refused (open); one beyond stock leaves the state untouched |
+| E13 | accounting reconciles with the ledger | the view sums the holder's rows by kind (sale, purchase, wage, rent, freight, other), values its inventories at today's prices, and its profit equals the balance change; a day range filters the rows |
+
+## Planned (PLAN.md steps 6 and 8)
+
+E12 wage quote rises when posts outnumber workers · E14 the three-port sim is deterministic.
 
 ## Integration (PLAN.md steps 9–11)
 

@@ -23,8 +23,28 @@ export function production(ctx: Ctx): void {
   }
 }
 
-/** Every inventory loses `spoilagePerDay` of each good that has one (E6). Goods with null spoil nothing (open). */
+/** Shipments whose day has come land in their destination inventory (E10). */
+export function shipments(ctx: Ctx): void {
+  for (const shipment of Object.values(ctx.state.shipments)) {
+    if (shipment.status !== 'transit' || shipment.arrives > ctx.state.day) continue
+    const to = must(ctx.state.inventories, shipment.to, 'inventory')
+    adjust(ctx, to, shipment.good, shipment.units, `arrive:${shipment.id}`)
+    shipment.status = 'arrived'
+    ctx.events.push({ type: 'arrived', shipment: shipment.id, to: shipment.to, good: shipment.good, units: shipment.units })
+  }
+}
+
+/** Every inventory, and every shipment in transit, loses `spoilagePerDay` of each good that has one (E6). Goods with
+ *  null spoil nothing (open). */
 export function spoilage(ctx: Ctx): void {
+  for (const shipment of Object.values(ctx.state.shipments)) {
+    if (shipment.status !== 'transit') continue
+    const rate = ctx.state.goods[shipment.good]?.spoilagePerDay ?? null
+    if (rate === null || rate <= 0) continue
+    const lost = shipment.units * rate
+    shipment.units -= lost
+    ctx.events.push({ type: 'spoiled', inventory: shipment.id, good: shipment.good, units: lost })
+  }
   for (const inv of Object.values(ctx.state.inventories)) {
     for (const [good, units] of Object.entries(inv.stock)) {
       const rate = ctx.state.goods[good]?.spoilagePerDay ?? null
@@ -80,7 +100,7 @@ export function advance(ctx: Ctx): void {
   ctx.state.day += 1
 }
 
-export const STEPS: Record<string, Step> = { production, spoilage, consumption, prices, advance }
+export const STEPS: Record<string, Step> = { production, shipments, spoilage, consumption, prices, advance }
 
 export function tick(ctx: Ctx): void {
   ctx.state.tickTrace = []

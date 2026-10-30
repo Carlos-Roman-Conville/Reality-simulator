@@ -3,6 +3,7 @@
 
 import { adjust, finite, good, integer, inventory, market, marketGood, must, newId, nonempty, recipe, stockOf, type Ctx } from './context.ts'
 import { availableUnits, consumeInputs } from './material.ts'
+import { price as priceOf } from './queries.ts'
 import type { Good, MarketMode, Recipe } from './state.ts'
 import { tick } from './tick/index.ts'
 
@@ -17,6 +18,10 @@ export type Command =
   | { type: 'moveStock'; from: string; to: string; good: string; units: number }
   | { type: 'produce'; inventory: string; recipe: string; units: number }     // Settlement's MaterialProvider.produce
   | { type: 'take'; inventory: string; good: string; units: number }         // Settlement's MaterialProvider.take
+  | { type: 'openOrganisation'; name: string; kind?: string | null }
+  | { type: 'sell'; inventory: string; good: string; units: number; price?: number }   // inventory -> its market's stock; money market -> holder
+  | { type: 'buy'; inventory: string; good: string; units: number; price?: number }    // market's stock -> inventory; money holder -> market
+  | { type: 'ship'; from: string; to: string; good: string; units: number; freight?: { payer: string; payee: string; amount: number } }
   | { type: 'tick' }
 
 export function apply(ctx: Ctx, command: Command): void {
@@ -31,6 +36,10 @@ export function apply(ctx: Ctx, command: Command): void {
     case 'moveStock': return moveStock(ctx, command.from, command.to, command.good, command.units)
     case 'produce': return produce(ctx, command.inventory, command.recipe, command.units)
     case 'take': return take(ctx, command.inventory, command.good, command.units)
+    case 'openOrganisation': return openOrganisation(ctx, command.name, command.kind ?? null)
+    case 'sell': return trade(ctx, 'sell', command.inventory, command.good, command.units, command.price)
+    case 'buy': return trade(ctx, 'buy', command.inventory, command.good, command.units, command.price)
+    case 'ship': return ship(ctx, command.from, command.to, command.good, command.units, command.freight ?? null)
     case 'tick': return tick(ctx)
     default: throw new Error(`unknown command: ${(command as { type: string }).type}`)
   }
@@ -147,4 +156,62 @@ function take(ctx: Ctx, invId: string, goodId: string, units: number): void {
   const taken = Math.min(units, stockOf(inv, goodId))
   if (taken > 0) adjust(ctx, inv, goodId, -taken, 'take')
   ctx.taken = taken
+}
+
+function openOrganisation(ctx: Ctx, name: string, kind: string | null): void {
+  nonempty(name, 'name')
+  const id = newId(ctx, 'org')
+  ctx.state.organisations[id] = { id, name, kind, inventories: [] }
+  ctx.minted = id
+  ctx.events.push({ type: 'organisationOpened', organisation: id, name })
+}
+
+/** A sale or purchase between an inventory and its market's own stock, at the market's price today unless the host
+ *  names one (CONTRACTS.md §7). Money moves through the ledger provider only (§3); the two holders are the inventory's
+ *  holder and the market id. With no price on the market and none given, the trade is refused: a price is open, never invented. */
+function trade(ctx: Ctx, side: 'sell' | 'buy', invId: string, goodId: string, units: number, given: number | undefined): void {
+  const inv = inventory(ctx, invId); good(ctx, goodId); finite(units, 'units', 0)
+  if (units === 0) throw new Error('units must be > 0')
+  const mkt = market(ctx, inv.market)
+  const stall = inventory(ctx, mkt.inventory)
+  const unit = given ?? priceOf(ctx.state, ctx.config, mkt.id, goodId)
+  if (unit === null) throw new Error(`no price for ${goodId} in ${mkt.id}: set a basePrice or give one (open)`)
+  finite(unit, 'price', 0)
+  const amount = unit * units
+  const note = `${units} @ ${unit}`
+  if (side === 'sell') {
+    if (units > stockOf(inv, goodId)) throw new Error(`cannot sell ${units} ${goodId} from ${invId}: have ${stockOf(inv, goodId)}`)
+    const txn = ctx.providers.ledger.transfer(mkt.id, inv.holder, amount, 'sale', goodId, note)
+    adjust(ctx, inv, goodId, -units, 'sell')
+    adjust(ctx, stall, goodId, units, 'sell')
+    ctx.events.push({ type: 'sold', inventory: invId, market: mkt.id, good: goodId, units, price: unit, amount, txn })
+  } else {
+    if (units > stockOf(stall, goodId)) throw new Error(`cannot buy ${units} ${goodId} in ${mkt.id}: the market has ${stockOf(stall, goodId)}`)
+    const txn = ctx.providers.ledger.transfer(inv.holder, mkt.id, amount, 'purchase', goodId, note)
+    adjust(ctx, stall, goodId, -units, 'buy')
+    adjust(ctx, inv, goodId, units, 'buy')
+    ctx.events.push({ type: 'bought', inventory: invId, market: mkt.id, good: goodId, units, price: unit, amount, txn })
+  }
+}
+
+/** Goods leave `from` now and reach `to` after the host map's travel days; in transit they are in no inventory (E10).
+ *  Freight, if any, is the host's figure, paid now through the ledger (kind `freight`). An unreachable pair is refused. */
+function ship(ctx: Ctx, fromId: string, toId: string, goodId: string, units: number, freight: { payer: string; payee: string; amount: number } | null): void {
+  const from = inventory(ctx, fromId); const to = inventory(ctx, toId); good(ctx, goodId); finite(units, 'units', 0)
+  if (units === 0) throw new Error('units must be > 0')
+  if (fromId === toId) throw new Error('ship needs two different inventories')
+  if (units > stockOf(from, goodId)) throw new Error(`cannot ship ${units} ${goodId} from ${fromId}: have ${stockOf(from, goodId)}`)
+  const days = ctx.providers.transport.days(from.market, to.market)
+  if (!Number.isFinite(days) || days < 0) throw new Error(`no route from ${from.market} to ${to.market}`)
+  let freightTxn: string | null = null
+  if (freight) {
+    finite(freight.amount, 'freight.amount', 0)
+    freightTxn = ctx.providers.ledger.transfer(freight.payer, freight.payee, freight.amount, 'freight', goodId, `${units} ${fromId}>${toId}`)
+  }
+  const id = newId(ctx, 'ship')
+  adjust(ctx, from, goodId, -units, `ship:${id}`)
+  const arrives = ctx.state.day + days
+  ctx.state.shipments[id] = { id, from: fromId, to: toId, good: goodId, units, departed: ctx.state.day, arrives, status: 'transit' }
+  ctx.minted = id
+  ctx.events.push({ type: 'shipped', shipment: id, from: fromId, to: toId, good: goodId, units, arrives, freightTxn })
 }
