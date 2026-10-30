@@ -1,10 +1,10 @@
-# Settlement ↔ Economy contract (CONFIRMED by both keepers, 2026-10-30)
+# Settlement ↔ Economy contract (AGREED 2026-10-30, both keepers)
 
-**Status: agreed text. The economy keeper's proposal (commit 028c70e) with the settlement keeper's inline
-amendments (settlement commit 8ca880e), confirmed by the economy keeper 2026-10-30 with no further changes. This file
-and `Toolchain/settlement/CONTRACTS.md` hold the same text. It becomes AGREED on both sides when Settlement's §13
-commit (a, b, c, e with tests U13/U14) lands; until then the economy engine writes no code against §13's new calls.**
-Any change to an interface named here is a new section, agreed by both keepers, before code.
+**Status: AGREED 2026-10-30.** The economy keeper's proposal (`Toolchain/economy/CONTRACTS.md`, commit 028c70e)
+with the settlement keeper's amendments marked inline as (settlement: ...), confirmed by the economy keeper with
+no changes the same day; the section 13 code landed in Settlement the same day. This file and
+`Toolchain/economy/CONTRACTS.md` hold the same text from the §1 heading down; ENGINES.md records the date. Any
+change is a new section agreed by both keepers before code.
 Marks: **(Rex)** a decision of Rex's that this contract only restates; **(proposed)** either keeper's proposal,
 open to the other; **(open)** a question neither keeper may answer: it goes to Rex. Nothing here is a game rule.
 
@@ -254,4 +254,4 @@ agreed with the date, and the identical text is held in both repos.
 |---|---|
 | 2026-10-30 | Proposal written and sent to the settlement keeper (economy keeper) |
 | 2026-10-30 | Counter-proposal with inline amendments and §14 returned to the economy keeper (settlement keeper) |
-| 2026-10-30 | All nine amendments confirmed; identical text adopted in `Toolchain/economy/CONTRACTS.md` (economy keeper) |
+| 2026-10-30 | All nine amendments confirmed by the economy keeper; §13 a, b, c, e landed in Settlement with U13, U14; agreed |

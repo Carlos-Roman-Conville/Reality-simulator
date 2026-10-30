@@ -8,7 +8,7 @@ engine**; the pirate game's goods, ports and companies (`Games/RPG's/pirate-ship
 it through an adapter. Modelled on `../realism` and `../settlement`. Rex placed it here on 2026-10-28
 (ALIGNMENT §10); the engine family and its rules are in `../ENGINES.md`.
 
-**Status: contract text confirmed with Settlement (2026-10-30); PLAN steps 2–8 built; nothing is written against §13's new Settlement calls until its commit lands.** ENGINES.md requires the contract to be agreed before
+**Status: contract AGREED with Settlement 2026-10-30 (Settlement commit 2c4223c holds its §13 code); PLAN steps 2–8 built; step 9 next.** ENGINES.md requires the contract to be agreed before
 either side implements production or labour. `CONTRACTS.md` is the agreed text.
 
 ## Read in this order
@@ -44,7 +44,7 @@ shipments over the host's travel days with in-transit spoilage, freight through 
 `npm run ports` prints price@shortage per port and good over thirty days). 25 tests, E1–E14.
 
 Not built: PLAN steps 9–11 (the pirate adapter over Settlement, the thirty-day settlement benchmark, the realism
-population hook). Step 9 waits on Settlement's CONTRACTS §13 commit.
+population hook). Step 9 is unblocked since Settlement 2c4223c.
 
 ## Marks
 

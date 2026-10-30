@@ -5,7 +5,7 @@ step waits where it says. Every number in a test is a fixture, not a game rule.
 
 | Step | What | Waits on | Tests |
 |---|---|---|---|
-| 1 | **Contract** with Settlement (`CONTRACTS.md`); the same text on both sides. Text confirmed 2026-10-30; waits only for Settlement's §13 commit | Settlement commit | none |
+| 1 | **Contract** with Settlement (`CONTRACTS.md`): AGREED 2026-10-30, byte-identical on both sides (Settlement 2c4223c) | done | none |
 | 2 | **Records and reducer** (done 2026-10-30): goods, recipes, inventories, markets, config (every constant proposed), ids, `reduce` + `Runner`, events; `MaterialProvider` implementation over inventories | 1 | E1 stock never negative; E2 produce consumes inputs by the recipe's quantities and yields by-products; E3 replay gives the same state; E4 no import from outside the package (a test reads `src/`) |
 | 3 | **Consumption and spoilage** (done 2026-10-30) per market from the five numbers and a population provider | 2 | E5 consumption draws stock; E6 spoilage by the good's rule; E7 shortage event when stock < reserve |
 | 4 | **Prices** (done 2026-10-30) from shortage, the formula a config key | 2 | E8 price rises with shortage, falls with surplus, by the configured curve; E9 base price is data, never derived |
