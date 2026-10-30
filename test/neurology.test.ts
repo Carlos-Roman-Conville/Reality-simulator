@@ -278,7 +278,7 @@ describe("the circuits at rest and under the interaction rules", () => {
 });
 
 describe("the four clocks", () => {
-  const params: NeuroParams = { ec50: { alcohol: 0.05 }, kTol: 0.5, reboundPeakH: { alcohol: 24 } };   // test values: the library gives neither
+  const params: NeuroParams = { ec50: { alcohol: 0.05 }, kTol: { alcohol: 0.5 }, reboundPeakH: { alcohol: 24 } };   // formula-test values: the library gives neither (null cells)
   /** n days of one 35 g drink at the start of each, with the mean gaba occupancy of each day sampled from the outputs. */
   function drinkDays(n: number, p: NeuroParams) {
     const x = build({ params: p }), means: number[] = [], peakEffect: number[] = [];
@@ -344,17 +344,17 @@ describe("the four clocks", () => {
     expect(Number(fresh.out.dependence_gaba)).toBe(0);
     expect(Number(fresh.out.withdrawal_gaba)).toBe(0);
     expect(fresh.out.alcohol_withdrawal_stage).toBe("none");
-    const noRate = drinkDays(5, { ec50: { alcohol: 0.05 }, kTol: null, reboundPeakH: { alcohol: 24 } }).x;   // k_tol null
+    const noRate = drinkDays(5, { ec50: { alcohol: 0.05 }, kTol: { alcohol: null }, reboundPeakH: { alcohol: 24 } }).x;   // k_tol null
     run(noRate, MIN);
     expect(Number(noRate.out.sensitivity_gaba)).toBe(1);
     expect(Number(noRate.out.dependence_gaba)).toBe(0);
-    const noPeak = drinkDays(14, { ec50: { alcohol: 0.05 }, kTol: 1 }).x;                      // no rebound peak for alcohol
+    const noPeak = drinkDays(14, { ec50: { alcohol: 0.05 }, kTol: { alcohol: 1 } }).x;                      // no rebound peak for alcohol
     run(noPeak, 13 * HOUR);
     expect(Number(noPeak.out.dependence_gaba)).toBeGreaterThan(0);
     expect(Number(noPeak.out.withdrawal_gaba)).toBe(0);
   });
   it("reaches delirium at 48 h only over 0.7 dependence, which takes more than the 14 days at the floor", () => {
-    const { x } = drinkDays(22, { ec50: { alcohol: 0.05 }, kTol: 3, reboundPeakH: { alcohol: 24 } });
+    const { x } = drinkDays(22, { ec50: { alcohol: 0.05 }, kTol: { alcohol: 3 }, reboundPeakH: { alcohol: 24 } });
     run(x, MIN);
     expect(Number(x.out.sensitivity_gaba)).toBeCloseTo(0.3, 9);
     expect(Number(x.out.dependence_gaba)).toBe(1);                                 // 0.7 x 22 / 14 held to 1
@@ -394,19 +394,21 @@ describe("the fence", () => {
     const imports = [...text.matchAll(/^import .* from "([^"]+)"/gm)].map(m => m[1]);
     expect(imports.every(i => i!.startsWith("./"))).toBe(true);
   });
-  it("runs tolerance on the library's EC50 and k_tol with no parameters, and null switches it off", () => {
-    const sub = neuroSubstance("alcohol");
-    expect(typeof sub.ec50).toBe("number");
-    expect(typeof sub.kTol).toBe("number");
+  it("builds tolerance only for a substance with a k_tol: the library's cells are null, so none without parameters, and null switches it off", () => {
+    for (const s of neuroSubstances()) { expect(s.ec50, s.key).toBeNull(); expect(s.kTol, s.key).toBeNull(); }
     const x = build();
     dose(x.w, "body", "alcohol", 35);
     for (let d = 0; d < 3; d++) run(x, DAY);
-    expect(Number(x.out.sensitivity_gaba)).toBeLessThan(1);
-    const y = build({ params: { kTol: null } });
+    expect(Number(x.out.sensitivity_gaba)).toBe(1);
+    const y = build({ params: { ec50: { alcohol: 0.05 }, kTol: { alcohol: null } } });
     dose(y.w, "body", "alcohol", 35);
     for (let d = 0; d < 3; d++) run(y, DAY);
     expect(Number(y.out.sensitivity_gaba)).toBe(1);
     expect(Number(y.out.dependence_gaba)).toBe(0);
-    for (const s of neuroSubstances().filter(s => s.key !== "alcohol")) { expect(s.ec50, s.key).toBeNull(); expect(s.kTol, s.key).toBeNull(); }
+    const z = build({ params: { ec50: { alcohol: 0.05 }, kTol: { alcohol: 0.5 } } });   // a rate given for one substance builds tolerance for it
+    dose(z.w, "body", "alcohol", 35);
+    for (let d = 0; d < 3; d++) run(z, DAY);
+    expect(Number(z.out.sensitivity_gaba)).toBeLessThan(1);
   });
+
 });

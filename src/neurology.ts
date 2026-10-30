@@ -458,8 +458,8 @@ export function breathingDrive(opioidEffect: number, gabaEffect: number, alcohol
 export interface NeuroParams {
   /** EC50 per substance key, in the concentration unit of `NeuroSubstance.concUnit`; overrides the pk table's column, null switches the substance's acute effect off. */
   ec50?: Record<string, number | null>;
-  /** The tolerance rate k_tol per day per unit of mean occupancy; overrides the pk table's column (the mean of its numbers), null switches tolerance off. */
-  kTol?: number | null;
+  /** The tolerance rate k_tol per substance key, per day per unit of mean occupancy; overrides the pk table's cell, null switches that substance's tolerance off. A substance with no number anywhere builds none. */
+  kTol?: Record<string, number | null>;
   /** Hours from the last dose to the rebound peak, per substance key. Absent: no withdrawal for it (opioids: the library's range). */
   reboundPeakH?: Record<string, number>;
 }
@@ -505,7 +505,7 @@ export function dose(w: World, bodyId: string, key: string, amount: number, o: {
 export function neurologyProcess(body: string, o: NeurologyOptions = {}): Process {
   const clockH0 = o.clockH0 ?? 0, dayStartH = o.dayStartH ?? 12, params = o.params ?? {};
   const systems = neuroSystems(), substances = neuroSubstances(), circuits = neuroCircuits();
-  const libK = substances.flatMap(s => s.kTol === null ? [] : [s.kTol]), kTol = params.kTol !== undefined ? params.kTol : libK.length ? libK.reduce((a, b) => a + b, 0) / libK.length : null;
+  const kTolOf = (s: NeuroSubstance): number | null => params.kTol && s.key in params.kTol ? params.kTol[s.key]! : s.kTol;
   const reboundPeak = (key: string): number | null => params.reboundPeakH?.[key] ?? (key === "laudanum" ? clocks().opioidPeakH : null);
 
   return { name: "neurology", every: o.every ?? 10, step(w, dt) {
@@ -524,13 +524,14 @@ export function neurologyProcess(body: string, o: NeurologyOptions = {}): Proces
         let sens = p[key] ?? 1;
         if (mean > 0) {
           p[`neu_expd_${sys.id}`] = (p[`neu_expd_${sys.id}`] ?? 0) + 1;
-          if (kTol !== null) sens = toleranceStep(sens, mean, kTol);
+          const rate = secs > 0 ? (p[`neu_tol_${sys.id}`] ?? 0) / secs : 0;   // the day's mean of k_tol x occupancy over the substances that have a k_tol
+          if (rate > 0) sens = toleranceStep(sens, rate, 1);
         } else {
           sens = recoveryStep(sens, sys.recoveryDays);
           if (1 - sens < 1e-6) { sens = 1; p[`neu_expd_${sys.id}`] = 0; }
         }
         p[key] = clamp(sens, scaleR.sensLo, scaleR.sensHi);
-        p[`neu_occ_${sys.id}`] = 0;
+        p[`neu_occ_${sys.id}`] = 0; p[`neu_tol_${sys.id}`] = 0;
       }
       p.neu_occ_s = 0; p.neu_day_index++;
     }
@@ -578,6 +579,7 @@ export function neurologyProcess(body: string, o: NeurologyOptions = {}): Proces
     // acute effect per system: potency x occupancy x sensitivity, summed over substances; the system's own occupancy (capped at 1)
     const effect: Record<string, number> = {}, sysOcc: Record<string, number> = {}, swing: Record<string, number> = {}, dep: Record<string, number> = {};
     let alcoholGaba = 0, depressants = 0;
+    const tolRate: Record<string, number> = {};
     for (const sys of systems) {
       const sens = p[`neu_sens_${sys.id}`] ?? 1;
       effect[sys.id] = 0; sysOcc[sys.id] = 0; swing[sys.id] = 0;
@@ -587,8 +589,10 @@ export function neurologyProcess(body: string, o: NeurologyOptions = {}): Proces
       const oc = occ[s.key];
       if (oc === null || oc === undefined) continue;
       let depressant = false;
+      const kt = kTolOf(s);
       for (const h of s.hits) {
         if (h.delayed) continue;
+        if (kt !== null) tolRate[h.system] = (tolRate[h.system] ?? 0) + kt * oc;
         const sens = p[`neu_sens_${h.system}`] ?? 1, e = h.potency * oc * sens;
         effect[h.system] = effect[h.system]! + e; sysOcc[h.system] = Math.min(1, sysOcc[h.system]! + oc);
         if (s.key === "alcohol" && h.system === "gaba") alcoholGaba += e;
@@ -615,6 +619,7 @@ export function neurologyProcess(body: string, o: NeurologyOptions = {}): Proces
       out[`dependence_${sys.id}`] = dep[sys.id]!;
       out[`withdrawal_${sys.id}`] = swing[sys.id]!;
       p[`neu_occ_${sys.id}`] = (p[`neu_occ_${sys.id}`] ?? 0) + sysOcc[sys.id]! * dt;
+      p[`neu_tol_${sys.id}`] = (p[`neu_tol_${sys.id}`] ?? 0) + (tolRate[sys.id] ?? 0) * dt;
     }
     p.neu_occ_s = (p.neu_occ_s ?? 0) + dt;
 
