@@ -7,6 +7,7 @@ import { defaultRegistry, type Component } from '../src/registry.ts';
 import { airContents, breathingProcess, roomAirProcess, roomGasFraction, litresToMoles } from '../src/atmosphere.ts';
 import { metOf } from '../src/physiology.ts';
 import { P_SEA_LEVEL } from '../src/physics.ts';
+import { GLYCOGEN_BOUND_WATER, nutritionProcess } from '../src/nutrition.ts';
 
 const row = (file: string, table: string, slug: string) => libraryRow(file, table, `${file}.${table}.${slug}`);
 const numberIn = (text: unknown, rx: RegExp, index = 1) => Number(rx.exec(String(text))![index]!.replaceAll(',', ''));
@@ -39,7 +40,11 @@ describe('checkpoint 1: an integrated human week', () => {
       expect(d.waterKg).toBeCloseTo(water, 8);
       expect(d.waterDeficitKg).toBeCloseTo(FIXTURE.waterKg - water, 8);
       balance += d.kcalIn - d.kcalOut;
-      expect(d.massKg - FIXTURE.massKg).toBeCloseTo((balance - (Number(d.outputs.glycogen_g) - initialGlycogen) * glyEnergy) / fatDensity, 8);
+      // mass = fat + glycogen with its bound water + the water ledger's change
+      const glycogenKg = (Number(d.outputs.glycogen_g) - initialGlycogen) / 1000, fatKg = (balance - (Number(d.outputs.glycogen_g) - initialGlycogen) * glyEnergy) / fatDensity;
+      const boundWaterKg = glycogenKg * GLYCOGEN_BOUND_WATER;
+      expect(d.massKg - FIXTURE.massKg).toBeCloseTo(fatKg + glycogenKg + boundWaterKg - d.waterDeficitKg, 8);
+      expect(d.outputs.water_change_kg).toBeTypeOf('number');
       debt += need - ((FIXTURE.watchDays as readonly number[]).includes(d.day) ? 4 : 6);
       expect(d.outputs.sleep_debt).toBeCloseTo(debt, 9);
       const band = libraryTable('physiology', 'sleep_debt').find(r => {
@@ -56,6 +61,24 @@ describe('checkpoint 1: an integrated human week', () => {
     expect(run.body.mass).toBeLessThan(FIXTURE.massKg);
     expect(run.w.trace.transfers.every(t => Number.isFinite(t.amount))).toBe(true);
   }, 20_000);
+
+  it('a fast shows the early glycogen and bound water drop of the library rows', () => {
+    const w = new World(defaultRegistry()), sch = new Scheduler();
+    const cap = numberIn(row('nutrition', 'body_composition', 'glycogen').Rule, /up to ([\d.]+) g/);
+    const body: Component = { id: 'body', kind: 'body', material: 'flesh', mass: 70, temperatureC: 37, contents: [], ports: [],
+      props: { fat_kg: 15, intake_kcal: 0, expenditure_kcal: 0 }, condition: { capability: 1, control: 1, accuracy: 1 } };
+    w.registry.addComponent(body);
+    sch.add({ name: 'fast', every: 1, step(_world, dt) { body.props.expenditure_kcal! += 2000 * dt / 86400; } });
+    sch.add(nutritionProcess('body', { every: 1, dayStartH: 0 }));
+    sch.run(w, 86400, 3600);
+    expect(body.props.glycogen_g).toBeLessThan(cap); // the store is drawn first
+    const lostG = cap - body.props.glycogen_g!;
+    expect(lostG).toBeGreaterThan(0);
+    // bound water leaves with the glycogen: the day's mass loss is fat + glycogen + its bound water
+    const fatLost = 15 - body.props.fat_kg!;
+    expect(70 - body.mass).toBeCloseTo(fatLost + lostG / 1000 * (1 + GLYCOGEN_BOUND_WATER), 9);
+    expect(w.trace.failed()).toEqual([]);
+  });
 
   it('matches the shut-door box-model peak for one sleeper in the same 40 m3 room', () => {
     // Controlled isothermal replay isolates the analytic box solution from changing heat and sweat.

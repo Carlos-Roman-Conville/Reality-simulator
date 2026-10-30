@@ -12,7 +12,7 @@
  * energy balance has nowhere to go and is reported as unplaced), glycogen_g (default: the full reserve), fever, pregnant,
  * menstrual, diarrhoea, rum_heavy, flux, chronic_flux (1 while the condition lasts), blood_lost_l (cumulative litres).
  * Outputs by library id on `body.props.outputs` (`bodyOutputs`): pool_<id>, pool_frac_<id>, deficiency_<id> (stage 0 to 3) and
- * deficiency_<id>_row for every pool; fat_kg, glycogen_g, glycogen_factor, energy_balance_day_kcal, energy_unplaced_kcal,
+ * deficiency_<id>_row for every pool; fat_kg, glycogen_g, glycogen_factor, glycogen_bound_water_kg, water_change_kg (the day's change of the water ledger), energy_balance_day_kcal, energy_unplaced_kcal,
  * starvation_limit, protein_need_g, intake_<id> (last closed day, in the food column's unit).
  */
 import type { Process } from "./scheduler.ts";
@@ -382,6 +382,12 @@ function composition(): Composition {
   return comp;
 }
 
+/**
+ * Water bound to stored glycogen, g of water per g of glycogen. UNSOURCED in the library (flags/nutrition.md): the textbook figure
+ * (about 3 g per g, Olsson and Saltin 1970, Sherman 1982), not read from a table row.
+ */
+export const GLYCOGEN_BOUND_WATER = 3;
+
 /** The energy density of stored fat the library gives (kcal/kg), 7,700 in the table. */
 export function fatKcalPerKg(): number { return composition().kcalPerKgFat; }
 /** The Endurance pool's glycogen factor from the glycogen reserve (g): 0.5 + 0.5 x glycogen/400 in the table. */
@@ -444,8 +450,15 @@ function closeDay(w: World, bodyId: string, o: NutritionOptions, sweatKg: number
   if (p.fat_kg !== undefined) {
     const next = Math.max(c.fatFloorKg, p.fat_kg + rest / c.kcalPerKgFat);
     fatDelta = next - p.fat_kg; unplaced = rest - fatDelta * c.kcalPerKgFat;
-    p.fat_kg = next; b.mass += fatDelta;
+    p.fat_kg = next;
   }
+  // body mass = fat + glycogen with its bound water + the body water change of physiology's ledger (the ledger does not hold the bound water)
+  const waterChangeKg = (p.nut_water_mark ?? 0) - (p.waterDeficitKg ?? 0);
+  p.nut_water_mark = p.waterDeficitKg ?? 0;
+  const glycogenKg = g / 1000, boundKg = glycogenKg * GLYCOGEN_BOUND_WATER, massBefore = b.mass;
+  b.mass += fatDelta + glycogenKg + boundKg + waterChangeKg;
+  w.trace.check(w.t, "mass:body", massBefore + fatDelta + glycogenKg * (1 + GLYCOGEN_BOUND_WATER) + waterChangeKg, b.mass, 1e-9);
+  out.glycogen_bound_water_kg = glycogen / 1000 * GLYCOGEN_BOUND_WATER; out.water_change_kg = waterChangeKg;
   p.glycogen_g = glycogen;
   p.nut_balance_kcal = (p.nut_balance_kcal ?? 0) + balance;
   p.nut_unplaced_kcal = (p.nut_unplaced_kcal ?? 0) + unplaced;
@@ -471,7 +484,7 @@ export function nutritionProcess(body: string, o: NutritionOptions = {}): Proces
     const clock = clockH0 + w.t / 3600, dayIndex = Math.floor((clock - dayStartH) / 24);
     if (p.nut_day_index === undefined) {
       // the marks start at zero: physiology's totals and the blood lost count from the body's beginning, so the first day holds all of them
-      p.nut_day_index = dayIndex; p.nut_intake_mark = 0; p.nut_spent_mark = 0; p.nut_sweat_mark = 0; p.nut_blood_mark = 0; p.nut_start_mass = b.mass;
+      p.nut_day_index = dayIndex; p.nut_intake_mark = 0; p.nut_spent_mark = 0; p.nut_sweat_mark = 0; p.nut_blood_mark = 0; p.nut_start_mass = b.mass; p.nut_water_mark = 0;
     }
     p.nut_met_over_h = (p.nut_met_over_h ?? 0) + Math.max(0, Number(bodyOutputs(b).met ?? 0) - composition().glycogenOverMet) * dt / 3600;
     const endDayIndex = Math.floor((clockH0 + (w.t + dt) / 3600 - dayStartH) / 24);

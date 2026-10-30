@@ -9,6 +9,7 @@ import { defaultRegistry } from '../src/registry.ts';
 import { bodyOutputs } from '../src/physiology.ts';
 import { healingMultiplier } from '../src/medicine.ts';
 import { rng } from '../src/process.ts';
+import { GLYCOGEN_BOUND_WATER } from '../src/nutrition.ts';
 
 describe('checkpoint 2: supported wound integration; missing kinetics explicitly blocked', () => {
   it('runs the three treatment schedules with row-derived classes, seeded infection, fatigue and conservation', () => {
@@ -34,7 +35,7 @@ describe('checkpoint 2: supported wound integration; missing kinetics explicitly
       expect(libraryRow('muscular', 'activations', HAUL_ID)['Intensity (MET)']).toBe(7);
       expect(w.trace.failed()).toEqual([]);
       expect(w.trace.checks.filter(c => c.quantity === 'mass:body-composition-proxy')).toHaveLength(FIXTURE.days * 86400 / FIXTURE.stepS);
-      expect(body.mass).toBeCloseTo(FIXTURE.massKg + body.props.fat_kg - FIXTURE.fatKg, 9);
+      expect(body.mass).toBeCloseTo(FIXTURE.massKg + body.props.fat_kg - FIXTURE.fatKg + (body.props.glycogen_g - 400) / 1000 * (1 + GLYCOGEN_BOUND_WATER) - body.props.nut_water_mark, 9);
       expect(body.props.blood_volume_ml + w.trace.outOf('body', 'volume:blood') - w.trace.into('body', 'volume:blood'))
         .toBeCloseTo(body.props.circulation_initial_ml, 6);
       expect([...w.registry.components.values()].filter(c => c.id.startsWith('body:')).every(c => c.mass === 0)).toBe(true);

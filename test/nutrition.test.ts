@@ -6,7 +6,7 @@ import { KCAL_J } from "../src/physics.ts";
 import { libraryRow, libraryTable } from "../src/library.ts";
 import { bodyOutputs, metOf, physiologyProcess } from "../src/physiology.ts";
 import {
-  absorbedFraction, dailyNeed, deficiencySignals, eat, eatMeal, fatKcalPerKg, foodContent, foodRow, glycogenFactor, nutrientInfo,
+  GLYCOGEN_BOUND_WATER, absorbedFraction, dailyNeed, deficiencySignals, eat, eatMeal, fatKcalPerKg, foodContent, foodRow, glycogenFactor, nutrientInfo,
   nutritionProcess, poolLevel, poolSpec, pooledNutrients, stockPools, type NutritionOptions,
 } from "../src/nutrition.ts";
 
@@ -263,7 +263,7 @@ describe("energy and body composition", () => {
     const stored = (p.fat_kg! - 15) * 7700 + (p.glycogen_g! - 400) * 4;
     expect(stored + p.nut_unplaced_kcal!).toBeCloseTo(p.nut_balance_kcal!, 6);
     expect(p.nut_unplaced_kcal).toBeCloseTo(0, 6);
-    expect(x.body.mass).toBeCloseTo(70 + (p.fat_kg! - 15), 9);
+    expect(x.body.mass).toBeCloseTo(70 + (p.fat_kg! - 15) + (p.glycogen_g! - 400) / 1000 * (1 + GLYCOGEN_BOUND_WATER) - p.nut_water_mark!, 9);
   });
 
   it("a surplus is stored as fat by balance / 7700 once glycogen is full", () => {
