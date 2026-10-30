@@ -13,7 +13,8 @@ export interface Substance {
   molarMass: number;          // kg/mol
   formula: string;            // chemical formula, e.g. "C2H5OH"
   cp: Partial<Record<Phase, number | null>>; // J/(kg K) by phase
-  hhv?: number | null;        // J/kg if a fuel
+  hhv?: number | null;        // J/kg higher heating value if a fuel
+  lhv?: number | null;        // J/kg lower heating value if a fuel
   density?: Partial<Record<Phase, number | null>>; // kg/m3 by phase, at the condition in the data row's note
   meltingPointC?: number | null;  // at 1 atm; null where none is standard
   boilingPointC?: number | null;

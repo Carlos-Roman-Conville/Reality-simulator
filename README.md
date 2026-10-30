@@ -59,7 +59,7 @@ water, so it still warms; this assumes circulation, not an external supply of co
 Condensate leaves saturated and mixes thermally with the collector; there is no subcooling section.
 
 Remaining named simplifications: lumped temperatures (including wall mass and body), explicit one-second
-steps, instantaneous vapour transport, cubic room geometry without roof/floor heat exchange, negligible
+steps, instantaneous vapour transport, cubic room geometry without roof/floor heat exchange, walls: four sides only, no roof or floor, negligible
 plaster thermal mass, pool-correlation extrapolation toward boiling, fixed water transport properties
 at 40 C, negligible copper/condensate-film thermal resistance and forced-convection enhancement,
 and the existing h, combustion oxygen threshold, body, wear and control approximations.
