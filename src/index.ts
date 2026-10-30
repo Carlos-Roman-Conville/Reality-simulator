@@ -7,4 +7,6 @@ export * from "./world.ts";
 export * from "./process.ts";
 export * from "./reactions.ts";
 export * from "./elements.ts";
+export * from "./library.ts";
+export * from "./physiology.ts";
 export * from "./lab/still.ts";

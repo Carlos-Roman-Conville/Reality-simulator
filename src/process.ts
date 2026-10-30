@@ -3,17 +3,16 @@
  * (physics.ts) and records every transfer in the trace. Lumped, explicit, per-step: the first build's simplification.
  */
 import type { Process } from "./scheduler.ts";
-import type { World } from "./world.ts";
+import { addHeat, type World } from "./world.ts";
 import type { Component } from "./registry.ts";
-import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, airDensity, carbonCombustion, heatFlow, metabolicHeat, molesInVolume, SWEAT_LATENT, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
+import { physiologyProcess } from "./physiology.ts";
+import { CP, R_GAS, counterflowEffectiveness, condenserWaterCoefficient, surfaceEvaporationKgPerS, C_TO_K, M, airDensity, carbonCombustion, heatFlow, molesInVolume, waterBoilingPoint, waterLatentHeat, waterVapourPressure } from "./physics.ts";
 
 /** A seeded random for reproducible control noise and measurement noise (mulberry32). */
 export function rng(seed: number) {
   let a = seed >>> 0;
   return () => { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
-
-function addHeat(w: World, c: Component, J: number) { c.temperatureC += J / w.registry.heatCapacity(c); }
 
 /** The room's air as a component: its contents are the gases (kg), its temperature the air's; props volume_m3, ach, pressurePa. */
 export function roomGasFraction(w: World, room: Component, gas: string): number {
@@ -229,37 +228,11 @@ export function roomProcess(room: string): Process {
 }
 
 /**
- * A body in the room (first build): metabolic heat by MET, heat exchange with the air, sweat by PHYSIOLOGY.md section 4's
- * rate (0.3 + 0.25 MET + 0.1 x degrees over the WBGT ceiling, L/h), water deficit as % of body mass, CO2 and CO exposure
- * integrated (ppm-min). Core temperature is the lumped body temperature here.
+ * A body in the room. The process is `physiologyProcess` (physiology.ts): metabolic heat by MET, the air exchange, sweat
+ * and its evaporative cooling, the water deficit, CO2 and CO exposure, and the library's heat, sleep and hydration states.
  */
 export function bodyProcess(body: string, room: string, met: number): Process {
-  return { name: "body", every: 10, step(w, dt) {
-    const b = w.registry.component(body), r = w.registry.component(room), reg = w.registry;
-    const mass = b.mass;
-    const mWatt = metabolicHeat(met, mass);
-    addHeat(w, b, mWatt * dt);
-    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: "metabolism", to: body, amount: mWatt * dt });
-    // exchange with the air: h A dT, skin area 1.9 m2, h 10 in still air
-    const q = heatFlow(b.props.h ?? 10, b.props.area_m2 ?? 1.9, b.temperatureC - r.temperatureC) * dt;
-    addHeat(w, b, -q); addHeat(w, r, q);
-    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: room, amount: q });
-    // sweat: PHYSIOLOGY 4 (WBGT approximated by the room's dry temperature here, named simplification)
-    const ceiling = met > 6 ? 25 : met > 3 ? 28 : 30;
-    const over = Math.max(0, r.temperatureC - ceiling);
-    const sweatLph = Math.min(2.5, Math.max(0.3, 0.3 + 0.25 * met + 0.1 * over)) * (b.temperatureC > 37.0 ? 1 : 0.2);
-    const sweatKg = sweatLph / 3600 * dt;
-    const evapJ = sweatKg * SWEAT_LATENT * Math.max(0, 1 - (r.props.rh ?? 0.6)); // evaporation falls with humidity
-    addHeat(w, b, -evapJ);
-    b.props.waterDeficitKg = (b.props.waterDeficitKg ?? 0) + sweatKg;
-    b.props.waterDeficitPct = b.props.waterDeficitKg / mass * 100;
-    reg.addContent(r, "water", "gas", sweatKg);
-    w.trace.record({ t: w.t, process: "body", quantity: "mass:water", from: body, to: room, amount: sweatKg, note: "sweat" });
-    w.trace.record({ t: w.t, process: "body", quantity: "energy", from: body, to: "sweat-latent", amount: evapJ });
-    // exposure
-    b.props.co2ppmMin = (b.props.co2ppmMin ?? 0) + (r.props.co2ppm ?? 400) * dt / 60;
-    b.props.coppmMin = (b.props.coppmMin ?? 0) + (r.props.coppm ?? 0) * dt / 60;
-  } };
+  return physiologyProcess(body, room, { met });
 }
 
 /** A thermometer on a component: reading = true + offset(drift x days) + noise(sigma); accuracy condition widens sigma. */

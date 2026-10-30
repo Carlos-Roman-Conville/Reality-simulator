@@ -29,6 +29,8 @@ vessel, and water and charcoal conserved every step with the trace saying where 
     src/registry.ts    substances (properties only), materials, components with ports, the default set
     src/graph.ts       typed edges
     src/process.ts     combustion, losses, boiling, condensation, the room box, the body, the thermometer, wear, control
+    src/library.ts     the typed loader for data/library: libraryTable(file, table) rows keyed by column, cached
+    src/physiology.ts  the human body process: energy (RMR, MET, PAL), heat (WBGT, core drift), sleep, water, acclimatisation
     src/reactions.ts   data-driven vessel reactions, limiting reagents, reaction heat and gas release
     src/elements.ts    chemical formula parser and atomic masses for the element ledger
     data/reactions.json four sourced reaction records with stoichiometry, conditions and rate models
@@ -148,6 +150,19 @@ Run `python scripts/split_data.py` to rewrite the library from the game's files 
 rows read and written and the columns moved and left). `--write-game [--game-out DIR]` also writes the adapter
 versions (`*.adapter.json`, id plus game columns) beside the originals or into DIR, for the game side of phase 2 to
 apply; it never changes the originals.
+
+### Physiology (`src/physiology.ts`)
+
+`physiologyProcess(body, room, {met | schedule, clockH0, dayStartH})` runs on a component of kind `body` and reads the
+`physiology` tables through `libraryTable`. Resting rate is Mifflin-St Jeor (PHY-MSJ) from `height_cm`, `age_y`, `male` on
+the body's props; an activity costs `metabolicHeat(MET)` corrected to that rate, so a day at 1 MET is the rate itself and the
+day's PAL is its MET-hours over 24. Heat: WBGT (the room's `wbgt_c`, else its dry temperature) against the work class's
+ceiling, between the unacclimatised and acclimatised columns by `acclimatisation`; the core drifts above it at the table's
+rate; sweat and its evaporative cooling are the old `bodyProcess`, which now delegates here. Sleep: quality-weighted hours
+close at `dayStartH` with the recovery table's debt, fatigue and core rules; alertness is the debt row times the circadian
+row. Outputs are by id on `body.props.outputs` (`bodyOutputs(body)`): `alertness`, `sleep_debt`, `core_c`,
+`water_deficit_pct`, `energy_balance_kcal`, `pal`, ... `ingest(world, body, {kcal, waterKg})` brings food energy and water
+in, traced (`energy:chemical`, `mass:water`). `FLAGS.md` lists what the docs ask for that the library cannot support.
 
 ## Next (the belt)
 

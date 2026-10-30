@@ -1,5 +1,5 @@
 /** The world: a registry, a graph, a trace, the clock, and the conservation ledger the trace checks each step. */
-import { Registry } from "./registry.ts";
+import { Registry, type Component } from "./registry.ts";
 import { Graph } from "./graph.ts";
 import { Trace } from "./trace.ts";
 import { atomicMass, formulaAtoms } from "./elements.ts";
@@ -70,3 +70,6 @@ export class World {
     }
   }
 }
+
+/** Add heat (J, negative to remove) to a component: its lumped temperature moves by J over its heat capacity. */
+export function addHeat(w: World, c: Component, J: number) { c.temperatureC += J / w.registry.heatCapacity(c); }
