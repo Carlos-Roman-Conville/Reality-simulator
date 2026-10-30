@@ -29,6 +29,11 @@ Step 2 (the same evening, on Rex's verbatim approval via the town keeper): the p
 `data/pirate-ship/settlement/start.json`; T0, T1, A1 and A2 green beside the game's 274 other tests. The engine
 gained `addBuilding` (seed a standing building) and `test/acceptance.test.ts` (the engine half of A1).
 
+2026-10-30, the Economy contract (`CONTRACTS.md`, agreed): a production line is `{ recipe, equipment }` and its
+rates come from `MaterialProvider.rates(recipe)` each tick; `TransactionKind` is any string (`SETTLEMENT_KINDS`
+lists the engine's own); the `pay` command and the `ledger` query's holder and day range are the economy's
+`LedgerProvider` over this engine's accounts; `setWage` sets a post's wage. U13, U14; 26 tests.
+
 What the code encodes of Rex's answers: a sale changes the holder and nothing else (U3); a title can refuse a
 buyer (U3, Q6); assignments never end on their own (U4); a business runs while its operator is away if a manager
 is available (U7, Q2); layouts change only through projects unless `config.freeLayout` is set (U8, Q8 default);
@@ -46,7 +51,7 @@ the heir of an `inherit` is named by the host (no law of succession); offices gr
 4. [TESTS.md](TESTS.md): package and adapter test specs, ending in the acceptance test A1.
 5. [QUESTIONS.md](QUESTIONS.md): what only Rex can answer, and what is assumed meanwhile.
 6. [CONTRACTS.md](CONTRACTS.md): the Settlement-Economy contract (ledger, materials, rates, the reader, the day
-   order), the economy keeper's proposal with this keeper's amendments; code on either side waits on its agreement.
+   order), agreed with the economy keeper 2026-10-30; both repos hold the same text.
 
 ## Marks
 

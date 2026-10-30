@@ -7,7 +7,7 @@ import { defaultConfig } from '../src/config.ts'
 
 export function buildHamlet() {
   const providers = stubProviders({
-    'plank': { inputs: [{ good: 'log', units: 1 }], output: 'plank', yield: 4 },
+    'plank': { inputs: [{ good: 'log', units: 1 }], output: 'plank', yield: 4, unitsPerFixtureDay: 5, labourPerUnit: 0.5 },
   })
   providers.labour.pools['pool.hamlet'] = 3
   const r = new Runner(initialState('stl.hamlet', 'The hamlet'), defaultConfig(), providers)
@@ -35,7 +35,7 @@ export function buildHamlet() {
   r.run({ type: 'grantTitle', subject: shopId, holder: 'alder' })
   r.run({ type: 'assign', person: 'alder', kind: 'residence', target: houseId })
   const biz = r.run<string>({ type: 'openBusiness', kind: 'sawyer', premises: [{ bldg: shopId, rooms: ['floor'] }], operator: 'alder',
-    inventory: 'inv.sawyer', lines: [{ recipe: 'plank', equipment: ['saw-pit'], unitsPerFixtureDay: 5, labourPerUnit: 0.5 }] })
+    inventory: 'inv.sawyer', lines: [{ recipe: 'plank', equipment: ['saw-pit'] }] })
   const post = r.run<string>({ type: 'addPost', biz, role: 'sawyer', wage: 2 })
   r.run({ type: 'hire', post, holder: 'pool.hamlet' })
   providers.materials.set('inv.sawyer', 'log', 30)

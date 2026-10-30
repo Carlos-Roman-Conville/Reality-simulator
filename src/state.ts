@@ -74,9 +74,13 @@ export interface Lease {
   status: 'active' | 'ended'
 }
 
-export type TransactionKind =
-  | 'sale' | 'lease' | 'lease-end' | 'inherit' | 'transfer' | 'seizure' | 'gift' | 'grant' | 'permit'
-  | 'wage' | 'rent' | 'purchase' | 'credit' | 'debit' | 'appoint' | 'vacate' | 'revoke'
+/** The kinds the engine writes. Any string is a kind (CONTRACTS.md s3): the economy writes its own through `pay`. */
+export const SETTLEMENT_KINDS = [
+  'sale', 'lease', 'lease-end', 'inherit', 'transfer', 'seizure', 'gift', 'grant', 'permit',
+  'wage', 'rent', 'purchase', 'credit', 'debit', 'appoint', 'vacate', 'revoke',
+] as const
+export type SettlementKind = typeof SETTLEMENT_KINDS[number]
+export type TransactionKind = string
 
 export interface Transaction {
   id: string
@@ -93,10 +97,8 @@ export interface Transaction {
 export interface Account { id: string; holder: string; balance: number }
 
 export interface ProductionLine {
-  recipe: string            // opaque
+  recipe: string            // opaque; its rates come from MaterialProvider.rates each tick (CONTRACTS.md s13a)
   equipment: string[]       // fixture ids the line needs (any count; more fixtures, more output)
-  unitsPerFixtureDay: number
-  labourPerUnit: number     // worker-days per unit
 }
 
 export type BusinessStatus = 'dormant' | 'staffed' | 'producing'

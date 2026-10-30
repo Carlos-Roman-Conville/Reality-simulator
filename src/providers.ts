@@ -21,6 +21,13 @@ export interface MaterialProvider {
   have(inventory: string, material: string): number
   /** Take up to `units` of a material for a project; returns what was taken. */
   take(inventory: string, material: string, units: number): number
+  /** A recipe's rates (CONTRACTS.md s13a): the recipe's home is the economy, so the engine reads them each tick. */
+  rates(recipe: string): Rates
+}
+
+export interface Rates {
+  unitsPerFixtureDay: number   // output units one fixture of each needed kind allows per day
+  labourPerUnit: number        // worker-days per unit; 0 means the line needs no labour
 }
 
 export interface UtilityProvider {
@@ -40,7 +47,7 @@ export interface Providers {
 
 // In-memory stubs for tests and examples.
 
-export interface StubRecipe { inputs: { good: string; units: number }[]; output: string; yield: number }
+export interface StubRecipe extends Rates { inputs: { good: string; units: number }[]; output: string; yield: number }
 
 export class StubMaterials implements MaterialProvider {
   stock: Record<string, Record<string, number>> = {}
@@ -63,6 +70,11 @@ export class StubMaterials implements MaterialProvider {
     if (!def) throw new Error(`stub recipe unknown: ${recipe}`)
     for (const input of def.inputs) this.set(inventory, input.good, this.get(inventory, input.good) - input.units * units)
     this.set(inventory, def.output, this.get(inventory, def.output) + def.yield * units)
+  }
+  rates(recipe: string): Rates {
+    const def = this.recipes[recipe]
+    if (!def) throw new Error(`stub recipe unknown: ${recipe}`)
+    return { unitsPerFixtureDay: def.unitsPerFixtureDay, labourPerUnit: def.labourPerUnit }
   }
   have(inventory: string, material: string): number { return this.get(inventory, material) }
   take(inventory: string, material: string, units: number): number {

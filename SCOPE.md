@@ -44,4 +44,6 @@ Inherited from [HQ/PRINCIPLES.md](../../HQ/PRINCIPLES.md) and [Toolchain/SCOPE.m
 - 2026-10-30: Rex reorganised the keepers; this one owns the engine, makes no pirate narrative or government
   decisions, and implements no production or labour calculation beyond today's until the Economy contract is
   agreed. The economy keeper's proposal was answered the same day in `CONTRACTS.md` (counter-proposal: rates via
-  the provider, `TransactionKind` to string, a `pay` command, `setWage`); code for it waits on their confirmation.
+  the provider, `TransactionKind` to string, a `pay` command, `setWage`); the economy keeper confirmed all nine
+  amendments the same day and the code landed (26 tests green; the pirate adapter re-run green). Next concrete
+  task: none until Rex answers Q1, Q5, Q6, Q7, Q10 or the economy keeper's engine reaches the adapter.

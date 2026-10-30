@@ -44,8 +44,15 @@ export const economic = (state: SettlementState, biz: string): string => state.b
 
 export const production = (state: SettlementState, biz: string): DayProduction | null => state.production[biz] ?? null
 
-export const ledger = (state: SettlementState, filter: Partial<Pick<Transaction, 'kind' | 'subject' | 'from' | 'to'>> = {}): Transaction[] =>
-  state.ledger.filter((row) => Object.entries(filter).every(([key, value]) => row[key as keyof typeof filter] === value))
+export type LedgerFilter = Partial<Pick<Transaction, 'kind' | 'subject' | 'from' | 'to'>> & { holder?: string; fromDay?: number; toDay?: number }
+
+/** Ledger rows matching every given field; `holder` matches either side; `fromDay`..`toDay` inclusive (CONTRACTS.md s3). */
+export const ledger = (state: SettlementState, filter: LedgerFilter = {}): Transaction[] => {
+  const { holder, fromDay, toDay, ...fields } = filter
+  return state.ledger.filter((row) => Object.entries(fields).every(([key, value]) => row[key as keyof typeof fields] === value)
+    && (holder === undefined || row.from === holder || row.to === holder)
+    && (fromDay === undefined || row.day >= fromDay) && (toDay === undefined || row.day <= toDay))
+}
 
 export const balanceOf = (state: SettlementState, holder: string): number =>
   Object.values(state.accounts).find((account) => account.holder === holder)?.balance ?? 0

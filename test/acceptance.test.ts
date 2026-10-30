@@ -10,8 +10,8 @@ import { assignmentsOf, economic, holderOf, ledger, physical, totalMoney } from 
 
 describe('A1 (engine): the butcher shop changes hands, is leased, staffed, renovated and produces', () => {
   const providers = stubProviders({
-    'salt-meat': { inputs: [{ good: 'meat', units: 1 }, { good: 'salt', units: 1 }], output: 'salt-meat', yield: 1 },
-    'smoked-meat': { inputs: [{ good: 'meat', units: 1 }], output: 'smoked-meat', yield: 1 },
+    'salt-meat': { inputs: [{ good: 'meat', units: 1 }, { good: 'salt', units: 1 }], output: 'salt-meat', yield: 1, unitsPerFixtureDay: 10, labourPerUnit: 0.25 },
+    'smoked-meat': { inputs: [{ good: 'meat', units: 1 }], output: 'smoked-meat', yield: 1, unitsPerFixtureDay: 6, labourPerUnit: 0.25 },
   })
   providers.labour.pools['pool.housing'] = 5
   providers.prices.values['bldg.0001'] = 60
@@ -48,8 +48,7 @@ describe('A1 (engine): the butcher shop changes hands, is leased, staffed, renov
   it('3. the son leases the shop to the cook, who operates a butcher business the son manages', () => {
     r.run({ type: 'lease', title, tenant: 'esfp-f', scope: ['shop'], rent: 2 })
     biz = r.run<string>({ type: 'openBusiness', kind: 'butcher', premises: [{ bldg, rooms: ['shop'] }], operator: 'esfp-f', manager: 'farm-son', inventory: 'inv.butcher',
-      lines: [{ recipe: 'salt-meat', equipment: ['salting-house'], unitsPerFixtureDay: 10, labourPerUnit: 0.25 },
-        { recipe: 'smoked-meat', equipment: ['smokehouse'], unitsPerFixtureDay: 6, labourPerUnit: 0.25 }] })
+      lines: [{ recipe: 'salt-meat', equipment: ['salting-house'] }, { recipe: 'smoked-meat', equipment: ['smokehouse'] }] })
     r.run({ type: 'assign', person: 'farm-son', kind: 'management', target: biz })
     r.run({ type: 'credit', holder: biz, amount: 100 })
     r.tick()

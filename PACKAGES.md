@@ -122,7 +122,7 @@ interface MaterialProvider {         // @rex/economy (CONTRACTS.md s4a), or the 
   produce(inventory, recipe, units): void                // consume inputs, add outputs; units <= floor(available)
   have(inventory, material): number                      // stock on hand, for projects
   take(inventory, material, units): number               // draw for a project; returns what was taken
-  rates(recipe): { unitsPerFixtureDay, labourPerUnit }   // (proposed, CONTRACTS.md s13a; not yet in code)
+  rates(recipe): { unitsPerFixtureDay, labourPerUnit }   // the recipe's rates, read each tick (CONTRACTS.md s13a)
 }
 interface UtilityProvider {          // @rex/realism later; the stub returns Infinity
   capacity(building, recipe, state): number
@@ -134,7 +134,7 @@ interface PriceProvider {            // @rex/economy, goods and inventories; pro
 
 Nothing in `@rex/settlement` imports the packages behind these; tests use in-memory stubs. What each side of the
 Settlement-Economy seam expects and promises (ledger provider, the settlement reader, the day order, the Q) is in
-[CONTRACTS.md](CONTRACTS.md), agreed with the economy keeper before any code on either side changes for it.
+[CONTRACTS.md](CONTRACTS.md), agreed with the economy keeper 2026-10-30; any change to it is agreed before code.
 
 ## 5. The id scheme
 

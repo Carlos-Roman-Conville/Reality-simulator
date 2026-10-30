@@ -2,7 +2,7 @@
 // Lines share the day's labour in order. The engine never knows what a recipe makes.
 import { bandOf } from '../config.ts'
 import { setStatus } from '../commands.ts'
-import type { Ctx } from '../context.ts'
+import { finite as checked, type Ctx } from '../context.ts'
 
 export function production(ctx: Ctx): void {
   const { labour, materials, utilities } = ctx.providers
@@ -17,6 +17,9 @@ export function production(ctx: Ctx): void {
     const lines: { recipe: string; q: number; caps: Record<string, number> }[] = []
     let produced = false
     for (const line of biz.lines) {
+      const rates = materials.rates(line.recipe)
+      const unitsPerFixtureDay = checked(rates.unitsPerFixtureDay, `rates(${line.recipe}).unitsPerFixtureDay`, 0)
+      const labourPerUnit = checked(rates.labourPerUnit, `rates(${line.recipe}).labourPerUnit`, 0)
       let equipment = Number.POSITIVE_INFINITY
       for (const fixture of line.equipment) {
         let count = 0
@@ -26,9 +29,9 @@ export function production(ctx: Ctx): void {
           const factor = bandOf(ctx.config, bldg.condition).outputFactor
           count += bldg.fixtures.filter((item) => item === fixture).length * factor
         }
-        equipment = Math.min(equipment, count * line.unitsPerFixtureDay)
+        equipment = Math.min(equipment, count * unitsPerFixtureDay)
       }
-      const labourCap = line.labourPerUnit > 0 ? labourDays / line.labourPerUnit : Number.POSITIVE_INFINITY
+      const labourCap = labourPerUnit > 0 ? labourDays / labourPerUnit : Number.POSITIVE_INFINITY
       const materialCap = materials.available(biz.inventory, line.recipe)
       let utility = Number.POSITIVE_INFINITY
       for (const premises of biz.premises) utility = Math.min(utility, utilities.capacity(premises.bldg, line.recipe, ctx.state))
@@ -37,7 +40,7 @@ export function production(ctx: Ctx): void {
       lines.push({ recipe: line.recipe, q, caps: { equipment: finite(equipment), labour: finite(labourCap), materials: finite(materialCap), utilities: finite(utility) } })
       if (q > 0) {
         materials.produce(biz.inventory, line.recipe, q)
-        labourDays -= q * line.labourPerUnit
+        labourDays -= q * labourPerUnit
         produced = true
       }
     }

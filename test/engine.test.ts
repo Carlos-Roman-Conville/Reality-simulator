@@ -3,13 +3,13 @@ import { Runner } from '../src/reduce.ts'
 import { initialState } from '../src/state.ts'
 import { defaultConfig } from '../src/config.ts'
 import { stubProviders } from '../src/providers.ts'
-import { assignmentsOf, hasFixture, holderOf, ledger, physical, tenantsOf, totalMoney } from '../src/queries.ts'
+import { assignmentsOf, balanceOf, hasFixture, holderOf, ledger, physical, tenantsOf, totalMoney } from '../src/queries.ts'
 import { buildHamlet } from '../examples/hamlet.ts'
 
 function fresh() {
   const providers = stubProviders({
-    'salt-meat': { inputs: [{ good: 'meat', units: 1 }, { good: 'salt', units: 1 }], output: 'salt-meat', yield: 1 },
-    'smoked-meat': { inputs: [{ good: 'meat', units: 1 }], output: 'smoked-meat', yield: 1 },
+    'salt-meat': { inputs: [{ good: 'meat', units: 1 }, { good: 'salt', units: 1 }], output: 'salt-meat', yield: 1, unitsPerFixtureDay: 10, labourPerUnit: 0.25 },
+    'smoked-meat': { inputs: [{ good: 'meat', units: 1 }], output: 'smoked-meat', yield: 1, unitsPerFixtureDay: 6, labourPerUnit: 0.25 },
   })
   providers.labour.pools['pool.housing'] = 5
   const r = new Runner(initialState('stl.test', 'test'), defaultConfig(), providers)
@@ -34,7 +34,7 @@ function fresh() {
 function openShop(ctx: ReturnType<typeof fresh>, operator = 'butcher') {
   const { r } = ctx
   const biz = r.run<string>({ type: 'openBusiness', kind: 'butcher', premises: [{ bldg: ctx.bldg, rooms: ['shop'] }], operator, inventory: 'inv.shop',
-    lines: [{ recipe: 'salt-meat', equipment: ['salting-house'], unitsPerFixtureDay: 10, labourPerUnit: 0.25 }] })
+    lines: [{ recipe: 'salt-meat', equipment: ['salting-house'] }] })
   const p1 = r.run<string>({ type: 'addPost', biz, role: 'butcher', wage: 2 })
   const p2 = r.run<string>({ type: 'addPost', biz, role: 'labourer', wage: 1 })
   r.run({ type: 'credit', holder: biz, amount: 100 })
@@ -300,6 +300,65 @@ describe('U12 the engine names nobody', () => {
     for (const command of ctx.r.log) for (const value of Object.values(command)) if (typeof value === 'string') fromCommands.add(value)
     for (const person of persons) expect(fromCommands.has(person) || person.startsWith('pool.')).toBe(true)
     expect(ctx.r.state.posts[p1].filledBy).toBe('pool.housing')
+  })
+})
+
+describe('U13 a line takes its rates from the material provider (CONTRACTS.md s13a)', () => {
+  it('changing the recipe rates changes the next day output; lines hold no copy', () => {
+    const ctx = fresh()
+    const { r, providers } = ctx
+    const { biz, p1, p2 } = openShop(ctx)
+    r.run({ type: 'hire', post: p1, holder: 'pool.housing' })
+    r.run({ type: 'hire', post: p2, holder: 'pool.housing' })
+    providers.materials.set('inv.shop', 'meat', 100)
+    providers.materials.set('inv.shop', 'salt', 100)
+    r.tick()
+    expect(r.state.businesses[biz].lines[0]).toEqual({ recipe: 'salt-meat', equipment: ['salting-house'] })
+    const first = r.state.production[biz].lines[0].q
+    expect(first).toBe(8)                         // 2 worker-days / 0.25, under one fixture's 10
+    providers.materials.recipes['salt-meat'].unitsPerFixtureDay = 3
+    r.tick()
+    expect(r.state.production[biz].lines[0].q).toBe(3)
+    expect(r.state.production[biz].lines[0].caps.equipment).toBe(3)
+    providers.materials.recipes['salt-meat'].unitsPerFixtureDay = Number.NaN
+    expect(() => r.tick()).toThrow(/rates\(salt-meat\)/)
+  })
+})
+
+describe('U14 pay and setWage are the ledger seam (CONTRACTS.md s3, s5, s13c, s13e)', () => {
+  it('pay moves money under any kind, stamps the day, returns the row id; ledger filters by holder and day', () => {
+    const ctx = fresh()
+    const { r } = ctx
+    r.tick(2)
+    const day = r.state.settlement.day
+    const butcherBefore = balanceOf(r.state, 'butcher')   // 99: the construct project's labour day was paid
+    const row = r.run<string>({ type: 'pay', from: 'player', to: 'butcher', amount: 25, kind: 'purchase', subject: 'inv.0001', note: 'a cask' })
+    expect(row).toMatch(/^txn\./)
+    expect(balanceOf(r.state, 'player')).toBe(75)
+    expect(balanceOf(r.state, 'butcher')).toBe(butcherBefore + 25)
+    expect(ledger(r.state, { kind: 'purchase' })).toEqual([expect.objectContaining({ id: row, day, from: 'player', to: 'butcher', subject: 'inv.0001', amount: 25 })])
+    r.run({ type: 'pay', from: 'butcher', to: 'town', amount: 5, kind: 'duty' })
+    expect(ledger(r.state, { holder: 'butcher', fromDay: day, toDay: day }).map((entry) => entry.kind)).toEqual(['purchase', 'duty'])
+    expect(ledger(r.state, { holder: 'butcher', toDay: day - 1 }).some((entry) => entry.kind === 'purchase')).toBe(false)
+    expect(() => r.run({ type: 'pay', from: 'player', to: 'butcher', amount: -1, kind: 'purchase' })).toThrow()
+    expect(() => r.run({ type: 'pay', from: 'player', to: 'butcher', amount: 1, kind: '' })).toThrow()
+  })
+  it('setWage changes what the next wages step pays and nothing else', () => {
+    const ctx = fresh()
+    const { r } = ctx
+    const { biz, p1 } = openShop(ctx)
+    r.run({ type: 'hire', post: p1, holder: 'pool.housing' })
+    r.tick()
+    expect(ledger(r.state, { kind: 'wage', subject: p1 }).map((entry) => entry.amount)).toEqual([2])
+    const events = r.events.length
+    r.run({ type: 'setWage', post: p1, wage: 3 })
+    expect(r.events).toHaveLength(events)
+    expect(r.state.posts[p1].holder).toBe('pool.housing')
+    r.tick()
+    expect(ledger(r.state, { kind: 'wage', subject: p1 }).map((entry) => entry.amount)).toEqual([2, 3])
+    expect(balanceOf(r.state, biz)).toBe(100 - 5)
+    expect(() => r.run({ type: 'setWage', post: p1, wage: -1 })).toThrow()
+    expect(() => r.run({ type: 'setWage', post: 'post.9999', wage: 1 })).toThrow()
   })
 })
 

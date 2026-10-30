@@ -61,6 +61,8 @@ export function reduce(state: SettlementState, command: Command, config: Settlem
     case 'revokePermission': handlers.revokePermission(ctx, command); break
     case 'credit': handlers.credit(ctx, command); break
     case 'debit': handlers.debit(ctx, command); break
+    case 'pay': result = handlers.payCommand(ctx, command); break
+    case 'setWage': handlers.setWage(ctx, command); break
     case 'tick': tick(ctx); break
     default: throw new Error(`unknown settlement command: ${String((command as { type: string }).type)}`)
   }

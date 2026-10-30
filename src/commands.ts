@@ -41,6 +41,7 @@ export type Command =
   | { type: 'setPublicWorks'; biz: string; publicWorks: boolean }
   | { type: 'addPost'; biz: string; role: string; requires?: unknown; wage: number; hours?: number; required?: boolean }
   | { type: 'removePost'; post: string }
+  | { type: 'setWage'; post: string; wage: number }
   // people
   | { type: 'assign'; person: string; kind: AssignmentKind; target: string }
   | { type: 'unassign'; assignment: string }
@@ -55,6 +56,7 @@ export type Command =
   // money
   | { type: 'credit'; holder: string; amount: number; note?: string }
   | { type: 'debit'; holder: string; amount: number; note?: string }
+  | { type: 'pay'; from: string; to: string; amount: number; kind: string; subject?: string | null; note?: string }
   // time
   | { type: 'tick' }
 
@@ -502,8 +504,7 @@ export function setManager(ctx: Ctx, c: Extract<Command, { type: 'setManager' }>
 }
 
 export function setLines(ctx: Ctx, c: Extract<Command, { type: 'setLines' }>): void {
-  business(ctx, c.biz).lines = c.lines.map((line) => ({ recipe: nonempty(line.recipe, 'recipe'), equipment: [...line.equipment],
-    unitsPerFixtureDay: finite(line.unitsPerFixtureDay, 'unitsPerFixtureDay', 0), labourPerUnit: finite(line.labourPerUnit, 'labourPerUnit', 0) }))
+  business(ctx, c.biz).lines = c.lines.map((line) => ({ recipe: nonempty(line.recipe, 'recipe'), equipment: [...line.equipment] }))
 }
 
 export function setPublicWorks(ctx: Ctx, c: Extract<Command, { type: 'setPublicWorks' }>): void {
@@ -517,6 +518,11 @@ export function addPost(ctx: Ctx, c: Extract<Command, { type: 'addPost' }>): str
     hours: finite(c.hours ?? ctx.config.hoursPerDay, 'hours', 0), required: c.required ?? true, holder: null, filledBy: null }
   biz.posts.push(id)
   return id
+}
+
+/** A post's wage, per day, from the next wages step (CONTRACTS.md s5): the host's number, or a market quote the host chose to pass on. */
+export function setWage(ctx: Ctx, c: Extract<Command, { type: 'setWage' }>): void {
+  post(ctx, c.post).wage = finite(c.wage, 'wage', 0)
 }
 
 export function removePost(ctx: Ctx, c: Extract<Command, { type: 'removePost' }>): void {
@@ -626,4 +632,9 @@ export function credit(ctx: Ctx, c: Extract<Command, { type: 'credit' }>): void 
 export function debit(ctx: Ctx, c: Extract<Command, { type: 'debit' }>): void {
   accountOf(ctx, nonempty(c.holder, 'holder')).balance -= finite(c.amount, 'amount', 0)
   record(ctx, 'debit', c.holder, null, null, c.amount, null, c.note ?? '')
+}
+
+/** Move money between holders under the caller's kind (CONTRACTS.md s3, s13e): the economy's LedgerProvider.transfer. Returns the row id. */
+export function payCommand(ctx: Ctx, c: Extract<Command, { type: 'pay' }>): string {
+  return pay(ctx, nonempty(c.from, 'from'), nonempty(c.to, 'to'), finite(c.amount, 'amount', 0), nonempty(c.kind, 'kind'), c.subject ?? null, null, c.note ?? '')
 }
