@@ -35,11 +35,11 @@ export class World {
   }
   private elementPerKg(substance: string, element: string): number {
     const s = this.registry.substance(substance);
-    return (formulaAtoms(s.formula)[element] ?? 0) * atomicMass[element] / s.molarMass;
+    return (s.formula === "" ? 0 : (formulaAtoms(s.formula)[element] ?? 0)) * atomicMass[element] / s.molarMass;
   }
   /** Enrol all registered elements before running processes; checked by every afterStep(). */
   conserveElements(components = [...this.registry.components.keys()], tolerance = 1e-9) {
-    const elements = new Set([...this.registry.substances.values()].flatMap(s => Object.keys(formulaAtoms(s.formula))));
+    const elements = new Set([...this.registry.substances.values()].flatMap(s => s.formula === "" ? [] : Object.keys(formulaAtoms(s.formula))));
     for (const element of elements) {
       if (!atomicMass[element]) throw new Error(`no atomic mass for ${element}`);
       this.elements.push({ element, components: [...components], initial: this.elementMassOf(element, components),

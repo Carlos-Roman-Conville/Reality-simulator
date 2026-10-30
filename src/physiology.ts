@@ -243,7 +243,7 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
     const rmr = bodyRmr(b);
     const dayIndex = Math.floor((clock - dayStartH) / 24);
     if (p.day_index === undefined) p.day_index = dayIndex;
-    while (p.day_index < dayIndex) { closeDay(b, rmr); p.day_index++; }
+
 
     const act = activityAt(hour), met = act.met;
     // energy: the MET cost, corrected to this body's resting rate when it has one (PHYSIOLOGY.md section 4); heat is M - W
@@ -292,6 +292,10 @@ export function physiologyProcess(body: string, room: string, o: PhysiologyOptio
 
     // exposure
     accumulateExposure(b, r, dt);
+
+    // Close after the final interval, so downstream nutrition sees exactly this day's totals.
+    const endDayIndex = Math.floor((clockH0 + (w.t + dt) / 3600 - dayStartH) / 24);
+    while (p.day_index < endDayIndex) { closeDay(b, rmr); p.day_index++; }
 
     // outputs by library id
     const out = bodyOutputs(b), debt = sleepDebtRow(p.sleep_debt ?? 0), circ = circadianRow(hour), core = coreRow(p.core_c);

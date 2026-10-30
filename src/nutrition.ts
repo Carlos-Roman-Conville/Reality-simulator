@@ -466,7 +466,8 @@ export function nutritionProcess(body: string, o: NutritionOptions = {}): Proces
       p.nut_day_index = dayIndex; p.nut_intake_mark = 0; p.nut_spent_mark = 0; p.nut_sweat_mark = 0; p.nut_blood_mark = 0; p.nut_start_mass = b.mass;
     }
     p.nut_met_over_h = (p.nut_met_over_h ?? 0) + Math.max(0, Number(bodyOutputs(b).met ?? 0) - composition().glycogenOverMet) * dt / 3600;
-    while (p.nut_day_index < dayIndex) {
+    const endDayIndex = Math.floor((clockH0 + (w.t + dt) / 3600 - dayStartH) / 24);
+    while (p.nut_day_index < endDayIndex) {
       closeDay(w, body, o, (p.sweat_kg ?? 0) - p.nut_sweat_mark!);
       p.nut_sweat_mark = p.sweat_kg ?? 0; p.nut_day_index++;
     }
