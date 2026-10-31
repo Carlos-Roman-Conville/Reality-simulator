@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform dashboard</title>
+<style>
+  :root { --bg:#f6f5f1; --card:#fff; --ink:#1c1b19; --muted:#6b6962; --line:#e3e1da; --ok:#2e7d4f; --bad:#b4342c; --run:#2b5fb3; --warn:#a86a00; --accent:#3d3a33; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#15161a; --card:#1e2026; --ink:#ecebe6; --muted:#9a988f; --line:#2c2f37; --ok:#5fc08a; --bad:#e8716a; --run:#6fa3ff; --warn:#e0a63f; --accent:#d8d5cc; } }
+  :root[data-theme="dark"] { --bg:#15161a; --card:#1e2026; --ink:#ecebe6; --muted:#9a988f; --line:#2c2f37; --ok:#5fc08a; --bad:#e8716a; --run:#6fa3ff; --warn:#e0a63f; --accent:#d8d5cc; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; padding:16px; }
+  header { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 20px; margin-bottom:14px; }
+  h1 { font-size:22px; margin:0; letter-spacing:.2px; }
+  h2 { font-size:15px; margin:0 0 10px; color:var(--accent); text-transform:uppercase; letter-spacing:.06em; }
+  .meta { color:var(--muted); font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0; }
+  .wide { grid-column:1 / -1; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:5px 8px 5px 0; vertical-align:top; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  tr:last-child td { border-bottom:0; }
+  .ok { color:var(--ok); font-weight:600; } .bad { color:var(--bad); font-weight:600; } .run { color:var(--run); font-weight:600; } .warn { color:var(--warn); font-weight:600; }
+  .pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); color:var(--muted); margin:2px 4px 2px 0; }
+  .num { font-variant-numeric:tabular-nums; text-align:right; }
+  .k { margin-bottom:12px; padding-bottom:10px; border-bottom:1px dashed var(--line); }
+  .k:last-child { border-bottom:0; margin-bottom:0; }
+  .k b { font-size:14px; }
+  .k p { margin:4px 0 0; font-size:13px; color:var(--ink); }
+  .k table { font-size:12.5px; margin-top:4px; } .k th, .k td { padding:3px 6px 3px 0; }
+  .k .t { color:var(--muted); font-size:12px; }
+  .bar { height:8px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px; }
+  .bar > span { display:block; height:100%; background:var(--ok); }
+  .feed li { list-style:none; padding:3px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .feed { margin:0; padding:0; }
+  .big { font-size:28px; font-weight:700; line-height:1.1; }
+  .stats { display:flex; flex-wrap:wrap; gap:18px 28px; }
+  code { font-size:12.5px; background:var(--bg); padding:1px 4px; border-radius:4px; }
+  @media (max-width:600px) { body { padding:12px; } .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Reality-simulator platform</h1>
+  <span class="meta" id="built">loading…</span>
+  <span class="meta">refreshes every 60 s</span>
+</header>
+
+<div class="grid">
+  <section class="card wide">
+    <h2>Waiting on you</h2>
+    <div id="blocked"></div>
+  </section>
+
+  <section class="card wide">
+    <h2>Belt lanes</h2>
+    <table id="lanes"><thead><tr><th>Lane</th><th>Now</th><th class="num">Queued</th><th class="num">Done</th><th class="num">Failed</th><th class="num">Today ✓ / ✗</th><th class="num">Today $</th><th>Failed units</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="card">
+    <h2>Registry</h2>
+    <div class="stats" id="reg"></div>
+    <div id="regengines" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card">
+    <h2>Overlap batches</h2>
+    <div id="batches"></div>
+  </section>
+
+  <section class="card">
+    <h2>Roadmap</h2>
+    <table id="roadmap"><tbody></tbody></table>
+  </section>
+
+  <section class="card wide">
+    <h2>Keepers</h2>
+    <div class="grid" id="keepers"></div>
+  </section>
+
+  <section class="card wide">
+    <h2>Recent belt results</h2>
+    <ul class="feed" id="feed"></ul>
+  </section>
+</div>
+
+<script>
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+// Markdown subset for handoff sections: pipe tables, bullet lists, paragraphs.
+function md(s) {
+  const lines = String(s ?? "").split("\n"); let out = "", table = [], list = [];
+  const flushT = () => { if (table.length) { out += "<table>" + table.map((cells, i) => "<tr>" + cells.map(c => `<${i===0?"th":"td"}>${inline(c)}</${i===0?"th":"td"}>`).join("") + "</tr>").join("") + "</table>"; table = []; } };
+  const flushL = () => { if (list.length) { out += "<ul style='margin:4px 0;padding-left:18px'>" + list.map(x => `<li>${inline(x)}</li>`).join("") + "</ul>"; list = []; } };
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (/^\|/.test(l)) { flushL(); if (!/^\|\s*-{2,}/.test(l)) table.push(l.replace(/^\||\|$/g, "").split("|").map(c => c.trim())); continue; }
+    flushT();
+    if (/^[-*] /.test(l)) { list.push(l.slice(2)); continue; }
+    flushL();
+    if (l) out += `<div>${inline(l)}</div>`;
+  }
+  flushT(); flushL();
+  return out;
+}
+
+async function load() {
+  let s;
+  try { s = await (await fetch("state.json?t=" + Date.now(), {cache:"no-store"})).json(); }
+  catch (e) { document.getElementById("built").textContent = "state.json not found: run build.py"; return; }
+  document.getElementById("built").textContent = "built " + s.built_at;
+
+  // Waiting on you
+  const st = s.starting_town || {rows:0, answered:0};
+  let b = `<div class="k"><b>STARTING_TOWN.md</b> <span class="t">${st.answered} of ${st.rows} rows answered</span><div class="bar"><span style="width:${st.rows ? 100*st.answered/st.rows : 0}%"></span></div></div>`;
+  for (const x of s.blocked_on_rex || []) b += `<div class="k"><b>${esc(x.keeper)}</b><div style="font-size:13px;margin-top:4px">${md(x.text)}</div></div>`;
+  document.getElementById("blocked").innerHTML = b || "<span class='meta'>nothing</span>";
+
+  // Lanes
+  const tb = document.querySelector("#lanes tbody"); tb.innerHTML = "";
+  for (const l of s.lanes) {
+    const now = l.running ? `<span class="run">${esc(l.running)}</span><div class="meta">${esc((l.since||"").slice(11,16))}</div>` : (l.queued ? `<span class="warn">idle, ${l.queued} queued</span>` : `<span class="meta">idle, empty</span>`);
+    tb.insertAdjacentHTML("beforeend", `<tr><td><b>${esc(l.lane)}</b></td><td>${now}</td><td class="num">${l.queued}</td><td class="num ok">${l.done}</td><td class="num ${l.failed?'bad':''}">${l.failed}</td><td class="num"><span class="ok">${l.today_passed}</span> / <span class="${l.today_failed?'bad':''}">${l.today_failed}</span></td><td class="num">${l.today_cost.toFixed(2)}</td><td class="meta">${(l.failed_names||[]).map(esc).join("<br>")}</td></tr>`);
+  }
+
+  // Registry
+  const r = s.registry || {}, bs = r.by_status || {}, vv = r.vv || {};
+  document.getElementById("reg").innerHTML = [
+    ["mechanisms", r.mechanisms], ["built", bs.built], ["documented only", bs["documented-only"]], ["planned", bs.planned],
+    ["integrated", vv.integrated], ["validated", vv.validated], ["overlap groups", r.overlap_groups], ["integration gaps", r.integration_gaps]
+  ].map(([k,v]) => `<div><div class="big">${v ?? 0}</div><div class="meta">${k}</div></div>`).join("");
+  const be = r.by_engine || {};
+  document.getElementById("regengines").innerHTML = Object.entries(be).sort((a,b)=> (b[1].built||0)-(a[1].built||0)).map(([e,c]) =>
+    `<span class="pill"><b>${esc(e)}</b> ${c.built||0} built · ${c["documented-only"]||0} doc · ${c.planned||0} planned</span>`).join("");
+
+  // Batches
+  document.getElementById("batches").innerHTML = (s.batches||[]).map(bt => {
+    const closed = bt.groups.filter(g => /clos/i.test(g.state) && !/closing/i.test(g.state)).length;
+    const rows = bt.groups.map(g => `<tr><td class="num">${esc(g.n)}</td><td>${esc(g.group)}</td><td class="${/closed/i.test(g.state)?'ok':(/closing|queued|agreed/i.test(g.state)?'run':'')}">${esc(g.state)}</td></tr>`).join("");
+    return `<div class="k"><b>${esc(bt.file)}</b> <span class="t">${esc(bt.status)}${bt.groups.length ? ` · ${closed} of ${bt.groups.length} closed` : ""}</span>${rows ? `<table><tbody>${rows}</tbody></table>` : ""}</div>`;
+  }).join("") || "<span class='meta'>none</span>";
+
+  // Roadmap
+  const rm = document.querySelector("#roadmap tbody"); rm.innerHTML = "";
+  for (const p of s.roadmap || []) rm.insertAdjacentHTML("beforeend", `<tr><td><b>${esc(p.phase)}</b></td><td>${esc(p.title)}</td><td class="meta">${esc(p.owner)}</td></tr>`);
+
+  // Keepers
+  document.getElementById("keepers").innerHTML = (s.keepers||[]).map(k => `<div class="card k"><b>${esc(k.name)}</b> <span class="t">updated ${esc(k.updated)} · issues ${k.issues_open} open / ${k.issues_total}</span>
+    <div style="font-size:13px;margin-top:4px"><span class="t">next:</span> ${md(k.next || "—")}</div></div>`).join("");
+
+  // Feed
+  const feed = [];
+  for (const l of s.lanes) for (const x of l.last) feed.push({...x, lane:l.lane});
+  feed.sort((a,b) => (b.at||"").localeCompare(a.at||""));
+  document.getElementById("feed").innerHTML = feed.slice(0, 24).map(x => `<li><span class="meta">${esc(x.at)}</span> <b>${esc(x.lane)}</b> ${esc(x.name)} <span class="${x.ok?'ok':'bad'}">${x.ok?'passed':'failed'}</span> <span class="meta">${esc(x.model||"")}${x.cost!=null?` $${Number(x.cost).toFixed(2)}`:""} ${esc(x.reason)}</span></li>`).join("");
+}
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

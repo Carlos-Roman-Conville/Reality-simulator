@@ -1,0 +1,68 @@
+{
+ "meta": {
+  "schema_version": 1,
+  "rule": "one entry per rename, split or merge: old id -> new id (or list); a retired id is never reused",
+  "applies_to": "mechanism ids and quantity ids"
+ },
+ "aliases": [
+  {
+   "old": "economy.recipe.labour_hours_per_unit",
+   "new": "economy.labourhoursperunit",
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "the economy keeper (the writer's owner) set the name; the old id was a settlement-keeper proposal published briefly in quantities.json"
+  },
+  {
+   "old": "percept.detectability",
+   "new": "body.detectability",
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "a per-observer value in the body scope; never registered under the old name (cognition keeper's proposal)"
+  },
+  {
+   "old": "settlement.state",
+   "new": null,
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "the settlement state container, not a quantity: every command writes it through settlement.infra.reducer_replay (settlement keeper, 2026-10-30)"
+  },
+  {
+   "old": "settlement.events",
+   "new": null,
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "events are the reducer's return value, not a quantity (settlement keeper, 2026-10-30)"
+  },
+  {
+   "old": "settlement.cap",
+   "new": [
+    "settlement.production.equipment_cap_units",
+    "settlement.production.labour_cap_units"
+   ],
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "one seed name for two caps; materials and utilities caps come from providers and need no settlement quantity (settlement keeper, 2026-10-30)"
+  },
+  {
+   "old": "settlement.wage_ledger_rows",
+   "new": "settlement.ledger_row",
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "an alias of settlement.ledger_row (kind wage); settlement.wage.pay asks pay to write (settlement keeper, 2026-10-30)"
+  },
+  {
+   "old": "settlement.business_status",
+   "new": "settlement.business.status",
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "merged into settlement.business.status: the same field"
+  },
+  {
+   "old": "settlement.business_status_dormant_staffed_producing",
+   "new": "settlement.business.status",
+   "date": "2026-10-30",
+   "kind": "quantity",
+   "reason": "merged into settlement.business.status: the same field"
+  }
+ ]
+}

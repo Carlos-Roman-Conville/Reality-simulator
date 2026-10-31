@@ -28,7 +28,81 @@ adapters. Rules Rex set the same day:
 - The ordering principle: physics decides what can happen, biology what an organism can do, cognition what it
   attempts, society the institutions and incentives around the attempt. The game supplies the objectives.
 
-## Engines
+## The approved organisation (Rex, 2026-10-30, on the audit; `AUDIT.md` §6, `ROADMAP.md`)
+
+| Engine | Responsibility | State |
+|---|---|---|
+| **Kernel** | shared time and scheduling, event ordering and causality, stable ids, units and dimensional validation, seeded RNG, snapshots and replay, cross-engine transaction boundaries. **Infrastructure only: it never owns a scientific or economic formula** (Rex) | new; P0; Kernel keeper to start |
+| **Physical Reality** | mechanics, thermodynamics, chemistry, fluids, optics, materials, environment; **weather and climate as a major P2 subsystem, generated from physics (solar heating, pressure gradients, humidity, instability, ocean evaporation, terrain, circulation, surface water), never drawn from a table** (Rex); climate = a region's statistics and boundary conditions, weather = the atmospheric state over time | today inside `realism/`; split from Life when mechanics makes it necessary |
+| **Life & Species** | anatomy, physiology, metabolism, genetics, development, health | today inside `realism/` |
+| **Catalogue** | scientific, historical, geographic and fictional reference data; tags, never unlocks | new; P4, researchable in parallel once ids and contracts exist |
+| **Settlement** | property, buildings, construction, workforce assignments | built, kept independent |
+| **Economy** | production, consumption, prices, trade, accounting | built, kept independent |
+| **Society** | population, culture, organisations, collective behaviour | new; P6 |
+| **Cognition** | perception, memory, learning, individual decisions | **started 2026-10-30** (Rex: begin now, in parallel, under refinement A): a baseline decision engine first (perception and subjective world, needs and goals, knowledge and memory with wrong beliefs, action generation and selection, learning), policy `a_t = π(o_t, m_t, n_t, p)` with the personality structure p a null model in the baseline; Rex's light-and-crystal / eight-function theory is the second layer, changing how experience is processed, never assigning behaviours to types; first benchmark the hungry-pair resource scenario under identical seeds; design and units for Rex's approval before code |
+| **Government** | laws, political authority, institutions, enforcement | new; P8; architecture may be researched while P6–P7 build |
+| **Knowledge & Technology** | discovery, invention, capabilities, diffusion | new; P9 |
+| **History** | historical initialisation, reconstruction and comparison; **a thin composition and validation layer, never a scripted-outcome engine**: it describes what happened in the simulation, it never determines what must happen (Rex) | new; P10–P11 |
+
+**Cellular biology (Rex, 2026-10-30):** a foundational layer of Life & Species between chemistry and tissues,
+not a top-level engine (`CELLULAR.md`): ATP production and use, DNA damage and repair, telomeres, senescence,
+mitochondrial function, proteostasis, stem-cell populations, epigenetic regulation, inflammation and immune
+signalling, cell death and replacement. Modelled as **cell populations with representative states** (size,
+capacity, energy, damage, repair, senescent fraction, turnover), never trillions of cells; resolution raised
+locally for an experiment. **Ageing is an emergent output of it**, never a timer on organ performance; two people
+of the same age differ by their histories. It also underlies muscle growth, nutrition, disease, wound healing,
+cancer, toxicology and reproduction, and gives other species their own turnover and regeneration by parameters.
+Established cellular processes are labelled apart from simplified or experimental ageing models. Not before P0
+and P1: the registry keeper audits metabolism, muscle adaptation, medicine, genetics and organ ageing for what
+moves under cellular ownership first.
+
+**Resolution of the biology (Rex, 2026-10-30, refining the above):** cells and DNA are simulated as compact
+mathematical representations that preserve their causal effects, never in their real form. Three separate records
+per organism: (1) a **genetic profile**, stable inherited information for development and reproduction, as
+chromosome segments carrying trait-associated variants (linkage, polygenic effects, dominance, interactions), never
+independent trait sliders or an average of the parents; (2) a **cellular and developmental state** (repair
+capacity, accumulated damage `D(t+1) = D(t) + damage − repair`, regeneration, adaptation), per representative
+tissue population; (3) the **organism state** (anatomy, organs, muscles, nutrients, immunity, capabilities). A
+character sheet is a view of these records, never a second source of numbers. A trait like muscular growth is
+`ΔM = f(G, T, N, H, R)` (genetics, training stimulus, nutrition, hormones and development, recovery): nobody
+inherits a Strength score. Named characters get tissue-level detail; distant populations aggregate genetic and
+health distributions.
+
+**Success measures (Rex, 2026-10-30):** the platform is a **generative** model of reality, not only a predictive
+one. Two evaluations of equal weight: **historical reconstruction** (does the engine reproduce observed patterns
+from documented starting conditions) and **generative plausibility** (do new societies obey physical, biological,
+economic and social constraints and emerge through coherent mechanisms, even along histories that never happened).
+Each major subsystem proves itself with an **executable demonstration**, not with a pirate slice: an organism
+ageing under different conditions; two fighters exchanging physically resolved actions; a settlement answering a
+harvest failure; a population forming competing organisations; an institution gaining or losing legitimacy;
+several societies developing and interacting over centuries. **Cliodynamics** (Turchin's structural-demographic
+theory, the Seshat databank, the journal *Cliodynamics*) is an input and a yardstick for Society, Government and
+History: it explains pressures and forecasts instability windows, not specific events, and its own record is
+mixed; the test worth running is the platform against simpler cliodynamic models on cases neither was calibrated
+on. More mechanisms never mean more accuracy by themselves; where the science is missing (cognition, cultural
+change, institutional emergence, ageing rates) the platform holds explicit hypotheses and tests their consequences.
+
+**Weather validation (Rex, 2026-10-30):** monthly normals within a tolerance are necessary, not sufficient; the
+generator must also match rainfall frequency, dry-spell duration, temperature variability, wind distributions,
+seasonal patterns and extreme-event frequency, with variable-specific tolerances and independent observational
+data, never one universal 10 %.
+
+**Kernel adoption (Rex, 2026-10-30):** adopting shared time, ordering, ids and seeded randomness must not silently
+change existing results: the thirty-day settlement simulation gives the same outputs under equivalent initial
+conditions unless a correction is documented. **Mortality:** Reality decides biological failure (a crisis before
+every death); the game's fate system decides what a dead character becomes; the two rules are compatible.
+
+Refinements Rex set with the approval: **(A)** dependency-based parallelism: a phase starts when what it reads
+from is ready, never "the previous phase finished"; **(B)** overlap closure removes duplicate *authority*, not
+every related calculation: a detailed and an aggregate computation may coexist when one owner holds the state and
+the aggregation interface is documented; the registry distinguishes legitimate aggregation from contradictory
+duplication. The benchmark structure (England and Tokugawa Japan for development; Norse Greenland and Copán held
+out; Iceland reserve) is approved provisionally: periods, weights and the 70 % target stay provisional until data
+coverage and the eleven indicators are audited. No disruptive migration starts until the affected keepers agree
+ownership and acceptance tests. The 47 overlap groups are presented in prioritised batches, first shared time,
+state ownership, metabolism, fatigue, labour and mortality.
+
+## Engines as they stand today
 
 | Engine | Folder | Owner session | State | Priority |
 |---|---|---|---|---|

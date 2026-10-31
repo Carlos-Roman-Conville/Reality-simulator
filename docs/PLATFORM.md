@@ -126,6 +126,36 @@ rebuild.
   and keeps `HQ/handoffs/<keeper>/HANDOFF.md` and `ISSUES.md` current.
 - Historical first; three value labels (`ENGINES.md`).
 
+## 11a. Mathematical verification and validation (Rex, 2026-10-30)
+
+The keepers are responsible for researching, selecting, implementing, testing and validating the mathematics.
+Rex is never the one who finds a wrong formula, an unrealistic parameter, a numerical instability or a
+contradiction between mechanisms; he decides what the simulator must represent and approves major design choices,
+and he can ask why a simulation behaves as it does and get a traceable, evidence-backed answer.
+
+Three states, never conflated: **implemented** (the code exists and its unit tests pass) ≠ **integrated** (it is
+wired to the mechanisms it reads and feeds, through registry ports) ≠ **validated** (its behaviour, alone and in
+combination, matches independent evidence within declared tolerances). The registry records all three per mechanism.
+
+For every mechanism the owner provides: (1) the scientific sources and the model used; (2) inputs, outputs, units,
+assumptions, conditions of applicability; (3) **verification** tests, that the mathematics is implemented as
+stated; (4) **validation** against independent empirical data where any exists, with tolerances; (5) numerical
+stability, conservation and boundary-condition tests; (6) **integration** tests with the mechanisms it is
+connected to (heat transfer and thermoregulation together, not only apart); (7) automated detection of duplicate
+effects and conflicting state ownership (the Kernel check script); (8) a report of accuracy, uncertainty,
+limitations and unresolved scientific questions. A validation specification is part of every belt unit's Gate.
+
+When a model fails validation, the owner investigates, corrects and reruns without Rex diagnosing it. Owners may
+autonomously fix implementation defects against the approved model inside their boundary. A change to the
+scientific model itself, to an architectural assumption, or an unvalidated hypothesis is recorded and reviewed
+before it becomes authoritative. Where no validated model exists, the approximation or hypothesis is labelled
+(§4 levels 4–6) and an experiment to evaluate it is designed.
+
+Qualification: an agent testing its own implementation is not independence. Validation needs independent
+reference data, competing models where they exist, a re-audit by the registry keeper, Haiku check units that did
+not write the code, and the held-out benchmarks; for cognition and civilisation-scale behaviour, explicit
+uncertainty is the honest result.
+
 ## 12. The controller's immediate assignment (Rex, 2026-10-30), and its state
 
 | # | Item | State |
@@ -146,3 +176,7 @@ rebuild.
 | Date | What |
 |---|---|
 | 2026-10-30 | Mission changed from pirate simulator to the universal reality platform; directive recorded; run rules (controller outputs, Opus 5.5 sub-agents, belt) recorded; settlement and economy lanes added to the belt; audit session started |
+| 2026-10-30 | Rex approved the Cognition design (C-Q1–C-Q8 as proposed, personality after the baseline, crude formulas with codex fingerprints) and added a universal motivational architecture (Maslow for categories not priority; SDT; homeostatic/allostatic; RL; `M_i = w_i·D_i·S_i` proposed); Reality owns biological signals, Cognition owns appraisal and selection, personality owns processing. Cognition lane released |
+| 2026-10-30 | Cognition lane opened at Rex's direction (baseline decision engine first, personality second; design before code) |
+| 2026-10-30 | Rex approved the Kernel P0 design (ms ticks; harness in `kernel/harness/`; `money` and `count` base dimensions; year length deferred to Catalogue/History) and all 14 batch-1 overlap owners. The kernel lane is released; keepers start P1 groups as they agree acceptance tests |
+| 2026-10-30 | Audit delivered (`AUDIT.md`, `REGISTRY.md`, `GRAPH.md`, `ROADMAP.md`). Rex approved the engine organisation and the P0–P11 order with refinements A (dependency parallelism) and B (duplicate authority, not every calculation); Kernel infrastructure-only; weather a physics-generated P2 subsystem; benchmark structure provisional. Items 2–6 and 8 done; 7 (dashboard) and 10 (migrations, per batch) remain. GitHub: `Pirate-game` and `Reality-simulator` pushed |
